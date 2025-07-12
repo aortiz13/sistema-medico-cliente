@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Esta línea es crucial: refresca la sesión del usuario en el servidor.
+  // Esta línea es crucial: refresca la sesión del usuario en el servidor ANTES de que la petición llegue a la API.
   await supabase.auth.getUser()
 
   // Devuelve la respuesta, que ahora contiene las cookies de sesión actualizadas.
