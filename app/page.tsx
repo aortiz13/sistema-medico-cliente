@@ -38,7 +38,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-blue-50 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">
-          Sistema Médico PRUEBA
+          Sistema Médico
         </h1>
         
         <form onSubmit={handleLogin} className="space-y-4">

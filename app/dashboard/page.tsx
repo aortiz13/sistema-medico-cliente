@@ -269,7 +269,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <FileText className="w-5 h-5 mr-2 text-blue-600" />
-              Consultas Recientes
+              Consultas Recientes Prueba
             </h2>
             <div className="space-y-3">
               {consultations.length === 0 ? (
