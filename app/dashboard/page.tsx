@@ -4,77 +4,98 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// NUEVO: Se importa el ícono para el nuevo botón
-import { Mic, Square, FileText, LogOut, UserPlus, X } from 'lucide-react'
+import { Mic, Square, FileText, LogOut, UserPlus, X, Send } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
-// Interfaces (sin cambios)
+// --- Interfaces ---
+interface Profile {
+  id: string;
+  full_name: string;
+  role: string;
+}
 interface Patient {
   id: string;
   full_name: string;
   phone?: string;
   created_at: string;
 }
-
 interface Consultation {
   id: string;
   created_at: string;
   status: string;
   formatted_notes: string;
-  patients: {
-    full_name: string;
-  } | null;
+  patients: { full_name: string; } | null;
 }
 
 export default function Dashboard() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [patients, setPatients] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState('')
-  const [isRecording, setIsRecording] = useState(false)
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [consultations, setConsultations] = useState<Consultation[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
   
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioStreamRef = useRef<MediaStream | null>(null);
-
-  // NUEVO: Estados para manejar el modal de creación de pacientes
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Estados para el modal de creación de pacientes
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
+  
+  // Estados para el formulario de invitación
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
 
+  // Estados y refs para la grabación
+  const [isRecording, setIsRecording] = useState(false)
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    const checkUser = async () => {
+    const checkUserAndProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/')
       } else {
         setUser(user)
-        loadPatients()
-        loadConsultations()
+        const { data: userProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') { // PGRST116: no rows found
+            console.error("Error al obtener el perfil:", profileError);
+        }
+        setProfile(userProfile);
+        
+        await loadPatients()
+        await loadConsultations()
+        setLoading(false);
       }
     }
-    checkUser()
+    checkUserAndProfile()
   }, [router])
 
   const loadPatients = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('patients')
       .select('*')
       .order('created_at', { ascending: false })
-    setPatients(data || [])
+    if (error) console.error("Error al cargar pacientes:", error);
+    else setPatients(data || [])
   }
 
   const loadConsultations = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('consultations')
       .select(`*, patients (full_name)`)
       .order('created_at', { ascending: false })
       .limit(5)
-    setConsultations(data || [])
+    if(error) console.error("Error al cargar consultas:", error);
+    else setConsultations(data || [])
   }
 
   const handleLogout = async () => {
@@ -82,7 +103,35 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  // NUEVO: Función para crear un nuevo paciente
+  const handleInviteAssistant = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setIsInviting(true);
+
+    try {
+      const response = await fetch('/api/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Falló al enviar la invitación.');
+      }
+      alert('¡Invitación enviada exitosamente!');
+      setInviteEmail('');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert('Error: ' + error.message);
+      } else {
+        alert('Ocurrió un error inesperado.');
+      }
+    } finally {
+      setIsInviting(false);
+    }
+  };
+  
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPatientName || !user) {
@@ -98,7 +147,7 @@ export default function Dashboard() {
         { 
           full_name: newPatientName, 
           phone: newPatientPhone,
-          user_id: user.id // Asigna el paciente al usuario actual
+          user_id: user.id
         }
       ]);
 
@@ -108,17 +157,13 @@ export default function Dashboard() {
       alert("Error al crear el paciente: " + error.message);
     } else {
       alert("¡Paciente creado exitosamente!");
-      // Limpiar y cerrar el modal
       setNewPatientName('');
       setNewPatientPhone('');
-      setIsModalOpen(false);
-      // Recargar la lista de pacientes para que aparezca el nuevo
-      loadPatients();
+      setIsPatientModalOpen(false);
+      await loadPatients();
     }
   };
 
-
-  // --- Lógica de grabación (sin cambios) ---
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -150,7 +195,7 @@ export default function Dashboard() {
       alert('Selecciona un paciente y graba audio')
       return
     }
-    setLoading(true)
+    setIsProcessingAudio(true)
     try {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
@@ -182,27 +227,23 @@ export default function Dashboard() {
           }
           setAudioBlob(null)
           setSelectedPatient('')
-          loadConsultations()
+          await loadConsultations()
         }
       } else { alert('Error al procesar audio: ' + result.error) }
     } catch { alert('Error inesperado')
-    } finally { setLoading(false) }
+    } finally { setIsProcessingAudio(false) }
   }
 
-
-  if (!user) {
-    return <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">Cargando...</div>
-    </div>
+  if (loading) {
+    return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Cargando...</div>
   }
 
   return (
     <>
-      {/* NUEVO: Modal para crear paciente */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+      {isPatientModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md relative">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+            <button onClick={() => setIsPatientModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
               <X size={24} />
             </button>
             <h2 className="text-2xl font-bold mb-6">Nuevo Paciente</h2>
@@ -214,7 +255,7 @@ export default function Dashboard() {
                     type="text"
                     value={newPatientName}
                     onChange={(e) => setNewPatientName(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ej: Carlos Sánchez"
                     required
                   />
@@ -225,13 +266,13 @@ export default function Dashboard() {
                     type="tel"
                     value={newPatientPhone}
                     onChange={(e) => setNewPatientPhone(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ej: 11-2233-4455"
                   />
                 </div>
               </div>
               <div className="mt-8 flex justify-end space-x-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200">
+                <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-4 py-2 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200">
                   Cancelar
                 </button>
                 <button type="submit" disabled={isSavingPatient} className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400">
@@ -245,7 +286,7 @@ export default function Dashboard() {
 
       <div className="min-h-screen bg-gray-100">
         <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
             <button onClick={handleLogout} className="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
               <LogOut className="w-5 h-5" />
@@ -253,60 +294,85 @@ export default function Dashboard() {
             </button>
           </div>
         </header>
-
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold flex items-center">
-                  <Mic className="w-5 h-5 mr-2 text-blue-600" />
-                  Nueva Consulta
-                </h2>
-                {/* NUEVO: Botón para abrir el modal */}
-                <button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600">
-                  <UserPlus size={16} />
-                  <span>Nuevo Paciente</span>
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Paciente</label>
-                  <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Seleccionar...</option>
-                    {patients.map((patient) => (
-                      <option key={patient.id} value={patient.id}>
-                        {patient.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex space-x-3">
-                  {!isRecording ? (
-                    <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:bg-gray-400">
-                      <Mic className="w-4 h-4" />
-                      <span>Grabar</span>
-                    </button>
-                  ) : (
-                    <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
-                      <Square className="w-4 h-4" />
-                      <span>Parar</span>
-                    </button>
-                  )}
-                  {audioBlob && (
-                    <button onClick={processAudio} disabled={loading} className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
-                      <FileText className="w-4 h-4" />
-                      <span>{loading ? 'Procesando...' : 'Procesar'}</span>
-                    </button>
-                  )}
+        
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold flex items-center">
+                    <Mic className="w-5 h-5 mr-2 text-blue-600" />
+                    Nueva Consulta
+                  </h2>
+                  <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600">
+                    <UserPlus size={16} />
+                    <span>Nuevo Paciente</span>
+                  </button>
                 </div>
                 
-                {isRecording && <div className="text-center text-red-500 font-medium">🔴 Grabando...</div>}
-                {audioBlob && !isRecording && <div className="text-center text-green-500 font-medium">✅ Audio listo para procesar</div>}
-              </div>
-            </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Paciente</label>
+                    <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">Seleccionar...</option>
+                      {patients.map((patient) => (
+                        <option key={patient.id} value={patient.id}>
+                          {patient.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
+                  <div className="flex space-x-3">
+                    {!isRecording ? (
+                      <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:bg-gray-400">
+                        <Mic className="w-4 h-4" />
+                        <span>Grabar</span>
+                      </button>
+                    ) : (
+                      <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
+                        <Square className="w-4 h-4" />
+                        <span>Parar</span>
+                      </button>
+                    )}
+                    {audioBlob && (
+                      <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
+                        <FileText className="w-4 h-4" />
+                        <span>{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span>
+                      </button>
+                    )}
+                  </div>
+                  
+                  {isRecording && <div className="text-center text-red-500 font-medium">🔴 Grabando...</div>}
+                  {audioBlob && !isRecording && <div className="text-center text-green-500 font-medium">✅ Audio listo para procesar</div>}
+                </div>
+              </div>
+
+              {profile?.role === 'doctor' && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                    <UserPlus className="w-5 h-5 mr-2 text-blue-600" />
+                    Invitar Nuevo Asistente
+                  </h2>
+                  <form onSubmit={handleInviteAssistant} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="email@asistente.com"
+                      required
+                    />
+                    <button type="submit" disabled={isInviting} className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400">
+                      <Send size={16} />
+                      <span>{isInviting ? 'Enviando...' : 'Invitar'}</span>
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+            
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center">
                 <FileText className="w-5 h-5 mr-2 text-blue-600" />
@@ -338,7 +404,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </>
   )
