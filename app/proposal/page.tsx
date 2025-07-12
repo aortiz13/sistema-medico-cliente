@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function ProposalPage() {
-  const deadlineDate = '14 de Julio'; // This is a fixed date, not calculated from current time.
+  const deadlineDate = '15 de Julio'; // This is a fixed date, not calculated from current time.
   const googleDriveLink = 'https://drive.google.com/drive/folders/1JQAh1J39nugVLocSVu4n_DB6WthzVTgO?usp=sharing'; // ¡CAMBIA ESTO POR TU ENLACE REAL!
 
   return (
