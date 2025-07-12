@@ -64,7 +64,7 @@ export default function ConsultationDetailPage() {
     html2canvas(input, { 
       scale: 2,
       useCORS: true,
-      backgroundColor: '#ffffff' // <-- ¡AQUÍ ESTÁ EL ARREGLO!
+      backgroundColor: '#ffffff' 
     })
     .then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
