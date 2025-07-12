@@ -7,16 +7,17 @@ import Link from 'next/link'
 import { ArrowLeft, Search, Calendar, FileText, User as UserIcon } from 'lucide-react'
 
 // --- Interfaces ---
+// CAMBIO DEFINITIVO: Se ajusta la interfaz para que 'patients' sea un array de objetos,
+// que es la estructura real que devuelve Supabase en esta consulta.
 interface ConsultationWithPatient {
   id: string;
   created_at: string;
   status: string;
   formatted_notes: string;
-  // CAMBIO: La consulta ahora devuelve un solo objeto de paciente, no un array
   patients: {
     full_name: string;
     document_id: string | null;
-  } | null; 
+  }[]; // Se define como un array
 }
 
 export default function AllConsultationsPage() {
@@ -30,61 +31,67 @@ export default function AllConsultationsPage() {
   const [dniFilter, setDniFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
+  // Se usa un solo useEffect para manejar la carga y los filtros
   useEffect(() => {
-    fetchConsultations();
-  }, []);
+    const fetchConsultations = async () => {
+      setLoading(true);
+      setError(null);
 
-  const fetchConsultations = async () => {
-    setLoading(true);
-    setError(null);
+      let query = supabase
+        .from('consultations')
+        .select(`
+          id,
+          created_at,
+          status,
+          formatted_notes,
+          patients!inner (
+            full_name,
+            document_id
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-    // CAMBIO: Se modifica la consulta para usar un INNER JOIN explícito.
-    // Esto soluciona el problema de permisos con RLS y asegura que los datos del paciente siempre vengan.
-    let query = supabase
-      .from('consultations')
-      .select(`
-        id,
-        created_at,
-        status,
-        formatted_notes,
-        patients!inner (
-          full_name,
-          document_id
-        )
-      `)
-      .order('created_at', { ascending: false });
+      if (nameFilter) {
+        query = query.ilike('patients.full_name', `%${nameFilter}%`);
+      }
+      if (dniFilter) {
+        query = query.ilike('patients.document_id', `%${dniFilter}%`);
+      }
+      if (dateFilter) {
+        const startDate = new Date(dateFilter);
+        startDate.setUTCHours(0, 0, 0, 0);
+        const endDate = new Date(dateFilter);
+        endDate.setUTCHours(23, 59, 59, 999);
+        
+        query = query
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString());
+      }
 
-    if (nameFilter) {
-      query = query.ilike('patients.full_name', `%${nameFilter}%`);
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error al cargar consultas:", error);
+        setError("No se pudieron cargar las consultas.");
+      } else {
+        setConsultations(data as ConsultationWithPatient[]);
+      }
+      setLoading(false);
     }
-    if (dniFilter) {
-      query = query.ilike('patients.document_id', `%${dniFilter}%`);
-    }
-    if (dateFilter) {
-      const startDate = new Date(dateFilter);
-      startDate.setUTCHours(0, 0, 0, 0);
-      const endDate = new Date(dateFilter);
-      endDate.setUTCHours(23, 59, 59, 999);
-      
-      query = query
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
-    }
 
-    const { data, error } = await query;
+    // Se usa un temporizador para no sobrecargar la BD al escribir en los filtros
+    const timer = setTimeout(() => {
+        fetchConsultations();
+    }, 500);
 
-    if (error) {
-      console.error("Error al cargar consultas:", error);
-      setError("No se pudieron cargar las consultas.");
-    } else {
-      setConsultations(data as ConsultationWithPatient[]);
-    }
-    setLoading(false);
-  }
+    return () => clearTimeout(timer);
+
+  }, [nameFilter, dniFilter, dateFilter]);
+
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchConsultations();
+    // La búsqueda ya se dispara automáticamente con el useEffect
   }
 
   const clearFilters = () => {
@@ -93,13 +100,6 @@ export default function AllConsultationsPage() {
     setDateFilter('');
   }
   
-  useEffect(() => {
-    if (!nameFilter && !dniFilter && !dateFilter) {
-        fetchConsultations();
-    }
-  }, [nameFilter, dniFilter, dateFilter]);
-
-
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b sticky top-0 z-10">
@@ -150,7 +150,6 @@ export default function AllConsultationsPage() {
               <Calendar className="absolute left-2 top-9 w-4 h-4 text-gray-400" />
             </div>
             <div className="flex items-end space-x-2">
-              <button type="submit" className="w-full flex-1 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold">Buscar</button>
               <button type="button" onClick={clearFilters} className="w-full flex-1 bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300">Limpiar</button>
             </div>
           </form>
@@ -174,10 +173,10 @@ export default function AllConsultationsPage() {
                   <tr><td colSpan={4} className="text-center py-10">No se encontraron resultados para tu búsqueda.</td></tr>
                 ) : (
                   consultations.map(consultation => (
-                    // CAMBIO: Se accede a la información del paciente directamente desde el objeto
+                    // CAMBIO: Se accede al primer elemento del array de pacientes
                     <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
-                      <td className="py-3 px-4 font-medium">{consultation.patients?.full_name || 'N/A'}</td>
-                      <td className="py-3 px-4">{consultation.patients?.document_id || 'N/A'}</td>
+                      <td className="py-3 px-4 font-medium">{consultation.patients[0]?.full_name || 'N/A'}</td>
+                      <td className="py-3 px-4">{consultation.patients[0]?.document_id || 'N/A'}</td>
                       <td className="py-3 px-4">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</td>
                       <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">{consultation.formatted_notes}</td>
                     </tr>
