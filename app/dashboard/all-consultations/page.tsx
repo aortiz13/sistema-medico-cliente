@@ -150,7 +150,17 @@ export default function AllConsultationsPage() {
                     const patient = consultation.patient_id ? patientsMap.get(consultation.patient_id) : null;
                     return (
                       <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
-                        <td className="py-3 px-4 font-medium">{patient?.full_name || 'N/A'}</td>
+                        // Dentro del map de la tabla, en all-consultations/page.tsx
+<td className="py-3 px-4 font-medium">
+  <Link 
+    href={`/dashboard/patient/${consultation.patient_id}`} 
+    className="text-blue-600 hover:underline"
+    onClick={(e) => e.stopPropagation()} // Evita que se active el link de la fila
+  >
+    {patient?.full_name || 'N/A'}
+  </Link>
+</td>
+
                         <td className="py-3 px-4">{patient?.document_id || 'N/A'}</td>
                         <td className="py-3 px-4">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</td>
                         <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">{consultation.formatted_notes}</td>

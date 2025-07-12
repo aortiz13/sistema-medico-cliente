@@ -27,6 +27,7 @@ interface Consultation {
   created_at: string;
   status: string;
   formatted_notes: string;
+  patient_id: string | null; // Necesitamos el ID para el enlace
   patients: { full_name: string; } | null;
 }
 
@@ -38,31 +39,30 @@ function Sidebar({ profile }: { profile: Profile | null }) {
       <div className="h-20 flex items-center px-8">
         <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
       </div>
-<nav className="flex-grow px-6">
-  <ul className="space-y-2">
-    <li>
-      <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-        <LayoutDashboard size={20} />
-        <span className="ml-4">Panel Principal</span>
-      </Link>
-    </li>
-    {/* NUEVO ENLACE AÑADIDO AQUÍ */}
-    <li>
-      <Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-white bg-blue-600 font-semibold shadow-md">
-        <Search size={20} />
-        <span className="ml-4">Todas las Consultas</span>
-      </Link>
-    </li>
-    {profile?.role === 'doctor' && (
-      <li>
-        <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <Users size={20} />
-          <span className="ml-4">Gestionar Asistentes</span>
-        </Link>
-      </li>
-    )}
-  </ul>
-</nav>
+      <nav className="flex-grow px-6">
+        <ul className="space-y-2">
+          <li>
+            <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-white bg-blue-600 font-semibold shadow-md">
+              <LayoutDashboard size={20} />
+              <span className="ml-4">Panel Principal</span>
+            </Link>
+          </li>
+           <li>
+            <Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+              <Search size={20} />
+              <span className="ml-4">Todas las Consultas</span>
+            </Link>
+          </li>
+          {profile?.role === 'doctor' && (
+            <li>
+              <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                <Users size={20} />
+                <span className="ml-4">Gestionar Asistentes</span>
+              </Link>
+            </li>
+          )}
+        </ul>
+      </nav>
       <div className="p-6">
         <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <LifeBuoy size={20} />
@@ -173,8 +173,7 @@ export default function Dashboard() {
   }
 
   const loadConsultations = async () => {
-    // CAMBIO: Se aumenta el límite para probar el scroll
-    const { data, error } = await supabase.from('consultations').select(`*, patients (full_name)`).order('created_at', { ascending: false }).limit(20)
+    const { data, error } = await supabase.from('consultations').select(`*, patients!inner(full_name)`).order('created_at', { ascending: false }).limit(20)
     if(error) console.error("Error al cargar consultas:", error); else setConsultations(data || [])
   }
 
@@ -192,7 +191,7 @@ export default function Dashboard() {
     setIsSavingPatient(true);
     const { error } = await supabase
       .from('patients')
-      .insert([{ full_name: newPatientName, phone: newPatientPhone, user_id: user.id }]);
+      .insert([{ full_name: newPatientName, phone: newPatientPhone, user_id: user.id, document_id: '' }]); // Añadimos document_id vacío
     setIsSavingPatient(false);
     if (error) {
       alert("Error al crear el paciente: " + error.message);
@@ -304,7 +303,6 @@ export default function Dashboard() {
         <Header profile={profile} onLogout={handleLogout} />
         
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-          {/* CAMBIO: Se eliminó la StatCard de Satisfacción y se ajustó el grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-500" />
             <StatCard title="Consultas Hoy" value="12" icon={FileText} color="bg-green-500" />
@@ -313,7 +311,6 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              {/* CAMBIO: Se restauró el botón de Nuevo Paciente */}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center"><Mic className="w-6 h-6 mr-3 text-blue-600" />Nueva Consulta</h2>
                 <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
@@ -349,8 +346,7 @@ export default function Dashboard() {
               {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
             </div>
 
-            {/* CAMBIO: Se añadió un layout de flexbox y clases de scroll */}
-            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col" style={{height: '500px'}}>
+            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col" style={{maxHeight: '500px'}}>
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center flex-shrink-0"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
               <div className="space-y-3 flex-1 overflow-y-auto pr-2">
                 {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No hay consultas aún.</p> : (
@@ -358,7 +354,16 @@ export default function Dashboard() {
                     <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
                       <div className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
                         <div className="flex justify-between items-start">
-                          <p className="font-semibold text-gray-800 text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
+                          <h3 className="font-semibold text-gray-800 text-sm">
+                            {/* CAMBIO: Se aplica la modificación para el enlace */}
+                            <Link 
+                              href={`/dashboard/patient/${consultation.patient_id}`}
+                              className="hover:underline text-blue-600"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {consultation.patients?.full_name || 'Paciente desconocido'}
+                            </Link>
+                          </h3>
                           <p className="text-xs text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
                         </div>
                         <p className="mt-1 text-xs text-gray-600 truncate">{consultation.formatted_notes}</p>
