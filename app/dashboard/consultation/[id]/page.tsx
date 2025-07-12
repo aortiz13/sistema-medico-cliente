@@ -6,7 +6,8 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   ArrowLeft, User, Calendar, FileText, Mic, Download, LogOut,
-  LayoutDashboard, Settings, Users, Bell, LifeBuoy, Bot 
+  LayoutDashboard, Settings, Users, Bell, LifeBuoy, Bot, 
+  Search
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
