@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// CAMBIO: Se importa el ícono 'Search'
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
   LayoutDashboard, Settings, ChevronLeft, Menu, Search
@@ -31,7 +30,7 @@ interface Consultation {
   patients: { full_name: string; } | null;
 }
 
-// --- Componente de la Barra Lateral (sin cambios) ---
+// --- Componente de la Barra Lateral ---
 function Sidebar({ profile, onLogout }: { profile: Profile | null, onLogout: () => void }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -91,7 +90,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   
-  // NUEVO: Estados para la búsqueda
   const [patientSearch, setPatientSearch] = useState('');
   const [consultationSearch, setConsultationSearch] = useState('');
 
@@ -109,7 +107,6 @@ export default function Dashboard() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
 
-  // CAMBIO: La función de carga ahora acepta un término de búsqueda
   const loadPatients = async (searchTerm: string) => {
     let query = supabase
       .from('patients')
@@ -125,7 +122,6 @@ export default function Dashboard() {
     else setPatients(data || []);
   }
 
-  // CAMBIO: La función de carga ahora acepta un término de búsqueda
   const loadConsultations = async (searchTerm: string) => {
     let query = supabase
       .from('consultations')
@@ -134,7 +130,6 @@ export default function Dashboard() {
       .limit(10);
 
     if (searchTerm) {
-      // Buscamos tanto en las notas como en el nombre del paciente
       query = query.or(`formatted_notes.ilike.%${searchTerm}%,patients.full_name.ilike.%${searchTerm}%`);
     }
 
@@ -143,7 +138,6 @@ export default function Dashboard() {
     else setConsultations(data || []);
   }
 
-  // CAMBIO: Carga inicial de datos
   useEffect(() => {
     const checkUserAndProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -153,23 +147,21 @@ export default function Dashboard() {
         setUser(user)
         const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setProfile(userProfile);
-        await loadPatients(''); // Carga inicial sin búsqueda
-        await loadConsultations(''); // Carga inicial sin búsqueda
+        await loadPatients('');
+        await loadConsultations('');
         setLoading(false);
       }
     }
     checkUserAndProfile()
   }, [router])
 
-  // NUEVO: useEffect para la búsqueda "debounced" de pacientes
   useEffect(() => {
     const timer = setTimeout(() => {
       loadPatients(patientSearch);
-    }, 500); // Espera 500ms después de que el usuario deja de escribir
+    }, 500);
     return () => clearTimeout(timer);
   }, [patientSearch]);
 
-  // NUEVO: useEffect para la búsqueda "debounced" de consultas
   useEffect(() => {
     const timer = setTimeout(() => {
       loadConsultations(consultationSearch);
@@ -178,12 +170,141 @@ export default function Dashboard() {
   }, [consultationSearch]);
 
 
-  const handleLogout = async () => { /* ...código sin cambios... */ }
-  const handleInviteAssistant = async (e: FormEvent) => { /* ...código sin cambios... */ };
-  const handleCreatePatient = async (e: FormEvent) => { /* ...código sin cambios... */ };
-  const startRecording = async () => { /* ...código sin cambios... */ };
-  const stopRecording = () => { /* ...código sin cambios... */ };
-  const processAudio = async () => { /* ...código sin cambios... */ };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  }
+  
+  const handleInviteAssistant = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setIsInviting(true);
+
+    try {
+      const response = await fetch('/api/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Falló al enviar la invitación.');
+      }
+      alert('¡Invitación enviada exitosamente!');
+      setInviteEmail('');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert('Error: ' + error.message);
+      } else {
+        alert('Ocurrió un error inesperado.');
+      }
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleCreatePatient = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newPatientName || !user) {
+      alert('El nombre del paciente es obligatorio.');
+      return;
+    }
+
+    setIsSavingPatient(true);
+    
+    const { error } = await supabase
+      .from('patients')
+      .insert([
+        { 
+          full_name: newPatientName, 
+          phone: newPatientPhone,
+          user_id: user.id
+        }
+      ]);
+
+    setIsSavingPatient(false);
+
+    if (error) {
+      alert("Error al crear el paciente: " + error.message);
+    } else {
+      alert("¡Paciente creado exitosamente!");
+      setNewPatientName('');
+      setNewPatientPhone('');
+      setIsPatientModalOpen(false);
+      await loadPatients('');
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioStreamRef.current = stream;
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder;
+      const audioChunks: Blob[] = []
+      mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data)
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
+        setAudioBlob(audioBlob)
+        audioStreamRef.current?.getTracks().forEach(track => track.stop());
+      }
+      mediaRecorder.start()
+      setIsRecording(true)
+      setAudioBlob(null);
+    } catch { alert('Error al acceder al micrófono') }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false)
+  }
+
+  const processAudio = async () => {
+    if (!audioBlob || !selectedPatient || !user) {
+      alert('Selecciona un paciente y graba audio')
+      return
+    }
+    setIsProcessingAudio(true)
+    try {
+      const formData = new FormData()
+      formData.append('audio', audioBlob, 'audio.wav')
+      formData.append('patientId', selectedPatient)
+      const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
+      const result = await response.json()
+      if (result.success) {
+        const { error } = await supabase
+          .from('consultations')
+          .insert([{
+              patient_id: selectedPatient,
+              doctor_id: user.id,
+              transcription: result.transcription,
+              formatted_notes: result.formatted_notes,
+              status: 'completed'
+          }])
+        if (error) { alert('Error al guardar: ' + error.message) } 
+        else {
+          alert('¡Consulta procesada exitosamente!')
+          if (process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL) {
+            fetch(process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                patientName: patients.find(p => p.id === selectedPatient)?.full_name || 'Desconocido',
+                notes: result.formatted_notes.substring(0, 200) + '...'
+              })
+            }).catch(err => console.error("Error al notificar a n8n:", err));
+          }
+          setAudioBlob(null)
+          setSelectedPatient('')
+          await loadConsultations('')
+        }
+      } else { alert('Error al procesar audio: ' + result.error) }
+    } catch { alert('Error inesperado')
+    } finally { setIsProcessingAudio(false) }
+  }
 
   if (loading) {
     return <div className="h-screen bg-gray-50 flex items-center justify-center">Cargando...</div>
@@ -191,7 +312,6 @@ export default function Dashboard() {
 
   return (
     <>
-      {/* Modal para crear paciente (sin cambios) */}
       {isPatientModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md relative">
@@ -234,7 +354,6 @@ export default function Dashboard() {
                   
                   <div className="space-y-4">
                     <div>
-                      {/* CAMBIO: Se añade barra de búsqueda de pacientes */}
                       <label className="block text-sm font-medium text-gray-600 mb-2">1. Buscar y Seleccionar Paciente</label>
                       <div className="relative">
                         <input 
@@ -256,7 +375,25 @@ export default function Dashboard() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-600 mb-2">2. Grabar Audio</label>
-                      <div className="flex space-x-3">{/* ...botones de grabación sin cambios... */}</div>
+                      <div className="flex space-x-3">
+                        {!isRecording ? (
+                          <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-5 py-3 rounded-lg hover:bg-red-600 disabled:bg-gray-300 transition-colors shadow-sm">
+                            <Mic className="w-5 h-5" />
+                            <span className="font-semibold">Grabar</span>
+                          </button>
+                        ) : (
+                          <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
+                            <Square className="w-5 h-5" />
+                            <span className="font-semibold">Parar</span>
+                          </button>
+                        )}
+                        {audioBlob && (
+                          <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-blue-500 text-white px-5 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors shadow-sm">
+                            <FileText className="w-5 h-5" />
+                            <span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     
                     {isRecording && <div className="text-center text-red-500 font-medium pt-2">🔴 Grabando...</div>}
@@ -265,13 +402,29 @@ export default function Dashboard() {
                 </div>
 
                 {profile?.role === 'doctor' && (
-                  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">{/* ...panel de gestión sin cambios... */}</div>
+                  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                      <Users className="w-6 h-6 mr-3 text-blue-600" />
+                      Gestión de Equipo
+                    </h2>
+                    <div className="space-y-4">
+                      <form onSubmit={handleInviteAssistant} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="flex-grow p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@asistente.com" required />
+                        <button type="submit" disabled={isInviting} className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors shadow-sm">
+                          <Send size={16} />
+                          <span className="font-semibold">{isInviting ? 'Enviando...' : 'Invitar'}</span>
+                        </button>
+                      </form>
+                      <Link href="/dashboard/manage-assistants" className="block w-full text-center bg-gray-200 text-gray-800 px-4 py-3 rounded-lg hover:bg-gray-300 font-semibold transition-colors">
+                        Gestionar Asistentes
+                      </Link>
+                    </div>
+                  </div>
                 )}
               </div>
 
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
-                {/* CAMBIO: Se añade barra de búsqueda de consultas */}
                 <div className="relative mb-4">
                   <input 
                     type="text"
@@ -286,7 +439,22 @@ export default function Dashboard() {
                   {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No se encontraron consultas.</p> : (
                     consultations.map((consultation) => (
                       <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
-                        <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">{/* ...contenido de la tarjeta de consulta sin cambios... */}</div>
+                        <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-gray-800">{consultation.patients?.full_name || 'Paciente desconocido'}</h3>
+                              <p className="text-sm text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
+                            </div>
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${consultation.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                              Completada
+                            </span>
+                          </div>
+                          {consultation.formatted_notes && (
+                            <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                              {consultation.formatted_notes.substring(0, 100)}...
+                            </p>
+                          )}
+                        </div>
                       </Link>
                     ))
                   )}
