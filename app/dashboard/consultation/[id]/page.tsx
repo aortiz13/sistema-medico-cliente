@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-// CAMBIO: Se eliminó 'useRouter' porque no se usaba.
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, FileText, Mic } from 'lucide-react'
+// CAMBIO: Importamos el ícono de descarga
+import { ArrowLeft, User, FileText, Mic, Download } from 'lucide-react'
+// CAMBIO: Importamos las librerías para el PDF
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
-// Definimos un tipo más completo para la consulta
+
 interface ConsultationDetail {
     id: string;
     created_at: string;
@@ -22,6 +25,9 @@ export default function ConsultationDetailPage() {
   const [consultation, setConsultation] = useState<ConsultationDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // CAMBIO: Nuevo estado para la carga del PDF
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  
   const params = useParams()
   const id = params.id as string;
 
@@ -31,29 +37,17 @@ export default function ConsultationDetailPage() {
         try {
           const { data, error } = await supabase
             .from('consultations')
-            .select(`
-              *,
-              patients (full_name)
-            `)
+            .select(`*, patients (full_name)`)
             .eq('id', id)
             .single()
 
-          if (error) {
-            throw error
-          }
-
-          if (data) {
-            setConsultation(data)
-          } else {
-            setError('No se encontró la consulta.')
-          }
-        // CAMBIO: Se tipó el error de forma segura en lugar de 'any'.
+          if (error) throw error
+          if (data) setConsultation(data)
+          else setError('No se encontró la consulta.')
+          
         } catch (err) { 
-          if (err instanceof Error) {
-            setError('Error al cargar la consulta: ' + err.message)
-          } else {
-            setError('Ocurrió un error desconocido.')
-          }
+          if (err instanceof Error) setError('Error al cargar la consulta: ' + err.message)
+          else setError('Ocurrió un error desconocido.')
         } finally {
           setLoading(false)
         }
@@ -61,6 +55,43 @@ export default function ConsultationDetailPage() {
       fetchConsultation()
     }
   }, [id])
+  
+  // CAMBIO: Nueva función para manejar la descarga del PDF
+  const handleDownloadPDF = () => {
+    const input = document.getElementById('pdf-content');
+    if (!input) return;
+
+    setIsGeneratingPDF(true);
+
+    html2canvas(input, { scale: 2 }) // Aumentamos la escala para mejor calidad
+      .then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'p', // 'p' de portrait (vertical)
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / canvasHeight;
+        const imgWidth = pdfWidth;
+        const imgHeight = pdfWidth / ratio;
+        
+        // Comprobar si la altura de la imagen excede la página
+        let height = imgHeight;
+        if (imgHeight > pdfHeight) {
+          height = pdfHeight; // Limitar la altura a la de la página
+        }
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, height);
+        pdf.save(`consulta-${consultation?.patients?.full_name}-${new Date(consultation!.created_at).toLocaleDateString()}.pdf`);
+        setIsGeneratingPDF(false);
+      });
+  };
+
 
   if (loading) {
     return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Cargando detalle de la consulta...</div>
@@ -77,17 +108,26 @@ export default function ConsultationDetailPage() {
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/dashboard" className="flex items-center space-x-2 text-blue-600 hover:underline">
             <ArrowLeft className="w-5 h-5" />
             <span>Volver al Panel</span>
           </Link>
+          {/* CAMBIO: Se añade el botón de descarga */}
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isGeneratingPDF}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+          >
+            <Download className="w-5 h-5" />
+            <span>{isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}</span>
+          </button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      {/* CAMBIO: Se añade un id al div principal para la captura del PDF */}
+      <main id="pdf-content" className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
-          {/* Encabezado de la Consulta */}
           <div className="border-b pb-4 mb-6">
             <h1 className="text-3xl font-bold text-gray-800">Detalle de la Consulta</h1>
             <div className="flex items-center space-x-4 text-sm text-gray-500 mt-2">
@@ -100,7 +140,6 @@ export default function ConsultationDetailPage() {
             </div>
           </div>
 
-          {/* Notas Clínicas Formateadas */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
               <FileText className="w-5 h-5 mr-2 text-blue-600" />
@@ -111,7 +150,6 @@ export default function ConsultationDetailPage() {
             </div>
           </div>
 
-          {/* Transcripción Original */}
           <div>
             <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
               <Mic className="w-5 h-5 mr-2 text-blue-600" />
