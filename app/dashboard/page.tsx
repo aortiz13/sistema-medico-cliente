@@ -38,24 +38,33 @@ function Sidebar({ profile }: { profile: Profile | null }) {
       <div className="h-20 flex items-center px-8">
         <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
       </div>
-      <nav className="flex-grow px-6">
-        <ul className="space-y-2">
-          <li>
-            <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-white bg-blue-600 font-semibold shadow-md">
-              <LayoutDashboard size={20} />
-              <span className="ml-4">Panel Principal</span>
-            </Link>
-          </li>
-          {profile?.role === 'doctor' && (
-            <li>
-              <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                <Users size={20} />
-                <span className="ml-4">Gestionar Asistentes</span>
-              </Link>
-            </li>
-          )}
-        </ul>
-      </nav>
+      // Dentro del componente Sidebar en app/dashboard/page.tsx
+
+<nav className="flex-grow px-6">
+  <ul className="space-y-2">
+    <li>
+      <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+        <LayoutDashboard size={20} />
+        <span className="ml-4">Panel Principal</span>
+      </Link>
+    </li>
+    {/* NUEVO ENLACE AÑADIDO AQUÍ */}
+    <li>
+      <Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-white bg-blue-600 font-semibold shadow-md">
+        <Search size={20} />
+        <span className="ml-4">Todas las Consultas</span>
+      </Link>
+    </li>
+    {profile?.role === 'doctor' && (
+      <li>
+        <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+          <Users size={20} />
+          <span className="ml-4">Gestionar Asistentes</span>
+        </Link>
+      </li>
+    )}
+  </ul>
+</nav>
       <div className="p-6">
         <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <LifeBuoy size={20} />
