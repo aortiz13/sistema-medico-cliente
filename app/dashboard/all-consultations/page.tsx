@@ -150,7 +150,6 @@ export default function AllConsultationsPage() {
                     const patient = consultation.patient_id ? patientsMap.get(consultation.patient_id) : null;
                     return (
                       <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
-                        // Dentro del map de la tabla, en all-consultations/page.tsx
 <td className="py-3 px-4 font-medium">
   <Link 
     href={`/dashboard/patient/${consultation.patient_id}`} 
