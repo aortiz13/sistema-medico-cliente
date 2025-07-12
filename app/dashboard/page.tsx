@@ -3,11 +3,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-// CAMBIO: Se eliminó 'User' porque no se usaba
 import { Mic, Square, FileText, LogOut } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
-// CAMBIO: Se agregaron tipos más específicos para evitar 'any'
 interface Patient {
   id: string;
   full_name: string;
@@ -25,9 +23,7 @@ interface Consultation {
   } | null;
 }
 
-
 export default function Dashboard() {
-  // CAMBIO: Se usó el tipo SupabaseUser en lugar de 'any'
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [patients, setPatients] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState('')
@@ -102,7 +98,7 @@ export default function Dashboard() {
         setIsRecording(false)
       }, 30000)
       
-    } catch (_error) { // CAMBIO: 'error' se renombró a '_error'
+    } catch { // <<<< CAMBIO FINAL AQUÍ
       alert('Error al acceder al micrófono')
     }
   }
@@ -132,7 +128,6 @@ export default function Dashboard() {
       const result = await response.json()
 
       if (result.success) {
-        // CAMBIO: Se eliminó 'data' porque no se usaba.
         const { error } = await supabase
           .from('consultations')
           .insert([
@@ -159,8 +154,8 @@ export default function Dashboard() {
                 patientName: patients.find(p => p.id === selectedPatient)?.full_name || 'Desconocido',
                 notes: result.formattedNotes.substring(0, 200) + '...'
               })
-            }).catch(_err => {
-              console.error("Error al notificar a n8n:", _err);
+            }).catch(err => {
+              console.error("Error al notificar a n8n:", err);
             });
           }
 
@@ -171,7 +166,7 @@ export default function Dashboard() {
       } else {
         alert('Error al procesar audio: ' + result.error)
       }
-    } catch (_error) { // CAMBIO: 'error' se renombró a '_error'
+    } catch { // <<<< CAMBIO FINAL AQUÍ
       alert('Error inesperado')
     } finally {
       setLoading(false)
@@ -269,7 +264,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <FileText className="w-5 h-5 mr-2 text-blue-600" />
-              Consultas Recientes Prueba
+              Consultas Recientes
             </h2>
             <div className="space-y-3">
               {consultations.length === 0 ? (

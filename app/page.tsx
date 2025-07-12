@@ -15,7 +15,6 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // CAMBIO: Se eliminó 'data' porque no se usaba.
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -27,7 +26,7 @@ export default function LoginPage() {
         alert('¡Login exitoso!')
         router.push('/dashboard')
       }
-    } catch (_error) { // CAMBIO: 'error' se renombró a '_error' para indicar que no se usa.
+    } catch { // <<<< CAMBIO FINAL AQUÍ
       alert('Error inesperado')
     } finally {
       setLoading(false)
