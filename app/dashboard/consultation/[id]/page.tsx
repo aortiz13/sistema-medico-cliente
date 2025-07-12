@@ -63,7 +63,8 @@ export default function ConsultationDetailPage() {
 
     html2canvas(input, { 
       scale: 2,
-      useCORS: true 
+      useCORS: true,
+      backgroundColor: '#ffffff' // <-- AÑADE ESTA LÍNEA
     })
     .then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
