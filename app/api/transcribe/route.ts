@@ -1,84 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { createClient } from '@supabase/supabase-js'
 
-// Se inicializa el cliente de OpenAI con la llave de entorno
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const audioFile = formData.get('audio') as File
-    const patientId = formData.get('patientId') as string
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
     
-    if (!audioFile || !patientId) {
-      return NextResponse.json({ error: 'Faltan el archivo de audio y el ID del paciente' }, { status: 400 })
+    const formData = await request.formData()
+    const audioFile = formData.get('audio') as File;
+    // CAMBIO: Se recibe el tipo de consulta desde el frontend
+    const consultationType = formData.get('consultationType') as string;
+
+    if (!audioFile || !consultationType) {
+      return NextResponse.json({ error: 'Faltan datos requeridos (audio, tipo de consulta).' }, { status: 400 })
     }
 
-    // 1. Transcribir el audio usando el modelo Whisper de OpenAI
+    // 1. Obtener la plantilla correcta desde la base de datos
+    const { data: templateData, error: templateError } = await supabase
+      .from('ai_prompt_template')
+      .select('prompt_text')
+      .eq('template_type', consultationType) // Se busca por 'new_patient' o 'follow_up'
+      .single();
+
+    if (templateError) {
+      console.error("Error al cargar plantilla de IA:", templateError);
+      throw new Error(`No se pudo cargar la plantilla para el tipo: ${consultationType}`);
+    }
+
+    const systemPrompt = templateData.prompt_text;
+
+    // 2. Transcribir el audio
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
       language: 'es',
-    })
+    });
 
-    // Verificación para asegurar que la transcripción no esté vacía
     if (!transcription.text || transcription.text.trim() === '') {
         return NextResponse.json({
             transcription: '(Audio vacío o inaudible)',
-            formattedNotes: 'No se pudo generar una nota clínica porque el audio estaba vacío o no contenía diálogo claro.',
+            formattedNotes: 'No se pudo generar una nota clínica porque el audio estaba vacío.',
             success: true
         })
     }
 
-
-    // 2. Procesar la transcripción con el modelo de chat para generar las notas
+    // 3. Llamar a la IA con el prompt dinámico
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        {
-          role: 'system',
-          content: `Eres un asistente médico altamente calificado. Tu tarea es analizar la transcripción de una consulta médica y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español. Extrae y formatea la siguiente información:
-          1.  **MOTIVO DE CONSULTA:**
-          2.  **HISTORIA CLÍNICA ACTUAL:** (Resumen de lo que cuenta el paciente)
-          3.  **SÍNTOMAS PRINCIPALES:** (Listado de síntomas)
-          4.  **POSIBLE DIAGNÓSTICO:** (Basado en la información, sugiere uno o más diagnósticos)
-          5.  **PLAN DE TRATAMIENTO RECOMENDADO:** (Medicamentos, dosis, estudios, etc.)
-          
-          Si la transcripción no contiene suficiente información para un campo, escribe "No se menciona".`
-        },
-        {
-          role: 'user',
-          content: `Por favor, analiza la siguiente transcripción: "${transcription.text}"`
-        }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Analiza la siguiente transcripción: "${transcription.text}"` }
       ],
-      temperature: 0.5, // Un poco más de creatividad para mejores resúmenes
-      max_tokens: 600,
+      temperature: 0.5,
+      max_tokens: 1000, // Aumentamos por si la historia clínica es larga
     })
 
-    // CAMBIO: Verificación explícita y más robusta de la respuesta de la IA
-    let notes = 'La IA no pudo generar un resumen para esta transcripción.';
-    if (completion.choices && completion.choices.length > 0 && completion.choices[0].message && completion.choices[0].message.content) {
-        const content = completion.choices[0].message.content.trim();
-        if (content) {
-            notes = content;
-        }
-    }
+    const notes = completion.choices[0]?.message?.content?.trim() || 'La IA no pudo generar un resumen.';
 
-    // 3. Devolver tanto la transcripción como las notas formateadas
     return NextResponse.json({
       transcription: transcription.text,
-      formattedNotes: notes, // Usamos la variable segura 'notes'
+      formattedNotes: notes,
       success: true
     })
 
   } catch (error) {
-    console.error('Error en el procesamiento de audio con OpenAI:', error)
-    // Devuelve un error claro al frontend
+    console.error('Error en el procesamiento de audio:', error)
     if (error instanceof Error) {
         return NextResponse.json({ error: `Error en el servidor: ${error.message}` }, { status: 500 })
     }
-    return NextResponse.json({ error: 'Ocurrió un error desconocido en el servidor.' }, { status: 500 })
+    return NextResponse.json({ error: 'Ocurrió un error desconocido.' }, { status: 500 })
   }
 }

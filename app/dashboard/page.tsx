@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// CAMBIO: Se importa el ícono 'Bot'
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
   LayoutDashboard, Settings, Search, Bell, LifeBuoy, BarChart3, Bot
@@ -54,7 +53,6 @@ function Sidebar({ profile }: { profile: Profile | null }) {
               <span className="ml-4">Todas las Consultas</span>
             </Link>
           </li>
-          {/* CAMBIO: Se añade el nuevo enlace a la plantilla de IA */}
           {profile?.role === 'doctor' && (
             <>
               <li>
@@ -73,7 +71,7 @@ function Sidebar({ profile }: { profile: Profile | null }) {
           )}
         </ul>
       </nav>
-      <div className="p-6">
+      <div className="p-6 border-t border-gray-200">
         <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <LifeBuoy size={20} />
           <span className="ml-4">Ayuda y Soporte</span>
@@ -155,6 +153,9 @@ export default function Dashboard() {
   const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
+
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
@@ -192,6 +193,35 @@ export default function Dashboard() {
     await supabase.auth.signOut();
     router.push('/');
   }
+
+  const handleInviteAssistant = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setIsInviting(true);
+
+    try {
+      const response = await fetch('/api/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Falló al enviar la invitación.');
+      }
+      alert('¡Invitación enviada exitosamente!');
+      setInviteEmail('');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert('Error: ' + error.message);
+      } else {
+        alert('Ocurrió un error inesperado.');
+      }
+    } finally {
+      setIsInviting(false);
+    }
+  };
 
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
@@ -258,6 +288,12 @@ export default function Dashboard() {
       formData.append('audio', audioBlob, 'audio.wav')
       formData.append('patientId', selectedPatient)
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
+      
+      if (!response.ok) {
+        // Manejar respuestas no-JSON o errores de red
+        throw new Error(`Error de red o API: ${response.status} ${response.statusText}`);
+      }
+
       const result = await response.json()
       if (result.success) {
         const { error } = await supabase
@@ -279,7 +315,11 @@ export default function Dashboard() {
       } else { alert('Error al procesar audio: ' + (result.error || 'Error desconocido')) }
     } catch (err) { 
       console.error("Error general en processAudio:", err);
-      alert('Error inesperado. Revisa la consola para más detalles.');
+      if (err instanceof SyntaxError) {
+        alert("Error: La respuesta de la API no es válida. Puede que el servidor esté tardando demasiado.");
+      } else {
+        alert('Error inesperado. Revisa la consola para más detalles.');
+      }
     } finally { setIsProcessingAudio(false) }
   }
 
