@@ -34,7 +34,6 @@ export async function POST(request: NextRequest) {
 
 
     // 2. Procesar la transcripción con el modelo de chat para generar las notas
-    // CAMBIO: Se usa 'gpt-3.5-turbo' por ser más accesible y eficiente
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -58,13 +57,19 @@ export async function POST(request: NextRequest) {
       max_tokens: 600,
     })
 
-    // CAMBIO: Verificación robusta de la respuesta de la IA
-    const formattedNotes = completion.choices[0]?.message?.content?.trim() || 'La IA no pudo generar un resumen para esta transcripción.';
+    // CAMBIO: Verificación explícita y más robusta de la respuesta de la IA
+    let notes = 'La IA no pudo generar un resumen para esta transcripción.';
+    if (completion.choices && completion.choices.length > 0 && completion.choices[0].message && completion.choices[0].message.content) {
+        const content = completion.choices[0].message.content.trim();
+        if (content) {
+            notes = content;
+        }
+    }
 
     // 3. Devolver tanto la transcripción como las notas formateadas
     return NextResponse.json({
       transcription: transcription.text,
-      formattedNotes: formattedNotes,
+      formattedNotes: notes, // Usamos la variable segura 'notes'
       success: true
     })
 
