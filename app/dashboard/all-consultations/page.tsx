@@ -1,27 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Search, Calendar, FileText, User as UserIcon } from 'lucide-react'
 
 // --- Interfaces ---
-// CAMBIO DEFINITIVO: Se ajusta la interfaz para que 'patients' sea un array de objetos,
-// que es la estructura real que devuelve Supabase en esta consulta.
-interface ConsultationWithPatient {
+interface Patient {
+  id: string;
+  full_name: string;
+  document_id: string | null;
+}
+
+interface Consultation {
   id: string;
   created_at: string;
   status: string;
   formatted_notes: string;
-  patients: {
-    full_name: string;
-    document_id: string | null;
-  }[]; // Se define como un array
+  patient_id: string | null;
 }
 
 export default function AllConsultationsPage() {
-  const [consultations, setConsultations] = useState<ConsultationWithPatient[]>([])
+  const [consultations, setConsultations] = useState<Consultation[]>([])
+  const [patientsMap, setPatientsMap] = useState<Map<string, Patient>>(new Map());
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter();
@@ -31,68 +33,56 @@ export default function AllConsultationsPage() {
   const [dniFilter, setDniFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
-  // Se usa un solo useEffect para manejar la carga y los filtros
   useEffect(() => {
-    const fetchConsultations = async () => {
+    const fetchInitialData = async () => {
       setLoading(true);
       setError(null);
+      
+      try {
+        // Pedimos ambas listas de datos en paralelo
+        const [consultationsRes, patientsRes] = await Promise.all([
+          supabase.from('consultations').select('*').order('created_at', { ascending: false }),
+          supabase.from('patients').select('*')
+        ]);
 
-      let query = supabase
-        .from('consultations')
-        .select(`
-          id,
-          created_at,
-          status,
-          formatted_notes,
-          patients!inner (
-            full_name,
-            document_id
-          )
-        `)
-        .order('created_at', { ascending: false });
+        if (consultationsRes.error) throw consultationsRes.error;
+        if (patientsRes.error) throw patientsRes.error;
 
-      if (nameFilter) {
-        query = query.ilike('patients.full_name', `%${nameFilter}%`);
-      }
-      if (dniFilter) {
-        query = query.ilike('patients.document_id', `%${dniFilter}%`);
-      }
-      if (dateFilter) {
-        const startDate = new Date(dateFilter);
-        startDate.setUTCHours(0, 0, 0, 0);
-        const endDate = new Date(dateFilter);
-        endDate.setUTCHours(23, 59, 59, 999);
+        // Creamos un "mapa" de pacientes para encontrarlos fácilmente por su ID
+        const patientMap = new Map(patientsRes.data.map(p => [p.id, p]));
         
-        query = query
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString());
-      }
+        setConsultations(consultationsRes.data || []);
+        setPatientsMap(patientMap);
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error al cargar consultas:", error);
-        setError("No se pudieron cargar las consultas.");
-      } else {
-        setConsultations(data as ConsultationWithPatient[]);
+      } catch (err: any) {
+        console.error("Error al cargar datos:", err);
+        setError("No se pudieron cargar los datos.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
+    fetchInitialData();
+  }, []);
 
-    // Se usa un temporizador para no sobrecargar la BD al escribir en los filtros
-    const timer = setTimeout(() => {
-        fetchConsultations();
-    }, 500);
-
-    return () => clearTimeout(timer);
-
-  }, [nameFilter, dniFilter, dateFilter]);
-
-
-  const handleFilterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // La búsqueda ya se dispara automáticamente con el useEffect
-  }
+  // CAMBIO: El filtrado ahora se hace en el lado del cliente (frontend)
+  const filteredConsultations = useMemo(() => {
+    return consultations
+      .filter(c => {
+        if (!dateFilter) return true;
+        const consultationDate = new Date(c.created_at).toISOString().split('T')[0];
+        return consultationDate === dateFilter;
+      })
+      .filter(c => {
+        if (!nameFilter) return true;
+        const patient = c.patient_id ? patientsMap.get(c.patient_id) : null;
+        return patient?.full_name.toLowerCase().includes(nameFilter.toLowerCase()) || false;
+      })
+      .filter(c => {
+        if (!dniFilter) return true;
+        const patient = c.patient_id ? patientsMap.get(c.patient_id) : null;
+        return patient?.document_id?.toLowerCase().includes(dniFilter.toLowerCase()) || false;
+      });
+  }, [consultations, patientsMap, nameFilter, dniFilter, dateFilter]);
 
   const clearFilters = () => {
     setNameFilter('');
@@ -116,43 +106,27 @@ export default function AllConsultationsPage() {
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Todas las Consultas</h1>
           <p className="text-gray-500 mb-6">Busca y filtra a través de todo el historial de consultas.</p>
 
-          <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
+            {/* Filtros */}
             <div className="relative">
               <label className="text-sm font-medium text-gray-600">Nombre y Apellido</label>
-              <input 
-                type="text"
-                placeholder="Buscar por nombre..."
-                value={nameFilter}
-                onChange={(e) => setNameFilter(e.target.value)}
-                className="w-full mt-1 p-2 pl-8 border border-gray-300 rounded-md"
-              />
+              <input type="text" placeholder="Buscar por nombre..." value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} className="w-full mt-1 p-2 pl-8 border border-gray-300 rounded-md" />
               <UserIcon className="absolute left-2 top-9 w-4 h-4 text-gray-400" />
             </div>
             <div className="relative">
               <label className="text-sm font-medium text-gray-600">Documento</label>
-              <input 
-                type="text"
-                placeholder="Buscar por DNI..."
-                value={dniFilter}
-                onChange={(e) => setDniFilter(e.target.value)}
-                className="w-full mt-1 p-2 pl-8 border border-gray-300 rounded-md"
-              />
+              <input type="text" placeholder="Buscar por DNI..." value={dniFilter} onChange={(e) => setDniFilter(e.target.value)} className="w-full mt-1 p-2 pl-8 border border-gray-300 rounded-md" />
               <FileText className="absolute left-2 top-9 w-4 h-4 text-gray-400" />
             </div>
             <div className="relative">
               <label className="text-sm font-medium text-gray-600">Fecha</label>
-              <input 
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full mt-1 p-2 pl-8 border border-gray-300 rounded-md"
-              />
+              <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-full mt-1 p-2 pl-8 border border-gray-300 rounded-md" />
               <Calendar className="absolute left-2 top-9 w-4 h-4 text-gray-400" />
             </div>
-            <div className="flex items-end space-x-2">
-              <button type="button" onClick={clearFilters} className="w-full flex-1 bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300">Limpiar</button>
+            <div className="flex items-end">
+              <button type="button" onClick={clearFilters} className="w-full bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 font-semibold">Limpiar Filtros</button>
             </div>
-          </form>
+          </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white">
@@ -169,18 +143,20 @@ export default function AllConsultationsPage() {
                   <tr><td colSpan={4} className="text-center py-10">Cargando...</td></tr>
                 ) : error ? (
                   <tr><td colSpan={4} className="text-center py-10 text-red-500">{error}</td></tr>
-                ) : consultations.length === 0 ? (
-                  <tr><td colSpan={4} className="text-center py-10">No se encontraron resultados para tu búsqueda.</td></tr>
+                ) : filteredConsultations.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center py-10">No se encontraron resultados.</td></tr>
                 ) : (
-                  consultations.map(consultation => (
-                    // CAMBIO: Se accede al primer elemento del array de pacientes
-                    <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
-                      <td className="py-3 px-4 font-medium">{consultation.patients[0]?.full_name || 'N/A'}</td>
-                      <td className="py-3 px-4">{consultation.patients[0]?.document_id || 'N/A'}</td>
-                      <td className="py-3 px-4">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">{consultation.formatted_notes}</td>
-                    </tr>
-                  ))
+                  filteredConsultations.map(consultation => {
+                    const patient = consultation.patient_id ? patientsMap.get(consultation.patient_id) : null;
+                    return (
+                      <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
+                        <td className="py-3 px-4 font-medium">{patient?.full_name || 'N/A'}</td>
+                        <td className="py-3 px-4">{patient?.document_id || 'N/A'}</td>
+                        <td className="py-3 px-4">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">{consultation.formatted_notes}</td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>
