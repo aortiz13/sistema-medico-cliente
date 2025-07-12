@@ -1,5 +1,5 @@
 // app/proposal/page.tsx
-'use client'; // Esto es necesario en el App Router si usas useState o useEffect
+'use client';
 
 import React from 'react';
 import {
@@ -10,16 +10,18 @@ import {
   User,
   Mic,
   FileText,
-  DollarSign,
   CalendarDays,
-  Video, // Para tutoriales
-  BookOpen, // Para manual
-  Award, // Para garantía
-  HardDrive, // Para enlace a drive
-  CreditCard, // Para modalidad de pago
-  RefreshCw, // Para optimización
+  Video,
+  BookOpen,
+  Award,
+  HardDrive,
+  CreditCard,
+  RefreshCw,
   ZoomIn,
-  XCircle, // Para capacitación
+  XCircle,
+  ChartBar, // Nuevo icono para reportes
+  Search,   // Nuevo icono para búsqueda avanzada
+  Printer,  // Nuevo icono para exportación
 } from 'lucide-react';
 
 export default function ProposalPage() {
@@ -107,20 +109,7 @@ export default function ProposalPage() {
         </div>
       </section>
 
-      {/* Sección Costos Mensuales */}
-      <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8 text-center">
-        <h2 className="text-2xl font-semibold text-blue-700 mb-4">Inversión y Costos Operativos</h2>
-        <div className="flex items-center justify-center bg-gray-50 p-6 rounded-lg border border-gray-200">
-          <DollarSign className="w-8 h-8 text-green-600 mr-4" />
-          <div>
-            <p className="text-lg text-gray-700">El único gasto mensual inicial estimado será para el uso de la API de OpenAI:</p>
-            <p className="text-3xl font-bold text-green-700 mt-2">Aprox. $10 USD/mes</p>
-            <p className="text-sm text-gray-500">(Dependiendo del volumen de uso)</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Sección Versiones */}
+      {/* Sección Versiones (con comparativa integrada) */}
       <section className="w-full max-w-4xl p-8 mb-8">
         <h2 className="text-3xl font-bold text-center text-blue-700 mb-8">Versiones</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -134,7 +123,22 @@ export default function ProposalPage() {
               <div className="text-center mb-6">
                 <p className="text-xl text-gray-500 line-through">$1500 USD</p>
                 <p className="text-5xl font-extrabold text-blue-800">$1000 USD</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  (El único gasto mensual inicial estimado será para el uso de la API de OpenAI: **Aprox. $10 USD/mes**, dependiendo del volumen de uso)
+                </p>
               </div>
+              <h4 className="font-semibold text-gray-700 mb-3 text-center">Características Incluidas:</h4>
+              <ul className="space-y-2 text-gray-700">
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Transcripción y Notas IA</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Gestión de Usuarios (Admin + Asistentes)</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Descarga de Historial Completo</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Información Encriptada</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Acceso Web (Móvil y PC)</li>
+                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Branding y Personalización de Marca</li>
+                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Reportes y Análisis de Consultas</li>
+                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Búsqueda Avanzada en Historial</li>
+                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Exportación de Notas Personalizadas</li>
+              </ul>
             </div>
           </div>
 
@@ -152,7 +156,22 @@ export default function ProposalPage() {
               <div className="text-center mb-6">
                 <p className="text-xl text-gray-500 line-through">$1800 USD</p>
                 <p className="text-5xl font-extrabold text-blue-800">$1300 USD</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  (El único gasto mensual inicial estimado será para el uso de la API de OpenAI: **Aprox. $10 USD/mes**, dependiendo del volumen de uso)
+                </p>
               </div>
+              <h4 className="font-semibold text-gray-700 mb-3 text-center">Características Incluidas:</h4>
+              <ul className="space-y-2 text-gray-700">
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Transcripción y Notas IA</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Gestión de Usuarios (Admin + Asistentes)</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Descarga de Historial Completo</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Información Encriptada</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Acceso Web (Móvil y PC)</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Branding y Personalización de Marca**</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Reportes y Análisis de Consultas** <span className="ml-1 text-xs text-blue-500">(NUEVO)</span></li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Búsqueda Avanzada en Historial** <span className="ml-1 text-xs text-blue-500">(NUEVO)</span></li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Exportación de Notas Personalizadas** <span className="ml-1 text-xs text-blue-500">(NUEVO)</span></li>
+              </ul>
             </div>
           </div>
         </div>
@@ -185,96 +204,6 @@ export default function ProposalPage() {
                     <span className="text-gray-800 font-medium">Capacitación en vivo vía Zoom.</span>
                 </div>
             </div>
-        </div>
-      </section>
-
-      {/* Tabla Comparativa de Versiones */}
-      <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-semibold text-blue-700 mb-6 text-center">Comparativa de Versiones</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Característica
-                </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Standard
-                </th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  PRO
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  Transcripción y Notas IA
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  Gestión de Usuarios (Admin + Asistentes)
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  Descarga de Historial Completo
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  Información Encriptada
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  Acceso Web (Móvil y PC)
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  Branding y Personalización de Marca
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <XCircle className="w-5 h-5 text-red-500 inline-block" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </section>
 
