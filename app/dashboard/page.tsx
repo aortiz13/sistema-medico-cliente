@@ -137,6 +137,19 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
   )
 }
 
+function formatClinicalNoteFromJSON(data: any): string {
+  if (!data) return "No se pudo generar la nota clínica.";
+
+  let note = `**NOTA CLÍNICA**\n\n`;
+  note += `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
+  note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
+  note += `**Exploración física:**\n${data.exploracion_fisica || 'No se menciona'}\n\n`;
+  note += `**Diagnóstico:**\n${data.diagnostico || 'No se menciona'}\n\n`;
+  note += `**Solicitud de laboratorio y gabinete:**\n${data.solicitud_laboratorio_gabinete || 'No se menciona'}\n\n`;
+  note += `**Tratamiento:**\n${data.tratamiento || 'No se menciona'}\n\n`;
+  
+  return note;
+}
 
 export default function Dashboard() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -266,28 +279,32 @@ export default function Dashboard() {
       }
 
       const result = await response.json()
-      if (result.success) {
+      if (result.success && result.structuredData) {
+        
+        const clinicalNote = formatClinicalNoteFromJSON(result.structuredData);
+
         const { error: consultationError } = await supabase
           .from('consultations')
           .insert([{
               patient_id: selectedPatient,
               doctor_id: user.id,
               transcription: result.transcription,
-              formatted_notes: result.clinicalNote,
+              formatted_notes: clinicalNote,
               status: 'completed'
           }])
         
         if (consultationError) throw consultationError;
 
-        if (consultationType === 'new_patient' && result.patientData) {
-          console.log("Actualizando perfil del paciente con datos de la IA:", result.patientData);
-          
+        if (consultationType === 'new_patient') {
+          const patientData = result.structuredData;
           const { error: patientUpdateError } = await supabase
             .from('patients')
             .update({ 
-              date_of_birth: result.patientData.date_of_birth,
-              allergies: result.patientData.personal_history_non_pathological?.allergies,
-              chronic_conditions: JSON.stringify(result.patientData.personal_history_pathological, null, 2),
+              date_of_birth: patientData.ficha_identificacion?.fecha_nacimiento,
+              allergies: patientData.antecedentes_personales_no_patologicos?.alergias,
+              chronic_conditions: JSON.stringify(patientData.antecedentes_personales_patologicos, null, 2),
+              document_id: patientData.ficha_identificacion?.dni,
+              email: patientData.ficha_identificacion?.email,
             })
             .eq('id', selectedPatient)
 
@@ -302,7 +319,7 @@ export default function Dashboard() {
         await loadConsultations()
 
       } else { 
-        alert('Error al procesar audio: ' + (result.error || 'Error desconocido')) 
+        alert('Error al procesar audio: ' + (result.error || 'La IA no devolvió datos estructurados.')) 
       }
     } catch (err) { 
       console.error("Error general en processAudio:", err);

@@ -37,14 +37,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'El audio estaba vacío o era inaudible.' });
     }
 
-    // CAMBIO: Se añade la opción de respuesta JSON para los modelos compatibles
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo-1106', // Este modelo es bueno para seguir instrucciones de formato JSON
+      model: 'gpt-3.5-turbo-1106',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Analiza la siguiente transcripción: "${transcription.text}"` }
+        { role: 'user', content: `Transcripción: "${transcription.text}"` }
       ],
-      response_format: { type: "json_object" }, // Le pedimos a la IA que garantice una salida JSON
+      response_format: { type: "json_object" },
       temperature: 0.2,
       max_tokens: 2000,
     })
@@ -54,27 +53,19 @@ export async function POST(request: NextRequest) {
       throw new Error("La IA no devolvió contenido.");
     }
 
-    // CAMBIO: Parseamos la respuesta JSON de la IA
     try {
       const aiJson = JSON.parse(aiResponseContent);
       
-      // Devolvemos la estructura completa al frontend
+      // CAMBIO: Se devuelve el JSON completo y la transcripción original
       return NextResponse.json({
         success: true,
         transcription: transcription.text,
-        clinicalNote: aiJson.clinicalNote,
-        patientData: aiJson.patientData, // Los datos estructurados para el perfil
+        structuredData: aiJson, // El JSON completo
       });
 
     } catch (parseError) {
       console.error("Error al parsear JSON de la IA:", parseError);
-      // Si la IA no devuelve un JSON válido, devolvemos el texto como nota clínica.
-      return NextResponse.json({
-        success: true,
-        transcription: transcription.text,
-        clinicalNote: aiResponseContent,
-        patientData: null, // No hay datos de paciente si el JSON falla
-      });
+      throw new Error("La IA devolvió un formato de JSON no válido.");
     }
 
   } catch (error) {
