@@ -4,9 +4,10 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+// CAMBIO: Se importa el ícono 'Bot'
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, BarChart3
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, BarChart3, Bot
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -32,46 +33,54 @@ interface Consultation {
 }
 
 // --- Componentes de UI Rediseñados ---
-function Sidebar({ profile }: { profile: Profile | null }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
+function Sidebar({ profile }: { profile: Profile | null }) {
   return (
-    <aside className={`bg-white border-r border-gray-200 flex-col flex-shrink-0 hidden md:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      <div className="h-20 flex items-center px-6 justify-center">
-        <h1 className={`text-2xl font-bold text-blue-600 overflow-hidden transition-all ${isCollapsed ? 'w-0' : 'w-auto'}`}>Sistema Médico</h1>
+    <aside className="w-64 bg-white border-r border-gray-200 flex-col flex-shrink-0 hidden md:flex">
+      <div className="h-20 flex items-center px-8">
+        <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
       </div>
-      <nav className="flex-grow px-4">
+      <nav className="flex-grow px-6">
         <ul className="space-y-2">
           <li>
             <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-white bg-blue-600 font-semibold shadow-md">
               <LayoutDashboard size={20} />
-              {!isCollapsed && <span className="ml-4">Panel Principal</span>}
+              <span className="ml-4">Panel Principal</span>
             </Link>
           </li>
-          {profile?.role === 'doctor' && (
-            <li>
-              <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                <Users size={20} />
-                {!isCollapsed && <span className="ml-4">Gestionar Asistentes</span>}
-              </Link>
-            </li>
-          )}
-           <li>
+          <li>
             <Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
               <Search size={20} />
-              {!isCollapsed && <span className="ml-4">Todas las Consultas</span>}
+              <span className="ml-4">Todas las Consultas</span>
             </Link>
           </li>
+          {/* CAMBIO: Se añade el nuevo enlace a la plantilla de IA */}
+          {profile?.role === 'doctor' && (
+            <>
+              <li>
+                <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                  <Users size={20} />
+                  <span className="ml-4">Gestionar Asistentes</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard/ai-settings" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                  <Bot size={20} />
+                  <span className="ml-4">Plantilla de IA</span>
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </nav>
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-6">
         <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <LifeBuoy size={20} />
-          {!isCollapsed && <span className="ml-4">Ayuda y Soporte</span>}
+          <span className="ml-4">Ayuda y Soporte</span>
         </a>
         <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <Settings size={20} />
-          {!isCollapsed && <span className="ml-4">Configuración</span>}
+          <span className="ml-4">Configuración</span>
         </a>
       </div>
     </aside>
@@ -366,7 +375,15 @@ export default function Dashboard() {
                     <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
                       <div className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
                         <div className="flex justify-between items-start">
-                          <p className="font-semibold text-gray-800 text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
+                          <h3 className="font-semibold text-gray-800 text-sm">
+                            <Link 
+                              href={`/dashboard/patient/${consultation.patient_id}`}
+                              className="hover:underline text-blue-600"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {consultation.patients?.full_name || 'Paciente desconocido'}
+                            </Link>
+                          </h3>
                           <p className="text-xs text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
                         </div>
                         <p className="mt-1 text-xs text-gray-600 truncate">{consultation.formatted_notes}</p>
