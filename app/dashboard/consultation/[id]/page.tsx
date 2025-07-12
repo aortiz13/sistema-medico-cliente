@@ -4,12 +4,9 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-// CAMBIO: Importamos el ícono de descarga
 import { ArrowLeft, User, FileText, Mic, Download } from 'lucide-react'
-// CAMBIO: Importamos las librerías para el PDF
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-
 
 interface ConsultationDetail {
     id: string;
@@ -25,7 +22,6 @@ export default function ConsultationDetailPage() {
   const [consultation, setConsultation] = useState<ConsultationDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  // CAMBIO: Nuevo estado para la carga del PDF
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   
   const params = useParams()
@@ -56,42 +52,51 @@ export default function ConsultationDetailPage() {
     }
   }, [id])
   
-  // CAMBIO: Nueva función para manejar la descarga del PDF
   const handleDownloadPDF = () => {
     const input = document.getElementById('pdf-content');
-    if (!input) return;
+    if (!input) {
+      alert("Error: No se encontró el contenido para generar el PDF.");
+      return;
+    }
 
     setIsGeneratingPDF(true);
 
-    html2canvas(input, { scale: 2 }) // Aumentamos la escala para mejor calidad
-      .then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'p', // 'p' de portrait (vertical)
-          unit: 'mm',
-          format: 'a4'
-        });
-
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-        const imgWidth = pdfWidth;
-        const imgHeight = pdfWidth / ratio;
-        
-        // Comprobar si la altura de la imagen excede la página
-        let height = imgHeight;
-        if (imgHeight > pdfHeight) {
-          height = pdfHeight; // Limitar la altura a la de la página
-        }
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, height);
-        pdf.save(`consulta-${consultation?.patients?.full_name}-${new Date(consultation!.created_at).toLocaleDateString()}.pdf`);
-        setIsGeneratingPDF(false);
+    html2canvas(input, { 
+      scale: 2,
+      useCORS: true 
+    })
+    .then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
       });
-  };
 
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const ratio = canvasWidth / canvasHeight;
+      const imgWidth = pdfWidth;
+      const imgHeight = pdfWidth / ratio;
+      
+      let height = imgHeight;
+      if (imgHeight > pdfHeight) {
+        height = pdfHeight;
+      }
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, height);
+      pdf.save(`consulta-${consultation?.patients?.full_name}-${new Date(consultation!.created_at).toLocaleDateString()}.pdf`);
+    })
+    .catch(err => {
+      console.error("Error al generar el PDF:", err);
+      alert("Hubo un error al generar el PDF. Revisa la consola para más detalles.");
+    })
+    .finally(() => {
+      setIsGeneratingPDF(false);
+    });
+  };
 
   if (loading) {
     return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Cargando detalle de la consulta...</div>
@@ -113,7 +118,6 @@ export default function ConsultationDetailPage() {
             <ArrowLeft className="w-5 h-5" />
             <span>Volver al Panel</span>
           </Link>
-          {/* CAMBIO: Se añade el botón de descarga */}
           <button
             onClick={handleDownloadPDF}
             disabled={isGeneratingPDF}
@@ -125,7 +129,6 @@ export default function ConsultationDetailPage() {
         </div>
       </header>
 
-      {/* CAMBIO: Se añade un id al div principal para la captura del PDF */}
       <main id="pdf-content" className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
           <div className="border-b pb-4 mb-6">
