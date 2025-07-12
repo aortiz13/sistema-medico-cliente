@@ -136,17 +136,17 @@ export default function ConsultationDetailPage() {
     
     html2canvas(input, { 
       scale: 2, 
-      backgroundColor: null, // Dejamos que onclone maneje el fondo
       useCORS: true,
-      // CAMBIO: Se implementa una lógica más robusta en onclone
+      // CAMBIO: Se aplica una solución más agresiva para garantizar la compatibilidad de colores.
       onclone: (clonedDoc) => {
-        // Forzamos un fondo blanco en los elementos principales del documento clonado
-        // para evitar cualquier herencia de color transparente o 'oklch'.
-        clonedDoc.documentElement.style.backgroundColor = 'white';
-        clonedDoc.body.style.backgroundColor = 'white';
         const content = clonedDoc.getElementById('pdf-content');
         if (content) {
           content.style.backgroundColor = 'white';
+          const allElements = content.querySelectorAll('*');
+          // Se recorren todos los elementos y se fuerza un color de texto seguro.
+          allElements.forEach((el) => {
+            (el as HTMLElement).style.color = '#000000';
+          });
         }
       }
     })
