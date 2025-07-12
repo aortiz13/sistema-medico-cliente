@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useParams, useRouter } from 'next/navigation'
+// CAMBIO: Se eliminó 'useRouter' porque no se usaba.
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, User, FileText, Mic } from 'lucide-react'
 
@@ -46,8 +47,13 @@ export default function ConsultationDetailPage() {
           } else {
             setError('No se encontró la consulta.')
           }
-        } catch (err: any) {
-          setError('Error al cargar la consulta: ' + err.message)
+        // CAMBIO: Se tipó el error de forma segura en lugar de 'any'.
+        } catch (err) { 
+          if (err instanceof Error) {
+            setError('Error al cargar la consulta: ' + err.message)
+          } else {
+            setError('Ocurrió un error desconocido.')
+          }
         } finally {
           setLoading(false)
         }
