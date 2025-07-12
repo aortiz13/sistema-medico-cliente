@@ -7,16 +7,16 @@ import Link from 'next/link'
 import { ArrowLeft, Search, Calendar, FileText, User as UserIcon } from 'lucide-react'
 
 // --- Interfaces ---
-// CAMBIO: Se ajustó la interfaz para que 'patients' sea un array de objetos
 interface ConsultationWithPatient {
   id: string;
   created_at: string;
   status: string;
   formatted_notes: string;
+  // CAMBIO: La consulta ahora devuelve un solo objeto de paciente, no un array
   patients: {
     full_name: string;
     document_id: string | null;
-  }[]; // Se define como un array
+  } | null; 
 }
 
 export default function AllConsultationsPage() {
@@ -38,6 +38,8 @@ export default function AllConsultationsPage() {
     setLoading(true);
     setError(null);
 
+    // CAMBIO: Se modifica la consulta para usar un INNER JOIN explícito.
+    // Esto soluciona el problema de permisos con RLS y asegura que los datos del paciente siempre vengan.
     let query = supabase
       .from('consultations')
       .select(`
@@ -45,7 +47,7 @@ export default function AllConsultationsPage() {
         created_at,
         status,
         formatted_notes,
-        patients (
+        patients!inner (
           full_name,
           document_id
         )
@@ -91,7 +93,6 @@ export default function AllConsultationsPage() {
     setDateFilter('');
   }
   
-  // Efecto para recargar al limpiar filtros
   useEffect(() => {
     if (!nameFilter && !dniFilter && !dateFilter) {
         fetchConsultations();
@@ -173,10 +174,10 @@ export default function AllConsultationsPage() {
                   <tr><td colSpan={4} className="text-center py-10">No se encontraron resultados para tu búsqueda.</td></tr>
                 ) : (
                   consultations.map(consultation => (
-                    // CAMBIO: Se accede al primer elemento del array de pacientes
+                    // CAMBIO: Se accede a la información del paciente directamente desde el objeto
                     <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
-                      <td className="py-3 px-4 font-medium">{consultation.patients[0]?.full_name || 'N/A'}</td>
-                      <td className="py-3 px-4">{consultation.patients[0]?.document_id || 'N/A'}</td>
+                      <td className="py-3 px-4 font-medium">{consultation.patients?.full_name || 'N/A'}</td>
+                      <td className="py-3 px-4">{consultation.patients?.document_id || 'N/A'}</td>
                       <td className="py-3 px-4">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</td>
                       <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">{consultation.formatted_notes}</td>
                     </tr>
