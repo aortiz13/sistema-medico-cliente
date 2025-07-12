@@ -231,9 +231,9 @@ export default function ProposalPage() {
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8 text-center">
         <h2 className="text-2xl font-semibold text-blue-700 mb-4">Plazo de Entrega</h2>
         <p className="text-gray-700 text-lg">
-          Mi equipo se compromoete con la eficiencia al 100%, la versión inicial del sistema será entregada en un plazo de:
+          Mi equipo se compromete con la eficiencia al 100%, la versión inicial del sistema será entregada en un plazo de:
         </p>
-        <p className="text-4xl font-bold text-blue-700 mt-4">7 días o menos</p>
+        <p className="text-4xl font-bold text-blue-700 mt-4">7 días hábiles</p>
       </section>
 
       {/* Sección Cierre */}
