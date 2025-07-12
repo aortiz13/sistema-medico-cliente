@@ -12,28 +12,21 @@ export async function POST(request: NextRequest) {
     
     const formData = await request.formData()
     const audioFile = formData.get('audio') as File;
-    // CAMBIO: Se recibe el tipo de consulta desde el frontend
     const consultationType = formData.get('consultationType') as string;
 
     if (!audioFile || !consultationType) {
-      return NextResponse.json({ error: 'Faltan datos requeridos (audio, tipo de consulta).' }, { status: 400 })
+      return NextResponse.json({ error: 'Faltan datos requeridos.' }, { status: 400 })
     }
 
-    // 1. Obtener la plantilla correcta desde la base de datos
     const { data: templateData, error: templateError } = await supabase
       .from('ai_prompt_template')
       .select('prompt_text')
-      .eq('template_type', consultationType) // Se busca por 'new_patient' o 'follow_up'
+      .eq('template_type', consultationType)
       .single();
 
-    if (templateError) {
-      console.error("Error al cargar plantilla de IA:", templateError);
-      throw new Error(`No se pudo cargar la plantilla para el tipo: ${consultationType}`);
-    }
-
+    if (templateError) throw new Error(`No se pudo cargar la plantilla para: ${consultationType}`);
     const systemPrompt = templateData.prompt_text;
 
-    // 2. Transcribir el audio
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
@@ -41,37 +34,54 @@ export async function POST(request: NextRequest) {
     });
 
     if (!transcription.text || transcription.text.trim() === '') {
-        return NextResponse.json({
-            transcription: '(Audio vacío o inaudible)',
-            formattedNotes: 'No se pudo generar una nota clínica porque el audio estaba vacío.',
-            success: true
-        })
+      return NextResponse.json({ success: false, error: 'El audio estaba vacío o era inaudible.' });
     }
 
-    // 3. Llamar a la IA con el prompt dinámico
+    // CAMBIO: Se añade la opción de respuesta JSON para los modelos compatibles
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-3.5-turbo-1106', // Este modelo es bueno para seguir instrucciones de formato JSON
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Analiza la siguiente transcripción: "${transcription.text}"` }
       ],
-      temperature: 0.5,
-      max_tokens: 1000, // Aumentamos por si la historia clínica es larga
+      response_format: { type: "json_object" }, // Le pedimos a la IA que garantice una salida JSON
+      temperature: 0.2,
+      max_tokens: 2000,
     })
 
-    const notes = completion.choices[0]?.message?.content?.trim() || 'La IA no pudo generar un resumen.';
+    const aiResponseContent = completion.choices[0]?.message?.content;
+    if (!aiResponseContent) {
+      throw new Error("La IA no devolvió contenido.");
+    }
 
-    return NextResponse.json({
-      transcription: transcription.text,
-      formattedNotes: notes,
-      success: true
-    })
+    // CAMBIO: Parseamos la respuesta JSON de la IA
+    try {
+      const aiJson = JSON.parse(aiResponseContent);
+      
+      // Devolvemos la estructura completa al frontend
+      return NextResponse.json({
+        success: true,
+        transcription: transcription.text,
+        clinicalNote: aiJson.clinicalNote,
+        patientData: aiJson.patientData, // Los datos estructurados para el perfil
+      });
+
+    } catch (parseError) {
+      console.error("Error al parsear JSON de la IA:", parseError);
+      // Si la IA no devuelve un JSON válido, devolvemos el texto como nota clínica.
+      return NextResponse.json({
+        success: true,
+        transcription: transcription.text,
+        clinicalNote: aiResponseContent,
+        patientData: null, // No hay datos de paciente si el JSON falla
+      });
+    }
 
   } catch (error) {
     console.error('Error en el procesamiento de audio:', error)
     if (error instanceof Error) {
-        return NextResponse.json({ error: `Error en el servidor: ${error.message}` }, { status: 500 })
+        return NextResponse.json({ success: false, error: `Error en el servidor: ${error.message}` })
     }
-    return NextResponse.json({ error: 'Ocurrió un error desconocido.' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Ocurrió un error desconocido.' })
   }
 }

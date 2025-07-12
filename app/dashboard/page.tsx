@@ -153,7 +153,6 @@ export default function Dashboard() {
   const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
-  // NUEVO: Estado para el tipo de consulta
   const [consultationType, setConsultationType] = useState('new_patient');
 
   const [isRecording, setIsRecording] = useState(false)
@@ -248,7 +247,6 @@ export default function Dashboard() {
     setIsRecording(false)
   }
 
-  // CAMBIO: La función ahora envía el tipo de consulta a la API
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
@@ -259,7 +257,7 @@ export default function Dashboard() {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
       formData.append('patientId', selectedPatient)
-      formData.append('consultationType', consultationType) // Se añade el tipo
+      formData.append('consultationType', consultationType)
 
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
       
@@ -269,31 +267,53 @@ export default function Dashboard() {
 
       const result = await response.json()
       if (result.success) {
-        const { error } = await supabase
+        const { error: consultationError } = await supabase
           .from('consultations')
           .insert([{
               patient_id: selectedPatient,
               doctor_id: user.id,
               transcription: result.transcription,
-              formatted_notes: result.formattedNotes,
+              formatted_notes: result.clinicalNote,
               status: 'completed'
           }])
-        if (error) { alert('Error al guardar: ' + error.message) } 
-        else {
-          alert('¡Consulta procesada exitosamente!')
-          setAudioBlob(null)
-          setSelectedPatient('')
-          await loadConsultations()
+        
+        if (consultationError) throw consultationError;
+
+        if (consultationType === 'new_patient' && result.patientData) {
+          console.log("Actualizando perfil del paciente con datos de la IA:", result.patientData);
+          
+          const { error: patientUpdateError } = await supabase
+            .from('patients')
+            .update({ 
+              date_of_birth: result.patientData.date_of_birth,
+              allergies: result.patientData.personal_history_non_pathological?.allergies,
+              chronic_conditions: JSON.stringify(result.patientData.personal_history_pathological, null, 2),
+            })
+            .eq('id', selectedPatient)
+
+          if (patientUpdateError) {
+            alert("La consulta se guardó, pero hubo un error al actualizar el perfil del paciente: " + patientUpdateError.message);
+          }
         }
-      } else { alert('Error al procesar audio: ' + (result.error || 'Error desconocido')) }
+
+        alert('¡Consulta procesada y perfil actualizado exitosamente!')
+        setAudioBlob(null)
+        setSelectedPatient('')
+        await loadConsultations()
+
+      } else { 
+        alert('Error al procesar audio: ' + (result.error || 'Error desconocido')) 
+      }
     } catch (err) { 
       console.error("Error general en processAudio:", err);
-      if (err instanceof SyntaxError) {
-        alert("Error: La respuesta de la API no es válida. Puede que el servidor esté tardando demasiado.");
+      if (err instanceof Error) {
+        alert(err.message);
       } else {
         alert('Error inesperado. Revisa la consola para más detalles.');
       }
-    } finally { setIsProcessingAudio(false) }
+    } finally { 
+      setIsProcessingAudio(false) 
+    }
   }
 
   if (loading) {
@@ -353,7 +373,6 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* NUEVO: Selección de tipo de consulta */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-600 mb-2">1. Tipo de Consulta</label>
                 <div className="flex space-x-4">
@@ -428,4 +447,3 @@ export default function Dashboard() {
     </div>
   )
 }
-
