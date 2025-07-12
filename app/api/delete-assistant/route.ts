@@ -3,32 +3,25 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Helper function for getting cookies to help with type inference
-const getCookie = (name: string) => {
-  const cookieStore = cookies()
-  return cookieStore.get(name)?.value
-}
-
-// CAMBIO: Se renombraron los parámetros no usados con un guion bajo
-const setCookie = (_name: string, _value: string, _options: CookieOptions) => {
-  // En una API Route, no podemos modificar las cookies de la solicitud.
-  // Dejamos este método vacío para operaciones de solo lectura.
-}
-const removeCookie = (_name: string, _options: CookieOptions) => {
-  // Igual que 'set', lo dejamos vacío.
-}
-
 export async function POST(request: NextRequest) {
   const { assistantId } = await request.json()
   
+  // CAMBIO ESTRUCTURAL: Se inicializa el cliente de Supabase DENTRO del manejador de la ruta.
+  // Esto asegura que la función `cookies()` se llame en el contexto correcto.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: getCookie,
-        set: setCookie,
-        remove: removeCookie,
+        get(name: string) {
+          return cookies().get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          // En una API Route, no podemos modificar las cookies de la solicitud.
+        },
+        remove(name: string, options: CookieOptions) {
+          // Igual que 'set', lo dejamos vacío.
+        },
       },
     }
   )
@@ -53,14 +46,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Se requiere el ID del asistente.' }, { status: 400 })
   }
 
-  // Creamos un cliente de Supabase con rol de administrador para operaciones seguras
+  // Se crea un cliente con rol de administrador para operaciones seguras
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // 1. Reasignar los pacientes del asistente al administrador que realiza la acción
+  // 1. Reasignar pacientes
   const { error: updateError } = await supabaseAdmin
     .from('patients')
     .update({ user_id: user.id })
@@ -71,7 +64,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error al reasignar los pacientes.' }, { status: 500 })
   }
 
-  // 2. Eliminar la cuenta del asistente. Esto eliminará en cascada su perfil.
+  // 2. Eliminar usuario asistente
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(assistantId)
 
   if (deleteError) {
