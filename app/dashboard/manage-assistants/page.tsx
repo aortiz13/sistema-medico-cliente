@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Users, Trash2, ShieldAlert, User as UserIcon } from 'lucide-react'
 
+// CAMBIO: Se simplificó la interfaz del Asistente
 interface Assistant {
   id: string;
   full_name: string;
-  patients: { count: number }[];
 }
 
 export default function ManageAssistantsPage() {
@@ -44,9 +44,11 @@ export default function ManageAssistantsPage() {
     
     const fetchAssistants = async () => {
       setLoading(true);
+      // CAMBIO: Se simplificó la consulta para evitar el error con RLS.
+      // Ahora solo pedimos el id y el nombre completo.
       const { data, error } = await supabase
         .from('profiles')
-        .select(`id, full_name, patients (count)`)
+        .select(`id, full_name`)
         .eq('role', 'asistente');
       
       if (error) {
@@ -158,9 +160,7 @@ export default function ManageAssistantsPage() {
                     </div>
                     <div>
                       <p className="font-bold text-lg text-gray-800">{assistant.full_name}</p>
-                      <p className="text-sm text-gray-500">
-                        {assistant.patients[0].count} {assistant.patients[0].count === 1 ? 'paciente' : 'pacientes'} a cargo
-                      </p>
+                      {/* CAMBIO: Se eliminó la línea que contaba pacientes */}
                     </div>
                   </div>
                   <button 
