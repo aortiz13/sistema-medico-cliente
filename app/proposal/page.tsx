@@ -23,7 +23,7 @@ import {
 
 export default function ProposalPage() {
   const deadlineDate = '14 de Julio'; // This is a fixed date, not calculated from current time.
-  const googleDriveLink = 'https://drive.google.com/drive/folders/EJEMPLO_SU_ID_DE_CARPETA_AQUI'; // ¡CAMBIA ESTO POR TU ENLACE REAL!
+  const googleDriveLink = 'https://drive.google.com/drive/folders/1JQAh1J39nugVLocSVu4n_DB6WthzVTgO?usp=sharing'; // ¡CAMBIA ESTO POR TU ENLACE REAL!
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
@@ -180,7 +180,7 @@ export default function ProposalPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex items-center bg-white p-4 rounded-lg shadow-sm border border-blue-200">
                     <RefreshCw className="w-6 h-6 text-blue-600 mr-3" />
-                    <span className="text-gray-800 font-medium">1 Mes GRATIS de optimización y mejoras del sistema.</span>
+                    <span className="text-gray-800 font-medium">1 Mes GRATIS de optimización, mejoras del sistema y mantenimiento</span>
                 </div>
                 <div className="flex items-center bg-white p-4 rounded-lg shadow-sm border border-blue-200">
                     <Video className="w-6 h-6 text-blue-600 mr-3" />
