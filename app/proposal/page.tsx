@@ -2,10 +2,29 @@
 'use client'; // Esto es necesario en el App Router si usas useState o useEffect
 
 import React from 'react';
-import { CheckCircle, XCircle, Gift, CalendarDays, DollarSign, Lightbulb, FileText } from 'lucide-react'; // Íconos que ya tienes
+import {
+  CheckCircle,
+  Download,
+  Lock,
+  Globe,
+  User,
+  Mic,
+  FileText,
+  DollarSign,
+  CalendarDays,
+  Video, // Para tutoriales
+  BookOpen, // Para manual
+  Award, // Para garantía
+  HardDrive, // Para enlace a drive
+  CreditCard, // Para modalidad de pago
+  RefreshCw, // Para optimización
+  ZoomIn,
+  XCircle, // Para capacitación
+} from 'lucide-react';
 
 export default function ProposalPage() {
-  const deadlineDate = '14 de Julio'; // Puedes hacer esto dinámico si quieres
+  const deadlineDate = '14 de Julio';
+  const googleDriveLink = 'https://drive.google.com/drive/folders/EJEMPLO_SU_ID_DE_CARPETA_AQUI'; // ¡CAMBIA ESTO POR TU ENLACE REAL!
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
@@ -17,42 +36,72 @@ export default function ProposalPage() {
 
       {/* Sección Introducción */}
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-semibold text-blue-700 mb-4">Estimado Doctor,</h2>
-        <p className="text-gray-700 leading-relaxed">
-          Me complace presentarle una propuesta detallada para el desarrollo de un sistema innovador que transformará la gestión de sus consultas. Diseñado para ahorrarle tiempo y mejorar la precisión de sus notas clínicas, este sistema integra inteligencia artificial para la transcripción y procesamiento de audio.
+        <h2 className="text-2xl font-semibold text-blue-700 mb-4">Dr. Alejandro,</h2>
+        <p className="text-gray-700 leading-relaxed mb-4">
+          Aquí le comparto toda la información detallada al respecto del desarrollo del sistema inteligente para transcripción de citas médicas. Un sistema que será 100% suyo y le ahorrará tiempo y mejorará la precisión de las notas clínicas, además de digitalizar su clínica.
         </p>
+        <p className="text-gray-700 leading-relaxed">
+          Más abajo le comparto además, un enlace a algunas imágenes de un bosquejo que he estado armando en base a lo que hablamos para que tenga una idea general de cómo se podría ver el sistema.
+        </p>
+
+        {/* Enlace a Google Drive */}
+        <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-md shadow-sm flex items-center justify-center">
+          <HardDrive className="w-6 h-6 mr-3" />
+          <a
+            href={googleDriveLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-blue-700 hover:underline"
+          >
+            Haga clic aquí para ver las imágenes del bosquejo del sistema
+          </a>
+        </div>
       </section>
 
-      {/* Sección Descripción del Sistema */}
+      {/* Sección Funcionalidades Más Importantes */}
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-semibold text-blue-700 mb-6">¿Qué Ofrecemos?</h2>
+        <h2 className="text-2xl font-semibold text-blue-700 mb-6">Funcionalidades Más Importantes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex items-start p-4 bg-blue-50 rounded-lg shadow-sm">
-            <CheckCircle className="text-blue-600 w-6 h-6 mr-3 mt-1" />
+            <Mic className="text-blue-600 w-6 h-6 mr-3 mt-1" />
             <div>
               <h3 className="font-semibold text-gray-800">Transcripción Automática</h3>
               <p className="text-gray-600 text-sm">Convierta la voz de sus consultas en texto de manera instantánea con alta precisión.</p>
             </div>
           </div>
           <div className="flex items-start p-4 bg-blue-50 rounded-lg shadow-sm">
-            <Lightbulb className="text-blue-600 w-6 h-6 mr-3 mt-1" />
-            <div>
-              <h3 className="font-semibold text-gray-800">Procesamiento Inteligente con IA</h3>
-              <p className="text-gray-600 text-sm">Extracción automática de motivo de consulta, historial, síntomas, diagnóstico y tratamiento.</p>
-            </div>
-          </div>
-          <div className="flex items-start p-4 bg-blue-50 rounded-lg shadow-sm">
             <FileText className="text-blue-600 w-6 h-6 mr-3 mt-1" />
             <div>
-              <h3 className="font-semibold text-gray-800">Generación de Notas Clínicas</h3>
-              <p className="text-gray-600 text-sm">Notas estructuradas y profesionales listas para su historial médico.</p>
+              <h3 className="font-semibold text-gray-800">Generación de Notas Clínicas Inteligentes</h3>
+              <p className="text-gray-600 text-sm">Notas estructuradas y profesionales con IA (motivo, historial, diagnóstico, tratamiento).</p>
             </div>
           </div>
           <div className="flex items-start p-4 bg-blue-50 rounded-lg shadow-sm">
-            <CalendarDays className="text-blue-600 w-6 h-6 mr-3 mt-1" />
+            <User className="text-blue-600 w-6 h-6 mr-3 mt-1" />
             <div>
-              <h3 className="font-semibold text-gray-800">Gestión Integral de Consultas</h3>
-              <p className="text-gray-600 text-sm">Acceda y organice fácilmente todo el historial de sus pacientes.</p>
+              <h3 className="font-semibold text-gray-800">Gestión de Usuarios</h3>
+              <p className="text-gray-600 text-sm">Soporte para usuario Administrador y usuarios Asistentes.</p>
+            </div>
+          </div>
+          <div className="flex items-start p-4 bg-blue-50 rounded-lg shadow-sm">
+            <Download className="text-blue-600 w-6 h-6 mr-3 mt-1" />
+            <div>
+              <h3 className="font-semibold text-gray-800">Descarga de Historial Completo</h3>
+              <p className="text-gray-600 text-sm">Posibilidad de descargar el historial completo de todas las consultas.</p>
+            </div>
+          </div>
+          <div className="flex items-start p-4 bg-blue-50 rounded-lg shadow-sm">
+            <Lock className="text-blue-600 w-6 h-6 mr-3 mt-1" />
+            <div>
+              <h3 className="font-semibold text-gray-800">Información Encriptada</h3>
+              <p className="text-gray-600 text-sm">La información de los pacientes se maneja de forma segura y encriptada.</p>
+            </div>
+          </div>
+          <div className="flex items-start p-4 bg-blue-50 rounded-lg shadow-sm">
+            <Globe className="text-blue-600 w-6 h-6 mr-3 mt-1" />
+            <div>
+              <h3 className="font-semibold text-gray-800">Acceso Web (Multi-dispositivo)</h3>
+              <p className="text-gray-600 text-sm">Se accede desde cualquier navegador web, compatible con móviles y computadoras.</p>
             </div>
           </div>
         </div>
@@ -71,37 +120,32 @@ export default function ProposalPage() {
         </div>
       </section>
 
-      {/* Sección Opciones de Presupuesto */}
+      {/* Sección Versiones */}
       <section className="w-full max-w-4xl p-8 mb-8">
-        <h2 className="text-3xl font-bold text-center text-blue-700 mb-8">Opciones de Inversión</h2>
+        <h2 className="text-3xl font-bold text-center text-blue-700 mb-8">Versiones</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Tarjeta Sin Branding */}
+          {/* Tarjeta Standard */}
           <div className="bg-white p-8 rounded-lg shadow-xl border border-gray-200 flex flex-col justify-between">
             <div>
-              <h3 className="text-2xl font-bold text-blue-600 mb-4 text-center">Versión Sin Branding</h3>
+              <h3 className="text-2xl font-bold text-blue-600 mb-4 text-center">Versión Standard</h3>
               <p className="text-gray-700 mb-6 text-center">
-                El sistema se entrega con una interfaz limpia y estándar, lista para usar.
+                El sistema se entrega con una interfaz limpia y funcional, sin personalización de marca.
               </p>
               <div className="text-center mb-6">
                 <p className="text-xl text-gray-500 line-through">$1500 USD</p>
                 <p className="text-5xl font-extrabold text-blue-800">$1000 USD</p>
               </div>
             </div>
-            <div className="mt-auto">
-              <p className="text-center text-sm font-semibold text-red-600">
-                ¡Oferta por tiempo limitado! Válida hasta el {deadlineDate}.
-              </p>
-            </div>
           </div>
 
-          {/* Tarjeta Con Branding */}
+          {/* Tarjeta PRO */}
           <div className="bg-white p-8 rounded-lg shadow-xl border-2 border-blue-600 flex flex-col justify-between relative overflow-hidden">
              {/* Esquina superior derecha con un acento */}
              <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
                 ¡Más valor!
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-blue-600 mb-4 text-center">Versión Con Branding de su Marca</h3>
+              <h3 className="text-2xl font-bold text-blue-600 mb-4 text-center">Versión PRO</h3>
               <p className="text-gray-700 mb-6 text-center">
                 Personalización completa con su logo, colores y elementos visuales de su clínica.
               </p>
@@ -110,22 +154,159 @@ export default function ProposalPage() {
                 <p className="text-5xl font-extrabold text-blue-800">$1300 USD</p>
               </div>
             </div>
-            <div className="mt-auto">
-              <p className="text-center text-sm font-semibold text-red-600 mb-4">
-                ¡Oferta por tiempo limitado! Válida hasta el {deadlineDate}.
-              </p>
-              <div className="bg-blue-100 text-blue-800 p-4 rounded-lg flex items-center justify-center font-medium shadow-inner">
-                <Gift className="w-6 h-6 mr-3 text-blue-600" />
-                <span>¡REGALO ESPECIAL! Sesión de capacitación personalizada de 2 horas.</span>
-              </div>
-            </div>
           </div>
         </div>
         <p className="text-center text-lg text-gray-700 mt-8">
-            Si toma la decisión antes del <span className="font-bold text-red-600">{deadlineDate}</span>, podremos
-            dedicar a todo nuestro equipo para asegurar una implementación rápida y eficiente de su proyecto.
+            El valor con descuento del trabajo es válido hasta el <span className="font-bold text-red-600">{deadlineDate}</span>,
+            debido a que tengo otros proyectos en espera pero me interesa mucho tu proyecto porque sé que voy a poder darte muy buenos resultados.
         </p>
+
+        {/* Sección de Beneficios Adicionales por Pronta Decisión */}
+        <div className="mt-12 p-8 bg-blue-100 rounded-lg shadow-inner border border-blue-200">
+            <h3 className="text-2xl font-bold text-blue-800 mb-6 text-center">Beneficios Exclusivos por Comenzar Ahora</h3>
+            <p className="text-lg text-gray-700 mb-6 text-center">
+                Si decide iniciar el proyecto en esta fecha, además del precio especial, recibirá:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                    <RefreshCw className="w-6 h-6 text-blue-600 mr-3" />
+                    <span className="text-gray-800 font-medium">1 Mes GRATIS de optimización y mejoras del sistema.</span>
+                </div>
+                <div className="flex items-center bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                    <Video className="w-6 h-6 text-blue-600 mr-3" />
+                    <span className="text-gray-800 font-medium">Videos tutoriales detallados para el uso del sistema.</span>
+                </div>
+                <div className="flex items-center bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                    <BookOpen className="w-6 h-6 text-blue-600 mr-3" />
+                    <span className="text-gray-800 font-medium">Manual de usuario completo.</span>
+                </div>
+                <div className="flex items-center bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                    <ZoomIn className="w-6 h-6 text-blue-600 mr-3" />
+                    <span className="text-gray-800 font-medium">Capacitación en vivo vía Zoom.</span>
+                </div>
+            </div>
+        </div>
       </section>
+
+      {/* Tabla Comparativa de Versiones */}
+      <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8">
+        <h2 className="text-2xl font-semibold text-blue-700 mb-6 text-center">Comparativa de Versiones</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Característica
+                </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Standard
+                </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  PRO
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  Transcripción y Notas IA
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  Gestión de Usuarios (Admin + Asistentes)
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  Descarga de Historial Completo
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  Información Encriptada
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  Acceso Web (Móvil y PC)
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  Branding y Personalización de Marca
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <XCircle className="w-5 h-5 text-red-500 inline-block" />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 inline-block" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Sección Modalidad de Pago y Garantía */}
+      <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8">
+        <h2 className="text-2xl font-semibold text-blue-700 mb-6 text-center">Modalidad de Pago y Garantía</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-200 flex items-start">
+            <CreditCard className="w-8 h-8 text-blue-600 mr-4 flex-shrink-0" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Modalidad de Pago Flexible</h3>
+              <p className="text-gray-700">
+                Para su comodidad y confianza, el pago se realizará en dos partes:
+              </p>
+              <ul className="list-disc list-inside text-gray-700 mt-2 space-y-1">
+                <li>**50%** antes de iniciar el proyecto.</li>
+                <li>**50%** al entregar el sistema completamente funcional.</li>
+              </ul>
+            </div>
+          </div>
+          <div className="bg-green-50 p-6 rounded-lg shadow-sm border border-green-200 flex items-start">
+            <Award className="w-8 h-8 text-green-600 mr-4 flex-shrink-0" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Garantía de Satisfacción 100%</h3>
+              <p className="text-gray-700">
+                Le ofrezco una garantía de funcionamiento firmada por contrato. Si el sistema no es lo que esperaba, tiene **30 días post-entrega** para solicitar el reembolso y se le reembolsará el 100% del dinero. Su inversión está protegida.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
 
       {/* Sección Plazos de Entrega */}
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8 text-center">
@@ -139,15 +320,15 @@ export default function ProposalPage() {
       {/* Sección Cierre */}
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md text-center">
         <p className="text-gray-700 leading-relaxed mb-4">
-          Estoy a su entera disposición para cualquier consulta adicional, aclarar dudas o programar una demostración más detallada del funcionamiento del sistema.
+          Estoy a su entera disposición para cualquier consulta adicional, aclarar dudas o lo que necesite.
         </p>
         <p className="text-gray-800 font-semibold mt-4">Atentamente,</p>
-        <p className="text-blue-700 font-bold text-lg">[Tu Nombre/Nombre de tu Empresa]</p>
+        <p className="text-blue-700 font-bold text-lg">Luis Adrian Ortiz</p>
       </section>
 
       {/* Footer (opcional) */}
       <footer className="w-full max-w-4xl text-center mt-8 text-gray-500 text-sm">
-        &copy; {new Date().getFullYear()} [Tu Nombre/Nombre de tu Empresa]. Todos los derechos reservados.
+        &copy; {new Date().getFullYear()} Luis Adrian Ortiz. Todos los derechos reservados.
       </footer>
     </div>
   );
