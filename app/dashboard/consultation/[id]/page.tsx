@@ -64,7 +64,7 @@ export default function ConsultationDetailPage() {
     html2canvas(input, { 
       scale: 2,
       useCORS: true,
-      backgroundColor: '#ffffff' // <-- AÑADE ESTA LÍNEA
+      backgroundColor: '#ffffff' // <-- ¡AQUÍ ESTÁ EL ARREGLO!
     })
     .then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
@@ -129,7 +129,7 @@ export default function ConsultationDetailPage() {
           </button>
         </div>
       </header>
-
+      
       <main id="pdf-content" className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
           <div className="border-b pb-4 mb-6">
