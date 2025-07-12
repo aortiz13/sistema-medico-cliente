@@ -23,6 +23,8 @@ export default function ConsultationDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   
   const params = useParams()
   const id = params.id as string;
@@ -52,21 +54,32 @@ export default function ConsultationDetailPage() {
     }
   }, [id])
   
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const input = document.getElementById('pdf-content');
     if (!input) {
-      alert("Error: No se encontró el contenido para generar el PDF.");
+      console.error("Error: No se encontró el contenido para generar el PDF.");
+      setError("Error: No se encontró el contenido para generar el PDF.");
       return;
     }
 
     setIsGeneratingPDF(true);
 
-    html2canvas(input, { 
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff', // <-- ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ AQUÍ
-    })
-    .then((canvas) => {
+    // --- Inicio de la solución temporal para el color oklch ---
+    const notesDiv = input.querySelector('.bg-blue-50') as HTMLElement;
+    let originalNotesDivBg = '';
+    if (notesDiv) {
+      originalNotesDivBg = notesDiv.style.backgroundColor;
+      notesDiv.style.backgroundColor = '#EFF6FF';
+    }
+    // --- Fin de la solución temporal ---
+
+    try {
+      const canvas = await html2canvas(input, { 
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'p',
@@ -89,14 +102,75 @@ export default function ConsultationDetailPage() {
       
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, height);
       pdf.save(`consulta-${consultation?.patients?.full_name}-${new Date(consultation!.created_at).toLocaleDateString()}.pdf`);
-    })
-    .catch(err => {
+    } catch (err) {
       console.error("Error al generar el PDF:", err);
-      alert("Hubo un error al generar el PDF. Revisa la consola para más detalles.");
-    })
-    .finally(() => {
+      if (err instanceof Error) {
+        setError("Hubo un error al generar el PDF: " + err.message);
+      } else {
+        setError("Hubo un error desconocido al generar el PDF.");
+      }
+    } finally {
+      // --- Revertir la solución temporal ---
+      if (notesDiv) {
+        notesDiv.style.backgroundColor = originalNotesDivBg;
+      }
+      // --- Fin de la reversión ---
       setIsGeneratingPDF(false);
-    });
+    }
+  };
+
+  const handleGenerateFollowUpQuestions = async () => {
+    if (!consultation?.formatted_notes) {
+      setError("No hay notas clínicas para generar preguntas de seguimiento.");
+      return;
+    }
+
+    setIsGeneratingQuestions(true);
+    setFollowUpQuestions([]); // Limpiar preguntas anteriores
+
+    try {
+      const prompt = `Basado en las siguientes notas clínicas de una consulta médica, genera 3-5 preguntas de seguimiento concisas y relevantes que un médico podría hacer en una próxima consulta. Presenta las preguntas como una lista numerada.
+
+Notas Clínicas:
+${consultation.formatted_notes}
+
+Preguntas de seguimiento:`
+
+      let chatHistory = [];
+      chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+      const payload = { contents: chatHistory };
+      const apiKey = ""; // La clave API se proporcionará en tiempo de ejecución por Canvas
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (result.candidates && result.candidates.length > 0 &&
+          result.candidates[0].content && result.candidates[0].content.parts &&
+          result.candidates[0].content.parts.length > 0) {
+        const text = result.candidates[0].content.parts[0].text;
+        // Parsear el texto para obtener una lista de preguntas (asumiendo formato numerado)
+        const questionsArray = text.split('\n').filter(line => line.trim().match(/^\d+\./)).map(line => line.trim().replace(/^\d+\.\s*/, ''));
+        setFollowUpQuestions(questionsArray);
+      } else {
+        setError("No se pudieron generar las preguntas de seguimiento. Inténtalo de nuevo.");
+      }
+    } catch (err) {
+      console.error("Error al llamar a la API de Gemini:", err);
+      if (err instanceof Error) {
+        setError("Error al generar preguntas: " + err.message);
+      } else {
+        setError("Error desconocido al generar preguntas.");
+      }
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
   };
 
   if (loading) {
@@ -119,14 +193,23 @@ export default function ConsultationDetailPage() {
             <ArrowLeft className="w-5 h-5" />
             <span>Volver al Panel</span>
           </Link>
-          <button
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPDF}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            <Download className="w-5 h-5" />
-            <span>{isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}</span>
-          </button>
+          <div className="flex space-x-4">
+            <button
+              onClick={handleGenerateFollowUpQuestions}
+              disabled={isGeneratingQuestions}
+              className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:bg-gray-400"
+            >
+              <span>{isGeneratingQuestions ? 'Generando...' : 'Generar Preguntas de Seguimiento ✨'}</span>
+            </button>
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+            >
+              <Download className="w-5 h-5" />
+              <span>{isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}</span>
+            </button>
+          </div>
         </div>
       </header>
       
@@ -149,10 +232,25 @@ export default function ConsultationDetailPage() {
               <FileText className="w-5 h-5 mr-2 text-blue-600" />
               Notas Clínicas (Generadas por IA)
             </h2>
+            {/* Este es el div al que le aplicaremos la solución temporal */}
             <div className="bg-blue-50 p-4 rounded-md text-gray-800 whitespace-pre-wrap font-mono text-sm leading-relaxed">
               {consultation.formatted_notes}
             </div>
           </div>
+
+          {followUpQuestions.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
+                <FileText className="w-5 h-5 mr-2 text-purple-600" />
+                Preguntas de Seguimiento Sugeridas ✨
+              </h2>
+              <ul className="bg-purple-50 p-4 rounded-md text-gray-800 list-disc list-inside text-sm leading-relaxed">
+                {followUpQuestions.map((question, index) => (
+                  <li key={index}>{question}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div>
             <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
