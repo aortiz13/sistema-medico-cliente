@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { ArrowLeft, Search, Calendar, FileText, User as UserIcon } from 'lucide-react'
 
 // --- Interfaces ---
-// CAMBIO: Se ajustó la interfaz para que coincida con la respuesta de Supabase
+// CAMBIO: Se ajustó la interfaz para que 'patients' sea un array de objetos
 interface ConsultationWithPatient {
   id: string;
   created_at: string;
@@ -16,7 +16,7 @@ interface ConsultationWithPatient {
   patients: {
     full_name: string;
     document_id: string | null;
-  } | null; // Supabase devuelve un objeto, no un array, para esta relación
+  }[]; // Se define como un array
 }
 
 export default function AllConsultationsPage() {
@@ -30,13 +30,11 @@ export default function AllConsultationsPage() {
   const [dniFilter, setDniFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
-  // CAMBIO: Se movió la carga inicial a un useEffect para que se ejecute solo una vez
   useEffect(() => {
-    fetchConsultations(true); // Carga inicial
+    fetchConsultations();
   }, []);
 
-  // Función para buscar y filtrar las consultas
-  const fetchConsultations = async (isInitialLoad = false) => {
+  const fetchConsultations = async () => {
     setLoading(true);
     setError(null);
 
@@ -54,26 +52,22 @@ export default function AllConsultationsPage() {
       `)
       .order('created_at', { ascending: false });
 
-    // Aplicar filtros solo si no es la carga inicial o si se han modificado
-    if (!isInitialLoad) {
-        if (nameFilter) {
-          query = query.ilike('patients.full_name', `%${nameFilter}%`);
-        }
-        if (dniFilter) {
-          query = query.ilike('patients.document_id', `%${dniFilter}%`);
-        }
-        if (dateFilter) {
-          const startDate = new Date(dateFilter);
-          startDate.setUTCHours(0, 0, 0, 0);
-          const endDate = new Date(dateFilter);
-          endDate.setUTCHours(23, 59, 59, 999);
-          
-          query = query
-            .gte('created_at', startDate.toISOString())
-            .lte('created_at', endDate.toISOString());
-        }
+    if (nameFilter) {
+      query = query.ilike('patients.full_name', `%${nameFilter}%`);
     }
-
+    if (dniFilter) {
+      query = query.ilike('patients.document_id', `%${dniFilter}%`);
+    }
+    if (dateFilter) {
+      const startDate = new Date(dateFilter);
+      startDate.setUTCHours(0, 0, 0, 0);
+      const endDate = new Date(dateFilter);
+      endDate.setUTCHours(23, 59, 59, 999);
+      
+      query = query
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+    }
 
     const { data, error } = await query;
 
@@ -81,7 +75,6 @@ export default function AllConsultationsPage() {
       console.error("Error al cargar consultas:", error);
       setError("No se pudieron cargar las consultas.");
     } else {
-      // Se asegura que el tipado sea correcto
       setConsultations(data as ConsultationWithPatient[]);
     }
     setLoading(false);
@@ -96,14 +89,12 @@ export default function AllConsultationsPage() {
     setNameFilter('');
     setDniFilter('');
     setDateFilter('');
-    // Se necesita llamar a fetchConsultations después de limpiar para recargar la lista completa
-    // Lo hacemos en un useEffect para que se ejecute después de que se actualicen los estados
   }
-
+  
+  // Efecto para recargar al limpiar filtros
   useEffect(() => {
-    // Este efecto se dispara cuando los filtros se limpian
     if (!nameFilter && !dniFilter && !dateFilter) {
-        fetchConsultations(true);
+        fetchConsultations();
     }
   }, [nameFilter, dniFilter, dateFilter]);
 
@@ -124,7 +115,6 @@ export default function AllConsultationsPage() {
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Todas las Consultas</h1>
           <p className="text-gray-500 mb-6">Busca y filtra a través de todo el historial de consultas.</p>
 
-          {/* --- Barra de Filtros --- */}
           <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
             <div className="relative">
               <label className="text-sm font-medium text-gray-600">Nombre y Apellido</label>
@@ -164,7 +154,6 @@ export default function AllConsultationsPage() {
             </div>
           </form>
 
-          {/* --- Tabla de Resultados --- */}
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white">
               <thead className="bg-gray-100">
@@ -184,10 +173,10 @@ export default function AllConsultationsPage() {
                   <tr><td colSpan={4} className="text-center py-10">No se encontraron resultados para tu búsqueda.</td></tr>
                 ) : (
                   consultations.map(consultation => (
-                    // CAMBIO: Se accede a la información del paciente correctamente
+                    // CAMBIO: Se accede al primer elemento del array de pacientes
                     <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
-                      <td className="py-3 px-4 font-medium">{consultation.patients?.full_name || 'N/A'}</td>
-                      <td className="py-3 px-4">{consultation.patients?.document_id || 'N/A'}</td>
+                      <td className="py-3 px-4 font-medium">{consultation.patients[0]?.full_name || 'N/A'}</td>
+                      <td className="py-3 px-4">{consultation.patients[0]?.document_id || 'N/A'}</td>
                       <td className="py-3 px-4">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</td>
                       <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">{consultation.formatted_notes}</td>
                     </tr>
