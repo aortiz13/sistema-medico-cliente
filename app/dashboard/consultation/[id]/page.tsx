@@ -6,8 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   ArrowLeft, User, Calendar, FileText, Mic, Download, LogOut,
-  LayoutDashboard, Settings, Users, Bell, LifeBuoy, Bot, 
-  Search
+  LayoutDashboard, Settings, Users, Bell, LifeBuoy, Bot 
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -128,10 +127,26 @@ export default function ConsultationDetailPage() {
 
   const handleDownloadPDF = () => {
     const input = document.getElementById('pdf-content');
-    if (!input) return;
+    if (!input) {
+        alert("Error: No se encontró el elemento para generar el PDF.");
+        return;
+    }
 
     setIsGeneratingPDF(true);
-    html2canvas(input, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+    
+    html2canvas(input, { 
+      scale: 2, 
+      backgroundColor: '#ffffff', // Forzar fondo blanco
+      useCORS: true,
+      logging: true, // Activar logging para más detalles en consola
+      onclone: (document) => {
+        // Opcional: Ocultar el borde rojo en el PDF final
+        const clonedElement = document.getElementById('pdf-content');
+        if (clonedElement) {
+          clonedElement.style.borderColor = 'transparent';
+        }
+      }
+    })
       .then((canvas) => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
@@ -147,8 +162,8 @@ export default function ConsultationDetailPage() {
         pdf.save(`consulta-${consultation?.patients?.full_name}-${new Date(consultation!.created_at).toLocaleDateString()}.pdf`);
       })
       .catch(err => {
-        console.error("Error al generar el PDF:", err);
-        alert("Hubo un error al generar el PDF.");
+        console.error("Error detallado al generar el PDF:", err);
+        alert("Hubo un error al generar el PDF. Por favor, revisa la consola del navegador para más detalles.");
       })
       .finally(() => {
         setIsGeneratingPDF(false);
@@ -170,7 +185,6 @@ export default function ConsultationDetailPage() {
         <Header profile={profile} onLogout={handleLogout} />
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
-            {/* Cabecera de la página */}
             <div className="flex justify-between items-center mb-8">
               <div>
                 <Link href="/dashboard/all-consultations" className="flex items-center space-x-2 text-blue-600 hover:underline mb-2">
@@ -189,8 +203,8 @@ export default function ConsultationDetailPage() {
               </button>
             </div>
 
-            {/* Contenido de la consulta */}
-            <div id="pdf-content" className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+            {/* CAMBIO: Se añade un borde rojo para depuración */}
+            <div id="pdf-content" className="bg-white rounded-xl shadow-lg border-4 border-red-500 p-8">
               <div className="border-b pb-4 mb-6">
                 <div className="flex justify-between items-center">
                   <div>
@@ -207,7 +221,6 @@ export default function ConsultationDetailPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Notas Clínicas */}
                 <div>
                   <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
                     <FileText className="w-5 h-5 mr-2 text-blue-600" />
@@ -218,7 +231,6 @@ export default function ConsultationDetailPage() {
                   </div>
                 </div>
 
-                {/* Transcripción */}
                 <div>
                   <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
                     <Mic className="w-5 h-5 mr-2 text-blue-600" />
