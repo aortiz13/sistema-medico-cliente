@@ -118,8 +118,8 @@ export default function ProposalPage() {
                 El sistema se entrega con una interfaz limpia y funcional, sin personalización de marca.
               </p>
               <div className="text-center mb-6">
-                <p className="text-xl text-gray-500 line-through">$1500 USD</p>
-                <p className="text-5xl font-extrabold text-blue-800">$1000 USD</p>
+                <p className="text-xl text-gray-500 line-through">$27000 MXN</p>
+                <p className="text-5xl font-extrabold text-blue-800">$18000 MXN</p>
                 <p className="text-sm text-gray-600 mt-2">
                   (El único gasto mensual inicial estimado será para el uso de la API de OpenAI: **Aprox. $10 USD/mes**, dependiendo del volumen de uso)
                 </p>
@@ -148,8 +148,8 @@ export default function ProposalPage() {
                 Personalización completa con su logo, colores y elementos visuales de su clínica.
               </p>
               <div className="text-center mb-6">
-                <p className="text-xl text-gray-500 line-through">$1800 USD</p>
-                <p className="text-5xl font-extrabold text-blue-800">$1300 USD</p>
+                <p className="text-xl text-gray-500 line-through">$33000 MXN</p>
+                <p className="text-5xl font-extrabold text-blue-800">$24000 mxn</p>
                 <p className="text-sm text-gray-600 mt-2">
                   (El único gasto mensual inicial estimado será para el uso de la API de OpenAI: **Aprox. $10 USD/mes**, dependiendo del volumen de uso)
                 </p>
@@ -175,7 +175,7 @@ export default function ProposalPage() {
         <div className="mt-12 p-8 bg-blue-100 rounded-lg shadow-inner border border-blue-200">
             <h3 className="text-2xl font-bold text-blue-800 mb-6 text-center">Beneficios Exclusivos por Comenzar Ahora</h3>
             <p className="text-lg text-gray-700 mb-6 text-center">
-                Si decide iniciar el proyecto en esta fecha, además del precio especial, recibirá:
+                Si decide iniciar el proyecto en esta fecha, además del precio especial, te regalo:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex items-center bg-white p-4 rounded-lg shadow-sm border border-blue-200">
@@ -220,7 +220,7 @@ export default function ProposalPage() {
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">Garantía de Satisfacción 100%</h3>
               <p className="text-gray-700">
-                Le ofrezco una garantía de funcionamiento firmada por contrato. Si el sistema no es lo que esperaba, tiene **30 días post-entrega** para solicitar el reembolso y se le reembolsará el 100% del dinero. Su inversión está protegida.
+                Estoy tan seguro de que te va a encantar, que te ofrezco una garantía de funcionamiento firmada por contrato. Si el sistema no es lo que esperaba, tienes **30 días post-entrega** para solicitar el reembolso y se le reembolsará el 100% del dinero.
               </p>
             </div>
           </div>
@@ -231,15 +231,15 @@ export default function ProposalPage() {
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8 text-center">
         <h2 className="text-2xl font-semibold text-blue-700 mb-4">Plazo de Entrega</h2>
         <p className="text-gray-700 text-lg">
-          Comprometidos con la eficiencia, la versión inicial del sistema será entregada en un plazo de:
+          Mi equipo se compromoete con la eficiencia al 100%, la versión inicial del sistema será entregada en un plazo de:
         </p>
-        <p className="text-4xl font-bold text-blue-700 mt-4">1 Semana</p>
+        <p className="text-4xl font-bold text-blue-700 mt-4">7 días o menos</p>
       </section>
 
       {/* Sección Cierre */}
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md text-center">
         <p className="text-gray-700 leading-relaxed mb-4">
-          Estoy a su entera disposición para cualquier consulta adicional, aclarar dudas o lo que necesite.
+          Estoy a tu disposición para cualquier consulta adicional, aclarar dudas o lo que necesite.
         </p>
         <p className="text-gray-800 font-semibold mt-4">Atentamente,</p>
         <p className="text-blue-700 font-bold text-lg">Luis Adrian Ortiz</p>
