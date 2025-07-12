@@ -34,7 +34,7 @@ interface Consultation {
 
 function Sidebar({ profile }: { profile: Profile | null }) {
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+    <aside className="w-64 bg-white border-r border-gray-200 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-20 flex items-center px-8">
         <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
       </div>
@@ -78,18 +78,18 @@ function Sidebar({ profile }: { profile: Profile | null }) {
 
 function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () => void }) {
   return (
-    <header className="bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10 py-6 px-8">
+    <header className="bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10 py-4 px-6 md:py-6 md:px-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Bienvenido, {profile?.full_name?.split(' ')[0]}</h2>
-          <p className="text-gray-500">Aquí tienes el resumen de tu actividad.</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800">Bienvenido, {profile?.full_name?.split(' ')[0]}</h2>
+          <p className="text-sm text-gray-500 hidden md:block">Aquí tienes el resumen de tu actividad.</p>
         </div>
-        <div className="flex items-center space-x-6">
-          <div className="relative">
+        <div className="flex items-center space-x-4 md:space-x-6">
+          <div className="relative hidden md:block">
             <input 
               type="text"
-              placeholder="Buscar en todo el sistema..."
-              className="w-72 p-2 pl-10 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Buscar..."
+              className="w-full md:w-72 p-2 pl-10 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
@@ -100,7 +100,7 @@ function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () =
             <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
               {profile?.full_name?.charAt(0) || 'U'}
             </div>
-            <div>
+            <div className="hidden md:block">
               <p className="font-semibold text-gray-800">{profile?.full_name}</p>
               <p className="text-xs text-gray-500 capitalize">{profile?.role}</p>
             </div>
@@ -116,13 +116,13 @@ function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () =
 
 function StatCard({ title, value, icon: Icon, color }: { title: string, value: string | number, icon: React.ElementType, color: string }) {
   return (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4">
+    <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4">
       <div className={`p-3 rounded-full ${color}`}>
-        <Icon size={24} className="text-white" />
+        <Icon size={20} md:size={24} className="text-white" />
       </div>
       <div>
         <p className="text-sm text-gray-500">{title}</p>
-        <p className="text-2xl font-bold text-gray-800">{value}</p>
+        <p className="text-xl md:text-2xl font-bold text-gray-800">{value}</p>
       </div>
     </div>
   )
@@ -130,7 +130,6 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
 
 
 export default function Dashboard() {
-  // --- Estados y Hooks ---
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null);
   const [patients, setPatients] = useState<Patient[]>([])
@@ -144,9 +143,6 @@ export default function Dashboard() {
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [isInviting, setIsInviting] = useState(false);
-
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
@@ -170,7 +166,6 @@ export default function Dashboard() {
     checkUserAndProfile()
   }, [router])
 
-  // --- Funciones de Lógica ---
   const loadPatients = async () => {
     const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false })
     if (error) console.error("Error al cargar pacientes:", error); else setPatients(data || [])
@@ -186,56 +181,17 @@ export default function Dashboard() {
     router.push('/');
   }
 
-  const handleInviteAssistant = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail) return;
-    setIsInviting(true);
-
-    try {
-      const response = await fetch('/api/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Falló al enviar la invitación.');
-      }
-      alert('¡Invitación enviada exitosamente!');
-      setInviteEmail('');
-    } catch (error) {
-      if (error instanceof Error) {
-        alert('Error: ' + error.message);
-      } else {
-        alert('Ocurrió un error inesperado.');
-      }
-    } finally {
-      setIsInviting(false);
-    }
-  };
-
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPatientName || !user) {
       alert('El nombre del paciente es obligatorio.');
       return;
     }
-
     setIsSavingPatient(true);
-    
     const { error } = await supabase
       .from('patients')
-      .insert([
-        { 
-          full_name: newPatientName, 
-          phone: newPatientPhone,
-          user_id: user.id
-        }
-      ]);
-
+      .insert([{ full_name: newPatientName, phone: newPatientPhone, user_id: user.id }]);
     setIsSavingPatient(false);
-
     if (error) {
       alert("Error al crear el paciente: " + error.message);
     } else {
@@ -298,17 +254,6 @@ export default function Dashboard() {
         if (error) { alert('Error al guardar: ' + error.message) } 
         else {
           alert('¡Consulta procesada exitosamente!')
-          if (process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL) {
-            const notesForN8N = result.formattedNotes ? result.formattedNotes.substring(0, 200) + '...' : 'Sin resumen.';
-            fetch(process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                patientName: patients.find(p => p.id === selectedPatient)?.full_name || 'Desconocido',
-                notes: notesForN8N
-              })
-            }).catch(err => console.error("Error al notificar a n8n:", err));
-          }
           setAudioBlob(null)
           setSelectedPatient('')
           await loadConsultations()
@@ -325,6 +270,7 @@ export default function Dashboard() {
   }
 
   return (
+    // CAMBIO: Se envuelve todo en un único fragmento <> para corregir el error de sintaxis
     <>
       {isPatientModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -357,8 +303,8 @@ export default function Dashboard() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header profile={profile} onLogout={handleLogout} />
           
-          <main className="flex-1 p-8 overflow-y-auto">
-            <div className="grid grid-cols-4 gap-6 mb-8">
+          <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-500" />
               <StatCard title="Consultas Hoy" value="12" icon={FileText} color="bg-green-500" />
               <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
