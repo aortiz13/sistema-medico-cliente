@@ -4,7 +4,8 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Mic, Square, FileText, LogOut, UserPlus, X, Send } from 'lucide-react'
+// CAMBIO: Se importa el ícono 'Users'
+import { Mic, Square, FileText, LogOut, UserPlus, X, Send, Users } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
 // --- Interfaces ---
@@ -36,17 +37,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   
-  // Estados para el modal de creación de pacientes
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
-  // Estados para el formulario de invitación
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
 
-  // Estados y refs para la grabación
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
@@ -66,7 +64,7 @@ export default function Dashboard() {
           .eq('id', user.id)
           .single();
         
-        if (profileError && profileError.code !== 'PGRST116') { // PGRST116: no rows found
+        if (profileError && profileError.code !== 'PGRST116') {
             console.error("Error al obtener el perfil:", profileError);
         }
         setProfile(userProfile);
@@ -349,26 +347,35 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* CAMBIO: Panel de Gestión de Equipo (solo para el doctor) */}
               {profile?.role === 'doctor' && (
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h2 className="text-xl font-semibold mb-4 flex items-center">
-                    <UserPlus className="w-5 h-5 mr-2 text-blue-600" />
-                    Invitar Nuevo Asistente
+                    <Users className="w-5 h-5 mr-2 text-blue-600" />
+                    Gestión de Equipo
                   </h2>
-                  <form onSubmit={handleInviteAssistant} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="email@asistente.com"
-                      required
-                    />
-                    <button type="submit" disabled={isInviting} className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400">
-                      <Send size={16} />
-                      <span>{isInviting ? 'Enviando...' : 'Invitar'}</span>
-                    </button>
-                  </form>
+                  <div className="space-y-4">
+                    {/* Formulario para invitar */}
+                    <form onSubmit={handleInviteAssistant} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        className="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="email@asistente.com"
+                        required
+                      />
+                      <button type="submit" disabled={isInviting} className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400">
+                        <Send size={16} />
+                        <span>{isInviting ? 'Enviando...' : 'Invitar'}</span>
+                      </button>
+                    </form>
+                    
+                    {/* Enlace a la página de gestión */}
+                    <Link href="/dashboard/manage-assistants" className="block w-full text-center bg-gray-200 text-gray-800 px-4 py-3 rounded-md hover:bg-gray-300 font-semibold transition-colors">
+                        Gestionar Asistentes
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
