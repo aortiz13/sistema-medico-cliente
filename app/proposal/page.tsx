@@ -40,7 +40,7 @@ export default function ProposalPage() {
           Aquí le comparto toda la información detallada al respecto del desarrollo del sistema inteligente para transcripción de citas médicas. Un sistema que será 100% suyo y le ahorrará tiempo y mejorará la precisión de las notas clínicas, además de digitalizar su clínica.
         </p>
         <p className="text-gray-700 leading-relaxed">
-          Más abajo le comparto además, un enlace a algunas imágenes de un bosquejo que he estado armando en base a lo que hablamos para que tenga una idea general de cómo se podría ver el sistema.
+          Te comparto un enlace con algunas imágenes de un bosquejo que he estado armando en base a lo que hablamos para tener una idea general de cómo se podría ver la aplicación web.
         </p>
 
         {/* Enlace a Google Drive */}
