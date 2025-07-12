@@ -3,37 +3,34 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// Helper function for getting cookies to help with type inference
+const getCookie = (name: string) => {
+  const cookieStore = cookies()
+  return cookieStore.get(name)?.value
+}
+
+// Helper functions for setting/removing cookies (empty for read-only context)
+const setCookie = (name: string, value: string, options: CookieOptions) => {
+  // En una API Route, no podemos modificar las cookies de la solicitud.
+  // Dejamos este método vacío para operaciones de solo lectura.
+}
+const removeCookie = (name: string, options: CookieOptions) => {
+  // Igual que 'set', lo dejamos vacío.
+}
+
 export async function POST(request: NextRequest) {
   const { assistantId } = await request.json()
-
-  // CAMBIO: Se corrigió la inicialización del cliente de Supabase.
-  // La función cookies() se llama ahora dentro de cada método (get, set, remove).
+  
+  // CAMBIO: Se reestructuró la forma de pasar las funciones de cookies
+  // para evitar problemas de inferencia de tipos en algunos entornos.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookies().get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookies().set({ name, value, ...options })
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookies().set({ name, value: '', ...options })
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
+        get: getCookie,
+        set: setCookie,
+        remove: removeCookie,
       },
     }
   )
