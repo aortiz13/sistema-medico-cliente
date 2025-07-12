@@ -18,10 +18,7 @@ import {
   CreditCard,
   RefreshCw,
   ZoomIn,
-  XCircle,
-  ChartBar, // Nuevo icono para reportes
-  Search,   // Nuevo icono para búsqueda avanzada
-  Printer,  // Nuevo icono para exportación
+  XCircle, // Still used for non-included features, if any remain.
 } from 'lucide-react';
 
 export default function ProposalPage() {
@@ -60,7 +57,7 @@ export default function ProposalPage() {
         </div>
       </section>
 
-      {/* Sección Funcionalidades Más Importantes */}
+      {/* Sección Funcionalidades Más Importantes (Manteniendo la descripción general) */}
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8">
         <h2 className="text-2xl font-semibold text-blue-700 mb-6">Funcionalidades Más Importantes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -131,13 +128,10 @@ export default function ProposalPage() {
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Transcripción y Notas IA</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Gestión de Usuarios (Admin + Asistentes)</li>
-                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Descarga de Historial Completo</li> {/* REMOVED FROM STANDARD */}
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Descarga de Historial Completo</li> {/* INCLUDED IN BOTH */}
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Información Encriptada</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Acceso Web (Móvil y PC)</li>
-                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Branding y Personalización de Marca</li>
-                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Reportes y Análisis de Consultas</li>
-                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Búsqueda Avanzada en Historial</li>
-                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Exportación de Notas Personalizadas</li>
+                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Branding y Personalización de Marca</li> {/* ONLY DIFFERENCE */}
               </ul>
             </div>
           </div>
@@ -164,13 +158,10 @@ export default function ProposalPage() {
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Transcripción y Notas IA</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Gestión de Usuarios (Admin + Asistentes)</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Descarga de Historial Completo** <span className="ml-1 text-xs text-blue-500">(EXCLUSIVO PRO)</span></li> {/* ADDED TO PRO */}
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Descarga de Historial Completo</li> {/* INCLUDED IN BOTH */}
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Información Encriptada</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Acceso Web (Móvil y PC)</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Branding y Personalización de Marca**</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Reportes y Análisis de Consultas**</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Búsqueda Avanzada en Historial**</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Exportación de Notas Personalizadas**</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Branding y Personalización de Marca** <span className="ml-1 text-xs text-blue-500">(EXCLUSIVO PRO)</span></li> {/* ONLY DIFFERENCE */}
               </ul>
             </div>
           </div>
