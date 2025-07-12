@@ -6,8 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   ArrowLeft, User, Calendar, FileText, Mic, Download, LogOut,
-  LayoutDashboard, Settings, Users, Bell, LifeBuoy, Bot, 
-  Search
+  LayoutDashboard, Settings, Users, Bell, LifeBuoy, Bot, Search 
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -139,13 +138,8 @@ export default function ConsultationDetailPage() {
       scale: 2, 
       backgroundColor: '#ffffff', // Forzar fondo blanco
       useCORS: true,
-      logging: true, // Activar logging para más detalles en consola
       onclone: (document) => {
-        // Opcional: Ocultar el borde rojo en el PDF final
-        const clonedElement = document.getElementById('pdf-content');
-        if (clonedElement) {
-          clonedElement.style.borderColor = 'transparent';
-        }
+        document.body.style.backgroundColor = 'white';
       }
     })
       .then((canvas) => {
@@ -204,8 +198,7 @@ export default function ConsultationDetailPage() {
               </button>
             </div>
 
-            {/* CAMBIO: Se añade un borde rojo para depuración */}
-            <div id="pdf-content" className="bg-white rounded-xl shadow-lg border-4 border-red-500 p-8">
+            <div id="pdf-content" className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
               <div className="border-b pb-4 mb-6">
                 <div className="flex justify-between items-center">
                   <div>
