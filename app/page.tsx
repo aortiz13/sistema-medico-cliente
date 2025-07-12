@@ -50,7 +50,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="doctor@test.com"
+              placeholder="miemail@test.com"
               required
             />
           </div>
@@ -79,8 +79,8 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-4">
-          Usuario de prueba: doctor@test.com<br />
-          Contraseña: 123456789
+          Usuario de prueba<br />
+          Contraseña
         </p>
       </div>
     </div>
