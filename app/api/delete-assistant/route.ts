@@ -9,20 +9,18 @@ const getCookie = (name: string) => {
   return cookieStore.get(name)?.value
 }
 
-// Helper functions for setting/removing cookies (empty for read-only context)
-const setCookie = (name: string, value: string, options: CookieOptions) => {
+// CAMBIO: Se renombraron los parámetros no usados con un guion bajo
+const setCookie = (_name: string, _value: string, _options: CookieOptions) => {
   // En una API Route, no podemos modificar las cookies de la solicitud.
   // Dejamos este método vacío para operaciones de solo lectura.
 }
-const removeCookie = (name: string, options: CookieOptions) => {
+const removeCookie = (_name: string, _options: CookieOptions) => {
   // Igual que 'set', lo dejamos vacío.
 }
 
 export async function POST(request: NextRequest) {
   const { assistantId } = await request.json()
   
-  // CAMBIO: Se reestructuró la forma de pasar las funciones de cookies
-  // para evitar problemas de inferencia de tipos en algunos entornos.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
