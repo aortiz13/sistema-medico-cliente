@@ -156,7 +156,7 @@ Preguntas de seguimiento:`
           result.candidates[0].content.parts.length > 0) {
         const text = result.candidates[0].content.parts[0].text;
         // Parsear el texto para obtener una lista de preguntas (asumiendo formato numerado)
-        const questionsArray = text.split('\n').filter(line => line.trim().match(/^\d+\./)).map(line => line.trim().replace(/^\d+\.\s*/, ''));
+        const questionsArray = text.split('\n').filter((line: string) => line.trim().match(/^\d+\./)).map((line: string) => line.trim().replace(/^\d+\.\s*/, ''));    
         setFollowUpQuestions(questionsArray);
       } else {
         setError("No se pudieron generar las preguntas de seguimiento. Inténtalo de nuevo.");
