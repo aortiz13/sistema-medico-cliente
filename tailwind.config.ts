@@ -15,10 +15,7 @@ const config: Config = {
       },
     },
   },
-  // Se añade esta configuración para desactivar el formato de color problemático
-  future: {
-    oklch: false,
-  },
+  // La configuración 'future' ha sido eliminada ya que no es necesaria con esta versión.
   plugins: [],
 };
 export default config;
