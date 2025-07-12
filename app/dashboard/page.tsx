@@ -166,6 +166,7 @@ export default function Dashboard() {
   const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
+  // NUEVO: Estado para el tipo de consulta
   const [consultationType, setConsultationType] = useState('new_patient');
 
   const [isRecording, setIsRecording] = useState(false)
@@ -260,6 +261,7 @@ export default function Dashboard() {
     setIsRecording(false)
   }
 
+  // CAMBIO: La función ahora envía el tipo de consulta a la API
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
@@ -270,7 +272,7 @@ export default function Dashboard() {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
       formData.append('patientId', selectedPatient)
-      formData.append('consultationType', consultationType)
+      formData.append('consultationType', consultationType) // Se añade el tipo
 
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
       
