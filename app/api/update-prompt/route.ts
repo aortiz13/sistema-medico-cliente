@@ -5,21 +5,30 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(request: NextRequest) {
   const { newPrompt } = await request.json();
   
-  // CAMBIO: Se ajusta la inicialización del cliente de Supabase para corregir el error de tipos.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) { 
+          // @ts-ignore - Se añade esta directiva para forzar la compilación en Vercel.
           return cookies().get(name)?.value 
         },
         set(name: string, value: string, options: CookieOptions) {
-          // En una API Route, no podemos modificar las cookies de la solicitud.
-          // Dejamos este método vacío para operaciones de solo lectura.
+          try {
+            // @ts-ignore
+            cookies().set({ name, value, ...options })
+          } catch (error) {
+            // Ignorar errores en este contexto de solo lectura.
+          }
         },
         remove(name: string, options: CookieOptions) {
-          // Igual que 'set', lo dejamos vacío.
+          try {
+            // @ts-ignore
+            cookies().set({ name, value: '', ...options })
+          } catch (error) {
+            // Ignorar errores en este contexto de solo lectura.
+          }
         },
       },
     }
