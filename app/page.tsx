@@ -15,9 +15,10 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // CAMBIO: Se eliminó 'data' porque no se usaba.
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       })
 
       if (error) {
@@ -26,7 +27,7 @@ export default function LoginPage() {
         alert('¡Login exitoso!')
         router.push('/dashboard')
       }
-    } catch (error) {
+    } catch (_error) { // CAMBIO: 'error' se renombró a '_error' para indicar que no se usa.
       alert('Error inesperado')
     } finally {
       setLoading(false)
@@ -39,7 +40,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">
           Sistema Médico
         </h1>
-
+        
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -79,8 +80,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-4">
-          Usuario de prueba: doctor@test.com
-          <br />
+          Usuario de prueba: doctor@test.com<br />
           Contraseña: 123456789
         </p>
       </div>
