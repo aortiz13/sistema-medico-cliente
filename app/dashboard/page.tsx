@@ -153,8 +153,8 @@ export default function Dashboard() {
   const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [isInviting, setIsInviting] = useState(false);
+  // NUEVO: Estado para el tipo de consulta
+  const [consultationType, setConsultationType] = useState('new_patient');
 
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -193,35 +193,6 @@ export default function Dashboard() {
     await supabase.auth.signOut();
     router.push('/');
   }
-
-  const handleInviteAssistant = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail) return;
-    setIsInviting(true);
-
-    try {
-      const response = await fetch('/api/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Falló al enviar la invitación.');
-      }
-      alert('¡Invitación enviada exitosamente!');
-      setInviteEmail('');
-    } catch (error) {
-      if (error instanceof Error) {
-        alert('Error: ' + error.message);
-      } else {
-        alert('Ocurrió un error inesperado.');
-      }
-    } finally {
-      setIsInviting(false);
-    }
-  };
 
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
@@ -277,6 +248,7 @@ export default function Dashboard() {
     setIsRecording(false)
   }
 
+  // CAMBIO: La función ahora envía el tipo de consulta a la API
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
@@ -287,10 +259,11 @@ export default function Dashboard() {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
       formData.append('patientId', selectedPatient)
+      formData.append('consultationType', consultationType) // Se añade el tipo
+
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
       
       if (!response.ok) {
-        // Manejar respuestas no-JSON o errores de red
         throw new Error(`Error de red o API: ${response.status} ${response.statusText}`);
       }
 
@@ -379,9 +352,25 @@ export default function Dashboard() {
                   <span>Nuevo Paciente</span>
                 </button>
               </div>
+
+              {/* NUEVO: Selección de tipo de consulta */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-600 mb-2">1. Tipo de Consulta</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input type="radio" name="consultationType" value="new_patient" checked={consultationType === 'new_patient'} onChange={(e) => setConsultationType(e.target.value)} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" />
+                    <span className="ml-2 text-sm text-gray-700">Primera Vez (Historia Clínica)</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input type="radio" name="consultationType" value="follow_up" checked={consultationType === 'follow_up'} onChange={(e) => setConsultationType(e.target.value)} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" />
+                    <span className="ml-2 text-sm text-gray-700">Seguimiento (Nota SOAP)</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">1. Seleccionar Paciente</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">2. Seleccionar Paciente</label>
                   <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Seleccionar...</option>
                     {patients.map((patient) => (
@@ -390,7 +379,7 @@ export default function Dashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">2. Grabar Audio</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">3. Grabar Audio</label>
                   <div className="flex space-x-3">
                     {!isRecording ? (
                       <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-5 py-3 rounded-lg hover:bg-red-600 disabled:bg-gray-300 transition-colors shadow-sm"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>
@@ -439,3 +428,4 @@ export default function Dashboard() {
     </div>
   )
 }
+
