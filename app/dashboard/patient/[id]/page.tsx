@@ -82,7 +82,13 @@ export default function PatientProfilePage() {
     return age;
   };
 
-  const handleDownloadPDF = (elementId: string, fileName: string) => {
+  const handleDownloadPDF = (elementId: string, fileName: string, event?: React.MouseEvent) => {
+    // Detener la navegación si se hace clic en el botón de descarga
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+
     const input = document.getElementById(elementId);
     if (!input) return;
 
@@ -102,21 +108,18 @@ export default function PatientProfilePage() {
       .finally(() => setIsGeneratingPDF(false));
   };
 
-  // NUEVO: Función para descargar el historial completo
   const handleDownloadHistory = async () => {
     if (!patient) return;
     setIsGeneratingHistory(true);
 
-    // 1. Crear un contenedor temporal y oculto para el reporte
     const reportElement = document.createElement('div');
     reportElement.id = 'full-history-report';
     reportElement.style.position = 'absolute';
     reportElement.style.left = '-9999px';
-    reportElement.style.width = '1000px'; // Ancho fijo para consistencia
+    reportElement.style.width = '1000px';
     reportElement.style.padding = '40px';
     reportElement.style.backgroundColor = 'white';
     
-    // 2. Construir el contenido HTML del reporte
     let reportHTML = `
       <div style="font-family: sans-serif; color: #333;">
         <h1 style="font-size: 28px; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">Historia Clínica Completa</h1>
@@ -139,10 +142,35 @@ export default function PatientProfilePage() {
     reportElement.innerHTML = reportHTML;
     document.body.appendChild(reportElement);
 
-    // 3. Generar el PDF a partir del elemento oculto
-    await handleDownloadPDF('full-history-report', `historial-completo-${patient.full_name}.pdf`);
+    const input = document.getElementById('full-history-report');
+    if (input) {
+        await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+            .then((canvas) => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                let pdfHeight = pdf.internal.pageSize.getHeight();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                let finalHeight = pdfWidth / ratio;
+                
+                let heightLeft = finalHeight;
+                let position = 0;
 
-    // 4. Limpiar y eliminar el elemento temporal
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - finalHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
+                    heightLeft -= pdfHeight;
+                }
+                pdf.save(`historial-completo-${patient.full_name}.pdf`);
+            });
+    }
+
     document.body.removeChild(reportElement);
     setIsGeneratingHistory(false);
   };
@@ -159,9 +187,9 @@ export default function PatientProfilePage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link href="/dashboard" className="flex items-center space-x-2 text-blue-600 hover:underline">
+          <Link href="/dashboard/all-consultations" className="flex items-center space-x-2 text-blue-600 hover:underline">
             <ArrowLeft className="w-5 h-5" />
-            <span>Volver al Panel</span>
+            <span>Volver a Todas las Consultas</span>
           </Link>
         </div>
       </header>
@@ -175,14 +203,12 @@ export default function PatientProfilePage() {
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-gray-800">{patient.full_name}</h1>
-                {/* CAMBIO: Se añade DNI y Fecha de Nacimiento a la cabecera */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-500 mt-2">
                   <span className="flex items-center"><UserIcon className="w-4 h-4 mr-2" /> DNI: {patient.document_id || 'No registrado'}</span>
                   <span className="flex items-center"><Calendar className="w-4 h-4 mr-2" /> Nacimiento: {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'No registrada'}</span>
                 </div>
               </div>
             </div>
-            {/* CAMBIO: Se añade el nuevo botón de descarga */}
             <div className="flex space-x-2 mt-4 md:mt-0">
               <button
                 onClick={handleDownloadHistory}
@@ -223,25 +249,32 @@ export default function PatientProfilePage() {
           <div className="lg:col-span-2 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
               <Stethoscope className="w-6 h-6 mr-3 text-blue-600"/>
-              Historial de Consultas Recientes
+              Historial de Consultas
             </h2>
             <div className="space-y-4 max-h-[600px] overflow-y-auto pr-3">
               {consultations.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">Este paciente no tiene consultas registradas.</p>
               ) : (
                 consultations.map(consultation => (
-                  <div id={`consultation-${consultation.id}`} key={consultation.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-all">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="font-semibold text-blue-600">Consulta del {new Date(consultation.created_at).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</p>
-                      <button onClick={() => handleDownloadPDF(`consultation-${consultation.id}`, `consulta-${new Date(consultation.created_at).toLocaleDateString()}.pdf`)}
-                        className="flex items-center space-x-1 text-xs text-gray-500 hover:text-blue-600"
-                      >
-                        <Download size={14}/>
-                        <span>PDF</span>
-                      </button>
+                  // CAMBIO: Se envuelve la tarjeta en un Link para que sea clickeable
+                  <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
+                    <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="font-semibold text-blue-600">Consulta del {new Date(consultation.created_at).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</p>
+                        <button 
+                          onClick={(e) => handleDownloadPDF(`consultation-content-${consultation.id}`, `consulta-${new Date(consultation.created_at).toLocaleDateString()}.pdf`, e)}
+                          className="flex items-center space-x-1 text-xs text-gray-500 hover:text-blue-600"
+                          disabled={isGeneratingPDF}
+                        >
+                          <Download size={14}/>
+                          <span>PDF</span>
+                        </button>
+                      </div>
+                      <div id={`consultation-content-${consultation.id}`}>
+                        <p className="text-sm text-gray-600 whitespace-pre-wrap">{consultation.formatted_notes}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{consultation.formatted_notes}</p>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
