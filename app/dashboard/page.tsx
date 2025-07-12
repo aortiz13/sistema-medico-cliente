@@ -54,12 +54,6 @@ function Sidebar({ profile }: { profile: Profile | null }) {
               </Link>
             </li>
           )}
-           <li>
-            <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-              <BarChart3 size={20} />
-              <span className="ml-4">Estadísticas</span>
-            </a>
-          </li>
         </ul>
       </nav>
       <div className="p-6">
@@ -172,7 +166,8 @@ export default function Dashboard() {
   }
 
   const loadConsultations = async () => {
-    const { data, error } = await supabase.from('consultations').select(`*, patients (full_name)`).order('created_at', { ascending: false }).limit(5)
+    // CAMBIO: Se aumenta el límite para probar el scroll
+    const { data, error } = await supabase.from('consultations').select(`*, patients (full_name)`).order('created_at', { ascending: false }).limit(20)
     if(error) console.error("Error al cargar consultas:", error); else setConsultations(data || [])
   }
 
@@ -302,16 +297,23 @@ export default function Dashboard() {
         <Header profile={profile} onLogout={handleLogout} />
         
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* CAMBIO: Se eliminó la StatCard de Satisfacción y se ajustó el grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-500" />
             <StatCard title="Consultas Hoy" value="12" icon={FileText} color="bg-green-500" />
             <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
-            <StatCard title="Satisfacción" value="98%" icon={BarChart3} color="bg-purple-500" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center"><Mic className="w-6 h-6 mr-3 text-blue-600" />Nueva Consulta</h2>
+              {/* CAMBIO: Se restauró el botón de Nuevo Paciente */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center"><Mic className="w-6 h-6 mr-3 text-blue-600" />Nueva Consulta</h2>
+                <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
+                  <UserPlus size={16} />
+                  <span>Nuevo Paciente</span>
+                </button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-2">1. Seleccionar Paciente</label>
@@ -340,9 +342,10 @@ export default function Dashboard() {
               {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
             </div>
 
-            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
-              <div className="space-y-3">
+            {/* CAMBIO: Se añadió un layout de flexbox y clases de scroll */}
+            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col" style={{height: '500px'}}>
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center flex-shrink-0"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
+              <div className="space-y-3 flex-1 overflow-y-auto pr-2">
                 {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No hay consultas aún.</p> : (
                   consultations.map((consultation) => (
                     <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
