@@ -4,8 +4,11 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// CAMBIO: Se importa el ícono 'Users'
-import { Mic, Square, FileText, LogOut, UserPlus, X, Send, Users } from 'lucide-react'
+// CAMBIO: Se importan nuevos íconos para la barra lateral y el diseño
+import { 
+  Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
+  LayoutDashboard, Settings, ChevronLeft, Menu
+} from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
 // --- Interfaces ---
@@ -28,7 +31,60 @@ interface Consultation {
   patients: { full_name: string; } | null;
 }
 
+// --- Componente de la Barra Lateral ---
+function Sidebar({ profile, onLogout }: { profile: Profile | null, onLogout: () => void }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  return (
+    <aside className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        {!isCollapsed && <span className="text-xl font-bold text-blue-600">Sistema Médico</span>}
+        <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-2 rounded-md hover:bg-gray-100">
+          {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+        </button>
+      </div>
+
+      <nav className="flex-grow p-4 space-y-2">
+        <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-gray-700 bg-blue-50 font-semibold">
+          <LayoutDashboard size={20} className="text-blue-600" />
+          {!isCollapsed && <span className="ml-4">Panel Principal</span>}
+        </Link>
+        {profile?.role === 'doctor' && (
+          <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100">
+            <Users size={20} />
+            {!isCollapsed && <span className="ml-4">Gestionar Asistentes</span>}
+          </Link>
+        )}
+        <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100">
+          <Settings size={20} />
+          {!isCollapsed && <span className="ml-4">Configuración</span>}
+        </a>
+      </nav>
+
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center">
+          <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+            {profile?.full_name?.charAt(0) || 'U'}
+          </div>
+          {!isCollapsed && (
+            <div className="ml-3">
+              <p className="text-sm font-semibold text-gray-800">{profile?.full_name}</p>
+              <p className="text-xs text-gray-500 capitalize">{profile?.role}</p>
+            </div>
+          )}
+        </div>
+        <button onClick={onLogout} className="w-full mt-4 flex items-center justify-center p-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600">
+          <LogOut size={20} />
+          {!isCollapsed && <span className="ml-4">Cerrar Sesión</span>}
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+
 export default function Dashboard() {
+  // --- Estados y Hooks ---
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null);
   const [patients, setPatients] = useState<Patient[]>([])
@@ -58,17 +114,8 @@ export default function Dashboard() {
         router.push('/')
       } else {
         setUser(user)
-        const { data: userProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (profileError && profileError.code !== 'PGRST116') {
-            console.error("Error al obtener el perfil:", profileError);
-        }
+        const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setProfile(userProfile);
-        
         await loadPatients()
         await loadConsultations()
         setLoading(false);
@@ -77,6 +124,7 @@ export default function Dashboard() {
     checkUserAndProfile()
   }, [router])
 
+  // --- Funciones de Lógica ---
   const loadPatients = async () => {
     const { data, error } = await supabase
       .from('patients')
@@ -97,10 +145,10 @@ export default function Dashboard() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+    await supabase.auth.signOut();
+    router.push('/');
   }
-
+  
   const handleInviteAssistant = async (e: FormEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
@@ -129,7 +177,7 @@ export default function Dashboard() {
       setIsInviting(false);
     }
   };
-  
+
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPatientName || !user) {
@@ -219,7 +267,7 @@ export default function Dashboard() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 patientName: patients.find(p => p.id === selectedPatient)?.full_name || 'Desconocido',
-                notes: result.formattedNotes.substring(0, 200) + '...'
+                notes: result.formatted_notes.substring(0, 200) + '...'
               })
             }).catch(err => console.error("Error al notificar a n8n:", err));
           }
@@ -233,15 +281,16 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Cargando...</div>
+    return <div className="h-screen bg-gray-50 flex items-center justify-center">Cargando...</div>
   }
 
   return (
     <>
+      {/* --- Modal para crear paciente --- */}
       {isPatientModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md relative">
-            <button onClick={() => setIsPatientModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+            <button onClick={() => setIsPatientModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors">
               <X size={24} />
             </button>
             <h2 className="text-2xl font-bold mb-6">Nuevo Paciente</h2>
@@ -249,165 +298,137 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                  <input
-                    type="text"
-                    value={newPatientName}
-                    onChange={(e) => setNewPatientName(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: Carlos Sánchez"
-                    required
-                  />
+                  <input type="text" value={newPatientName} onChange={(e) => setNewPatientName(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: Carlos Sánchez" required />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono (Opcional)</label>
-                  <input
-                    type="tel"
-                    value={newPatientPhone}
-                    onChange={(e) => setNewPatientPhone(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: 11-2233-4455"
-                  />
+                  <input type="tel" value={newPatientPhone} onChange={(e) => setNewPatientPhone(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: 11-2233-4455" />
                 </div>
               </div>
               <div className="mt-8 flex justify-end space-x-4">
-                <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-4 py-2 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200">
-                  Cancelar
-                </button>
-                <button type="submit" disabled={isSavingPatient} className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400">
-                  {isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}
-                </button>
+                <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-4 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
+                <button type="submit" disabled={isSavingPatient} className="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 transition-colors">{isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <div className="min-h-screen bg-gray-100">
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
-            <button onClick={handleLogout} className="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
-              <LogOut className="w-5 h-5" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </div>
-        </header>
+      {/* --- Nueva estructura de layout con Sidebar --- */}
+      <div className="h-screen flex bg-gray-50">
+        <Sidebar profile={profile} onLogout={handleLogout} />
         
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <main className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-3xl font-bold text-gray-800 mb-8">Panel Principal</h1>
             
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold flex items-center">
-                    <Mic className="w-5 h-5 mr-2 text-blue-600" />
-                    Nueva Consulta
-                  </h2>
-                  <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600">
-                    <UserPlus size={16} />
-                    <span>Nuevo Paciente</span>
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Paciente</label>
-                    <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Seleccionar...</option>
-                      {patients.map((patient) => (
-                        <option key={patient.id} value={patient.id}>
-                          {patient.full_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex space-x-3">
-                    {!isRecording ? (
-                      <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:bg-gray-400">
-                        <Mic className="w-4 h-4" />
-                        <span>Grabar</span>
-                      </button>
-                    ) : (
-                      <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
-                        <Square className="w-4 h-4" />
-                        <span>Parar</span>
-                      </button>
-                    )}
-                    {audioBlob && (
-                      <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400">
-                        <FileText className="w-4 h-4" />
-                        <span>{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span>
-                      </button>
-                    )}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+              <div className="space-y-8">
+                {/* --- Tarjeta de Nueva Consulta --- */}
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                      <Mic className="w-6 h-6 mr-3 text-blue-600" />
+                      Nueva Consulta
+                    </h2>
+                    <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
+                      <UserPlus size={16} />
+                      <span>Nuevo Paciente</span>
+                    </button>
                   </div>
                   
-                  {isRecording && <div className="text-center text-red-500 font-medium">🔴 Grabando...</div>}
-                  {audioBlob && !isRecording && <div className="text-center text-green-500 font-medium">✅ Audio listo para procesar</div>}
-                </div>
-              </div>
-
-              {/* CAMBIO: Panel de Gestión de Equipo (solo para el doctor) */}
-              {profile?.role === 'doctor' && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-4 flex items-center">
-                    <Users className="w-5 h-5 mr-2 text-blue-600" />
-                    Gestión de Equipo
-                  </h2>
                   <div className="space-y-4">
-                    {/* Formulario para invitar */}
-                    <form onSubmit={handleInviteAssistant} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        className="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="email@asistente.com"
-                        required
-                      />
-                      <button type="submit" disabled={isInviting} className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400">
-                        <Send size={16} />
-                        <span>{isInviting ? 'Enviando...' : 'Invitar'}</span>
-                      </button>
-                    </form>
-                    
-                    {/* Enlace a la página de gestión */}
-                    <Link href="/dashboard/manage-assistants" className="block w-full text-center bg-gray-200 text-gray-800 px-4 py-3 rounded-md hover:bg-gray-300 font-semibold transition-colors">
-                        Gestionar Asistentes
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <FileText className="w-5 h-5 mr-2 text-blue-600" />
-                Consultas Recientes
-              </h2>
-              <div className="space-y-3">
-                {consultations.length === 0 ? <p className="text-gray-500 text-center py-4">No hay consultas aún</p> : (
-                  consultations.map((consultation) => (
-                    <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
-                      <div className="border border-gray-200 rounded-md p-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium text-gray-800">{consultation.patients?.full_name || 'Paciente desconocido'}</h3>
-                            <p className="text-sm text-gray-600">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
-                          </div>
-                          <span className={`px-2 py-1 rounded text-xs ${consultation.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                            {consultation.status === 'completed' ? 'Completada' : 'Procesando'}
-                          </span>
-                        </div>
-                        {consultation.formatted_notes && (
-                          <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded whitespace-pre-wrap">
-                            {consultation.formatted_notes.substring(0, 100)}...
-                          </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">1. Seleccionar Paciente</label>
+                      <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar...</option>
+                        {patients.map((patient) => (
+                          <option key={patient.id} value={patient.id}>{patient.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">2. Grabar Audio</label>
+                      <div className="flex space-x-3">
+                        {!isRecording ? (
+                          <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-5 py-3 rounded-lg hover:bg-red-600 disabled:bg-gray-300 transition-colors shadow-sm">
+                            <Mic className="w-5 h-5" />
+                            <span className="font-semibold">Grabar</span>
+                          </button>
+                        ) : (
+                          <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
+                            <Square className="w-5 h-5" />
+                            <span className="font-semibold">Parar</span>
+                          </button>
+                        )}
+                        {audioBlob && (
+                          <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-blue-500 text-white px-5 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors shadow-sm">
+                            <FileText className="w-5 h-5" />
+                            <span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span>
+                          </button>
                         )}
                       </div>
-                    </Link>
-                  ))
+                    </div>
+                    
+                    {isRecording && <div className="text-center text-red-500 font-medium pt-2">🔴 Grabando...</div>}
+                    {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-2">✅ Audio listo para procesar</div>}
+                  </div>
+                </div>
+
+                {/* --- Tarjeta de Gestión (solo para doctor) --- */}
+                {profile?.role === 'doctor' && (
+                  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                      <Users className="w-6 h-6 mr-3 text-blue-600" />
+                      Gestión de Equipo
+                    </h2>
+                    <div className="space-y-4">
+                      <form onSubmit={handleInviteAssistant} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="flex-grow p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@asistente.com" required />
+                        <button type="submit" disabled={isInviting} className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors shadow-sm">
+                          <Send size={16} />
+                          <span className="font-semibold">{isInviting ? 'Enviando...' : 'Invitar'}</span>
+                        </button>
+                      </form>
+                      <Link href="/dashboard/manage-assistants" className="block w-full text-center bg-gray-200 text-gray-800 px-4 py-3 rounded-lg hover:bg-gray-300 font-semibold transition-colors">
+                        Gestionar Asistentes
+                      </Link>
+                    </div>
+                  </div>
                 )}
+              </div>
+
+              {/* --- Tarjeta de Consultas Recientes --- */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                  <FileText className="w-6 h-6 mr-3 text-blue-600" />
+                  Consultas Recientes
+                </h2>
+                <div className="space-y-3">
+                  {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No hay consultas aún</p> : (
+                    consultations.map((consultation) => (
+                      <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
+                        <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-gray-800">{consultation.patients?.full_name || 'Paciente desconocido'}</h3>
+                              <p className="text-sm text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
+                            </div>
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${consultation.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                              Completada
+                            </span>
+                          </div>
+                          {consultation.formatted_notes && (
+                            <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                              {consultation.formatted_notes.substring(0, 100)}...
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
