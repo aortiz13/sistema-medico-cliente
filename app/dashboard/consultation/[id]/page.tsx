@@ -136,7 +136,7 @@ ${consultation.formatted_notes}
 
 Preguntas de seguimiento:`
 
-      let chatHistory = [];
+      const chatHistory = [];
       chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
       const payload = { contents: chatHistory };
