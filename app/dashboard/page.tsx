@@ -118,7 +118,7 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
   return (
     <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4">
       <div className={`p-3 rounded-full ${color}`}>
-        <Icon size={20} md:size={24} className="text-white" />
+        <Icon size={20} className="md:size-24 text-white" />
       </div>
       <div>
         <p className="text-sm text-gray-500">{title}</p>
@@ -270,8 +270,7 @@ export default function Dashboard() {
   }
 
   return (
-    // CAMBIO: Se envuelve todo en un único fragmento <> para corregir el error de sintaxis
-    <>
+    <div className="h-screen flex bg-gray-50 overflow-hidden">
       {isPatientModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md relative">
@@ -297,73 +296,71 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="h-screen flex bg-gray-50 overflow-hidden">
-        <Sidebar profile={profile} />
+      <Sidebar profile={profile} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header profile={profile} onLogout={handleLogout} />
         
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header profile={profile} onLogout={handleLogout} />
-          
-          <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-500" />
-              <StatCard title="Consultas Hoy" value="12" icon={FileText} color="bg-green-500" />
-              <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
-              <StatCard title="Satisfacción" value="98%" icon={BarChart3} color="bg-purple-500" />
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-500" />
+            <StatCard title="Consultas Hoy" value="12" icon={FileText} color="bg-green-500" />
+            <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
+            <StatCard title="Satisfacción" value="98%" icon={BarChart3} color="bg-purple-500" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center"><Mic className="w-6 h-6 mr-3 text-blue-600" />Nueva Consulta</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">1. Seleccionar Paciente</label>
+                  <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Seleccionar...</option>
+                    {patients.map((patient) => (
+                      <option key={patient.id} value={patient.id}>{patient.full_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">2. Grabar Audio</label>
+                  <div className="flex space-x-3">
+                    {!isRecording ? (
+                      <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-5 py-3 rounded-lg hover:bg-red-600 disabled:bg-gray-300 transition-colors shadow-sm"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>
+                    ) : (
+                      <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-sm"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>
+                    )}
+                    {audioBlob && (
+                      <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-blue-500 text-white px-5 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors shadow-sm"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {isRecording && <div className="text-center text-red-500 font-medium pt-4">🔴 Grabando...</div>}
+              {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center"><Mic className="w-6 h-6 mr-3 text-blue-600" />Nueva Consulta</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-2">1. Seleccionar Paciente</label>
-                    <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Seleccionar...</option>
-                      {patients.map((patient) => (
-                        <option key={patient.id} value={patient.id}>{patient.full_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-2">2. Grabar Audio</label>
-                    <div className="flex space-x-3">
-                      {!isRecording ? (
-                        <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-5 py-3 rounded-lg hover:bg-red-600 disabled:bg-gray-300 transition-colors shadow-sm"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>
-                      ) : (
-                        <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-sm"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>
-                      )}
-                      {audioBlob && (
-                        <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-blue-500 text-white px-5 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors shadow-sm"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                {isRecording && <div className="text-center text-red-500 font-medium pt-4">🔴 Grabando...</div>}
-                {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
-              </div>
-
-              <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
-                <div className="space-y-3">
-                  {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No hay consultas aún.</p> : (
-                    consultations.map((consultation) => (
-                      <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
-                        <div className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
-                          <div className="flex justify-between items-start">
-                            <p className="font-semibold text-gray-800 text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
-                            <p className="text-xs text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
-                          </div>
-                          <p className="mt-1 text-xs text-gray-600 truncate">{consultation.formatted_notes}</p>
+            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
+              <div className="space-y-3">
+                {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No hay consultas aún.</p> : (
+                  consultations.map((consultation) => (
+                    <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
+                      <div className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
+                        <div className="flex justify-between items-start">
+                          <p className="font-semibold text-gray-800 text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
+                          <p className="text-xs text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
                         </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
+                        <p className="mt-1 text-xs text-gray-600 truncate">{consultation.formatted_notes}</p>
+                      </div>
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
           </div>
         </main>
       </div>
-    </>
+    </div>
   )
 }
