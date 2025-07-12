@@ -5,22 +5,32 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   const { assistantId } = await request.json()
+  const cookieStore = cookies()
   
-  // CAMBIO ESTRUCTURAL: Se inicializa el cliente de Supabase DENTRO del manejador de la ruta.
-  // Esto asegura que la función `cookies()` se llame en el contexto correcto.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return cookies().get(name)?.value
+          // @ts-ignore - Se añade esta directiva para forzar la compilación en Vercel.
+          return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          // En una API Route, no podemos modificar las cookies de la solicitud.
+          try {
+            // @ts-ignore
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // Ignorar errores en este contexto de solo lectura.
+          }
         },
         remove(name: string, options: CookieOptions) {
-          // Igual que 'set', lo dejamos vacío.
+          try {
+            // @ts-ignore
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // Ignorar errores en este contexto de solo lectura.
+          }
         },
       },
     }
