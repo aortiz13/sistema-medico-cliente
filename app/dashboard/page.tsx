@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react' // <--- CAMBIO: Se importa useRef
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link' // <--- CAMBIO: Se importa Link
 import { Mic, Square, FileText, LogOut } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -33,10 +34,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   
-  // --- NUEVO: Se usa useRef para guardar la instancia de la grabadora ---
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
-
 
   useEffect(() => {
     const checkUser = async () => {
@@ -80,9 +79,9 @@ export default function Dashboard() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      audioStreamRef.current = stream; // Guardamos el stream para poder pararlo luego
+      audioStreamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder; // Guardamos la instancia
+      mediaRecorderRef.current = mediaRecorder;
       
       const audioChunks: Blob[] = []
       
@@ -93,20 +92,18 @@ export default function Dashboard() {
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
         setAudioBlob(audioBlob)
-        // Detener todas las pistas de audio para que el ícono del navegador desaparezca
         audioStreamRef.current?.getTracks().forEach(track => track.stop());
       }
       
       mediaRecorder.start()
       setIsRecording(true)
-      setAudioBlob(null); // Limpiar audio anterior
+      setAudioBlob(null);
       
     } catch {
       alert('Error al acceder al micrófono')
     }
   }
 
-  // --- CAMBIO: La función ahora detiene la grabación de verdad ---
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
@@ -280,30 +277,33 @@ export default function Dashboard() {
                 </p>
               ) : (
                 consultations.map((consultation) => (
-                  <div key={consultation.id} className="border border-gray-200 rounded-md p-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium text-gray-800">
-                          {consultation.patients?.full_name || 'Paciente desconocido'}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {new Date(consultation.created_at).toLocaleDateString('es-AR')}
-                        </p>
+                  // --- CAMBIO: Se envuelve la tarjeta en un Link ---
+                  <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
+                    <div className="border border-gray-200 rounded-md p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-gray-800">
+                            {consultation.patients?.full_name || 'Paciente desconocido'}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {new Date(consultation.created_at).toLocaleDateString('es-AR')}
+                          </p>
+                        </div>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          consultation.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {consultation.status === 'completed' ? 'Completada' : 'Procesando'}
+                        </span>
                       </div>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        consultation.status === 'completed' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {consultation.status === 'completed' ? 'Completada' : 'Procesando'}
-                      </span>
+                      {consultation.formatted_notes && (
+                        <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded whitespace-pre-wrap">
+                          {consultation.formatted_notes.substring(0, 100)}...
+                        </div>
+                      )}
                     </div>
-                    {consultation.formatted_notes && (
-                      <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded whitespace-pre-wrap">
-                        {consultation.formatted_notes.substring(0, 100)}...
-                      </div>
-                    )}
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
