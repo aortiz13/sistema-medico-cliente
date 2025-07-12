@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function ProposalPage() {
-  const deadlineDate = '14 de Julio';
+  const deadlineDate = '14 de Julio'; // This is a fixed date, not calculated from current time.
   const googleDriveLink = 'https://drive.google.com/drive/folders/EJEMPLO_SU_ID_DE_CARPETA_AQUI'; // ¡CAMBIA ESTO POR TU ENLACE REAL!
 
   return (
@@ -131,7 +131,7 @@ export default function ProposalPage() {
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Transcripción y Notas IA</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Gestión de Usuarios (Admin + Asistentes)</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Descarga de Historial Completo</li>
+                <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Descarga de Historial Completo</li> {/* REMOVED FROM STANDARD */}
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Información Encriptada</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Acceso Web (Móvil y PC)</li>
                 <li className="flex items-center text-gray-500"><XCircle className="w-5 h-5 text-red-500 mr-2" /> Branding y Personalización de Marca</li>
@@ -164,13 +164,13 @@ export default function ProposalPage() {
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Transcripción y Notas IA</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Gestión de Usuarios (Admin + Asistentes)</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Descarga de Historial Completo</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Descarga de Historial Completo** <span className="ml-1 text-xs text-blue-500">(EXCLUSIVO PRO)</span></li> {/* ADDED TO PRO */}
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Información Encriptada</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Acceso Web (Móvil y PC)</li>
                 <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Branding y Personalización de Marca**</li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Reportes y Análisis de Consultas** <span className="ml-1 text-xs text-blue-500">(NUEVO)</span></li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Búsqueda Avanzada en Historial** <span className="ml-1 text-xs text-blue-500">(NUEVO)</span></li>
-                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Exportación de Notas Personalizadas** <span className="ml-1 text-xs text-blue-500">(NUEVO)</span></li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Reportes y Análisis de Consultas**</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Búsqueda Avanzada en Historial**</li>
+                <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> **Exportación de Notas Personalizadas**</li>
               </ul>
             </div>
           </div>
@@ -235,7 +235,6 @@ export default function ProposalPage() {
           </div>
         </div>
       </section>
-
 
       {/* Sección Plazos de Entrega */}
       <section className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-md mb-8 text-center">
