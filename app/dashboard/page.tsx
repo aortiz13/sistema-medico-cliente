@@ -262,7 +262,6 @@ export default function Dashboard() {
     setIsRecording(false)
   }
 
-  // CAMBIO: Se añade un bloque try...catch más específico para aislar el error
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
@@ -275,14 +274,16 @@ export default function Dashboard() {
       formData.append('patientId', selectedPatient)
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
       const result = await response.json()
+      
       if (result.success) {
+        // En la base de datos, usamos 'formatted_notes' (snake_case)
         const { error } = await supabase
           .from('consultations')
           .insert([{
               patient_id: selectedPatient,
               doctor_id: user.id,
               transcription: result.transcription,
-              formatted_notes: result.formattedNotes,
+              formatted_notes: result.formattedNotes, // Usamos la variable correcta de la API
               status: 'completed'
           }])
         if (error) { 
@@ -290,41 +291,25 @@ export default function Dashboard() {
         } else {
           alert('¡Consulta procesada exitosamente!');
           
-          // --- INICIO DEL BLOQUE DE DEPURACIÓN ---
-          try {
-            console.log("Paso 1: Notificando a n8n (si está configurado)...");
-            if (process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL) {
-              fetch(process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  patientName: patients.find(p => p.id === selectedPatient)?.full_name || 'Desconocido',
-                  notes: result.formatted_notes.substring(0, 200) + '...'
-                })
-              }).catch(err => console.error("La llamada a n8n falló, pero no debería causar el error principal:", err));
-            }
-            
-            console.log("Paso 2: Limpiando estados...");
-            setAudioBlob(null);
-            setSelectedPatient('');
-            
-            console.log("Paso 3: Recargando la lista de consultas...");
-            await loadConsultations('');
-            console.log("Paso 4: ¡Todo el post-procesamiento fue exitoso!");
-
-          } catch (postProcessError) {
-            console.error("ERROR DETALLADO AISLADO:", postProcessError);
-            if (postProcessError instanceof Error) {
-              alert(`Error DETALLADO después de guardar: ${postProcessError.message}`);
-            } else {
-              alert('Se produjo un error detallado después de guardar. Revisa la consola.');
-            }
+          if (process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL) {
+            // CAMBIO: Se usa result.formattedNotes (camelCase)
+            const notesForN8N = result.formattedNotes ? result.formattedNotes.substring(0, 200) + '...' : 'Sin resumen.';
+            fetch(process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                patientName: patients.find(p => p.id === selectedPatient)?.full_name || 'Desconocido',
+                notes: notesForN8N
+              })
+            }).catch(err => console.error("La llamada a n8n falló:", err));
           }
-          // --- FIN DEL BLOQUE DE DEPURACIÓN ---
-
+          
+          setAudioBlob(null);
+          setSelectedPatient('');
+          await loadConsultations('');
         }
       } else { 
-        alert('Error al procesar audio: ' + result.error);
+        alert('Error al procesar audio: ' + (result.error || 'Error desconocido'));
       }
     } catch (err) { 
       console.error("Error general en processAudio:", err);
