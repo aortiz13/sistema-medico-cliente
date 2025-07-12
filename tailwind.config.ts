@@ -15,7 +15,6 @@ const config: Config = {
       },
     },
   },
-  // La configuración 'future' ha sido eliminada ya que no es necesaria con esta versión.
   plugins: [],
 };
 export default config;
