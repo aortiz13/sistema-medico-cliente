@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, Calendar, AlertTriangle, Stethoscope, FileText, HeartPulse, UserIcon } from 'lucide-react'
+import { ArrowLeft, User, Calendar, AlertTriangle, Stethoscope, FileText, HeartPulse, Mail, UserIcon } from 'lucide-react'
 
 // --- Interfaces ---
 interface Patient {
@@ -12,6 +12,7 @@ interface Patient {
   full_name: string;
   document_id: string | null;
   phone: string | null;
+  email: string | null;
   date_of_birth: string | null;
   allergies: string | null;
   chronic_conditions: string | null;
@@ -39,9 +40,8 @@ export default function PatientProfilePage() {
       setLoading(true);
       setError(null);
       try {
-        // Hacemos dos peticiones en paralelo para mayor eficiencia
         const [patientRes, consultationsRes] = await Promise.all([
-          supabase.from('patients').select('*').eq('id', id).single(),
+          supabase.from('patients').select('*, email').eq('id', id).single(),
           supabase.from('consultations').select('id, created_at, formatted_notes').eq('patient_id', id).order('created_at', { ascending: false })
         ]);
 
@@ -101,7 +101,7 @@ export default function PatientProfilePage() {
         {/* --- Cabecera del Perfil --- */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8 mb-8">
           <div className="flex items-center space-x-6">
-            <div className="w-24 h-24 rounded-full bg-blue-500 text-white flex items-center justify-center text-5xl font-bold">
+            <div className="w-24 h-24 rounded-full bg-blue-500 text-white flex items-center justify-center text-5xl font-bold flex-shrink-0">
               {patient.full_name?.charAt(0) || 'P'}
             </div>
             <div>
@@ -115,7 +115,6 @@ export default function PatientProfilePage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* --- Columna Izquierda: Información Médica y Datos --- */}
           <div className="lg:col-span-1 space-y-8">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Información Médica Clave</h2>
@@ -134,12 +133,12 @@ export default function PatientProfilePage() {
               <h2 className="text-xl font-bold text-gray-800 mb-4">Datos de Contacto</h2>
               <div className="space-y-2 text-gray-800">
                 <p><span className="font-semibold">Teléfono:</span> {patient.phone || 'No registrado'}</p>
-                <p><span className="font-semibold">Fecha de Nacimiento:</span> {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString('es-AR') : 'No registrada'}</p>
+                <p><span className="font-semibold">Email:</span> {patient.email || 'No registrado'}</p>
+                <p><span className="font-semibold">Fecha de Nacimiento:</span> {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'No registrada'}</p>
               </div>
             </div>
           </div>
 
-          {/* --- Columna Derecha: Historial de Consultas --- */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
               <Stethoscope className="w-6 h-6 mr-3 text-blue-600"/>
@@ -153,7 +152,7 @@ export default function PatientProfilePage() {
                   <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
                     <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
                       <div className="flex justify-between items-center mb-2">
-                        <p className="font-semibold text-blue-600">Consulta del {new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
+                        <p className="font-semibold text-blue-600">Consulta del {new Date(consultation.created_at).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</p>
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Ver Detalle</span>
                       </div>
                       <p className="text-sm text-gray-600 truncate">{consultation.formatted_notes}</p>

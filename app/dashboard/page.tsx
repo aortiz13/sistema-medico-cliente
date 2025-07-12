@@ -27,50 +27,51 @@ interface Consultation {
   created_at: string;
   status: string;
   formatted_notes: string;
-  patient_id: string | null; // Necesitamos el ID para el enlace
+  patient_id: string | null;
   patients: { full_name: string; } | null;
 }
 
 // --- Componentes de UI Rediseñados ---
-
 function Sidebar({ profile }: { profile: Profile | null }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex-col flex-shrink-0 hidden md:flex">
-      <div className="h-20 flex items-center px-8">
-        <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
+    <aside className={`bg-white border-r border-gray-200 flex-col flex-shrink-0 hidden md:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <div className="h-20 flex items-center px-6 justify-center">
+        <h1 className={`text-2xl font-bold text-blue-600 overflow-hidden transition-all ${isCollapsed ? 'w-0' : 'w-auto'}`}>Sistema Médico</h1>
       </div>
-      <nav className="flex-grow px-6">
+      <nav className="flex-grow px-4">
         <ul className="space-y-2">
           <li>
             <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-white bg-blue-600 font-semibold shadow-md">
               <LayoutDashboard size={20} />
-              <span className="ml-4">Panel Principal</span>
-            </Link>
-          </li>
-           <li>
-            <Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-              <Search size={20} />
-              <span className="ml-4">Todas las Consultas</span>
+              {!isCollapsed && <span className="ml-4">Panel Principal</span>}
             </Link>
           </li>
           {profile?.role === 'doctor' && (
             <li>
               <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
                 <Users size={20} />
-                <span className="ml-4">Gestionar Asistentes</span>
+                {!isCollapsed && <span className="ml-4">Gestionar Asistentes</span>}
               </Link>
             </li>
           )}
+           <li>
+            <Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+              <Search size={20} />
+              {!isCollapsed && <span className="ml-4">Todas las Consultas</span>}
+            </Link>
+          </li>
         </ul>
       </nav>
-      <div className="p-6">
+      <div className="p-4 border-t border-gray-200">
         <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <LifeBuoy size={20} />
-          <span className="ml-4">Ayuda y Soporte</span>
+          {!isCollapsed && <span className="ml-4">Ayuda y Soporte</span>}
         </a>
         <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <Settings size={20} />
-          <span className="ml-4">Configuración</span>
+          {!isCollapsed && <span className="ml-4">Configuración</span>}
         </a>
       </div>
     </aside>
@@ -142,6 +143,7 @@ export default function Dashboard() {
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientPhone, setNewPatientPhone] = useState('');
+  const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
   const [isRecording, setIsRecording] = useState(false)
@@ -191,7 +193,12 @@ export default function Dashboard() {
     setIsSavingPatient(true);
     const { error } = await supabase
       .from('patients')
-      .insert([{ full_name: newPatientName, phone: newPatientPhone, user_id: user.id, document_id: '' }]); // Añadimos document_id vacío
+      .insert([{ 
+        full_name: newPatientName, 
+        phone: newPatientPhone,
+        email: newPatientEmail,
+        user_id: user.id 
+      }]);
     setIsSavingPatient(false);
     if (error) {
       alert("Error al crear el paciente: " + error.message);
@@ -199,6 +206,7 @@ export default function Dashboard() {
       alert("¡Paciente creado exitosamente!");
       setNewPatientName('');
       setNewPatientPhone('');
+      setNewPatientEmail('');
       setIsPatientModalOpen(false);
       await loadPatients();
     }
@@ -287,6 +295,10 @@ export default function Dashboard() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono (Opcional)</label>
                   <input type="tel" value={newPatientPhone} onChange={(e) => setNewPatientPhone(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: 11-2233-4455" />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
+                  <input type="email" value={newPatientEmail} onChange={(e) => setNewPatientEmail(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ejemplo@correo.com" />
+                </div>
               </div>
               <div className="mt-8 flex justify-end space-x-4">
                 <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-4 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
@@ -346,7 +358,7 @@ export default function Dashboard() {
               {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
             </div>
 
-            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col" style={{maxHeight: '500px'}}>
+            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col" style={{height: '500px'}}>
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center flex-shrink-0"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
               <div className="space-y-3 flex-1 overflow-y-auto pr-2">
                 {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No hay consultas aún.</p> : (
@@ -354,16 +366,7 @@ export default function Dashboard() {
                     <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
                       <div className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
                         <div className="flex justify-between items-start">
-                          <h3 className="font-semibold text-gray-800 text-sm">
-                            {/* CAMBIO: Se aplica la modificación para el enlace */}
-                            <Link 
-                              href={`/dashboard/patient/${consultation.patient_id}`}
-                              className="hover:underline text-blue-600"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {consultation.patients?.full_name || 'Paciente desconocido'}
-                            </Link>
-                          </h3>
+                          <p className="font-semibold text-gray-800 text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
                           <p className="text-xs text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
                         </div>
                         <p className="mt-1 text-xs text-gray-600 truncate">{consultation.formatted_notes}</p>
