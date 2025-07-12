@@ -38,8 +38,6 @@ function Sidebar({ profile }: { profile: Profile | null }) {
       <div className="h-20 flex items-center px-8">
         <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
       </div>
-      // Dentro del componente Sidebar en app/dashboard/page.tsx
-
 <nav className="flex-grow px-6">
   <ul className="space-y-2">
     <li>
