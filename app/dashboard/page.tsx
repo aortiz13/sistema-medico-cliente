@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react' // <--- CAMBIO: Se importa useRef
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Mic, Square, FileText, LogOut } from 'lucide-react'
@@ -32,6 +32,11 @@ export default function Dashboard() {
   const [consultations, setConsultations] = useState<Consultation[]>([])
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  
+  // --- NUEVO: Se usa useRef para guardar la instancia de la grabadora ---
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+
 
   useEffect(() => {
     const checkUser = async () => {
@@ -75,7 +80,10 @@ export default function Dashboard() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioStreamRef.current = stream; // Guardamos el stream para poder pararlo luego
       const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder; // Guardamos la instancia
+      
       const audioChunks: Blob[] = []
       
       mediaRecorder.ondataavailable = (event) => {
@@ -85,25 +93,24 @@ export default function Dashboard() {
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
         setAudioBlob(audioBlob)
+        // Detener todas las pistas de audio para que el ícono del navegador desaparezca
+        audioStreamRef.current?.getTracks().forEach(track => track.stop());
       }
       
       mediaRecorder.start()
       setIsRecording(true)
+      setAudioBlob(null); // Limpiar audio anterior
       
-      setTimeout(() => {
-        if (mediaRecorder.state === "recording") {
-            mediaRecorder.stop()
-            stream.getTracks().forEach(track => track.stop())
-        }
-        setIsRecording(false)
-      }, 30000)
-      
-    } catch { // <<<< CAMBIO FINAL AQUÍ
+    } catch {
       alert('Error al acceder al micrófono')
     }
   }
 
+  // --- CAMBIO: La función ahora detiene la grabación de verdad ---
   const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
     setIsRecording(false)
   }
 
@@ -166,7 +173,7 @@ export default function Dashboard() {
       } else {
         alert('Error al procesar audio: ' + result.error)
       }
-    } catch { // <<<< CAMBIO FINAL AQUÍ
+    } catch {
       alert('Error inesperado')
     } finally {
       setLoading(false)
@@ -251,10 +258,10 @@ export default function Dashboard() {
               </div>
               {isRecording && (
                 <div className="text-center text-red-500 font-medium">
-                  🔴 Grabando... (máximo 30 segundos)
+                  🔴 Grabando...
                 </div>
               )}
-              {audioBlob && (
+              {audioBlob && !isRecording && (
                 <div className="text-center text-green-500 font-medium">
                   ✅ Audio listo para procesar
                 </div>
@@ -292,7 +299,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     {consultation.formatted_notes && (
-                      <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                      <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded whitespace-pre-wrap">
                         {consultation.formatted_notes.substring(0, 100)}...
                       </div>
                     )}
