@@ -8,7 +8,7 @@ import Image from 'next/image'
 import { 
   Users, Trash2, ShieldAlert, User as UserIcon, LogOut, 
   LayoutDashboard, Settings, Bell, LifeBuoy, Bot, Search, Send, UserPlus, X,
-  CheckCircle, AlertCircle // Se importan nuevos íconos para el pop-up
+  CheckCircle, AlertCircle
 } from 'lucide-react'
 
 // --- Interfaces ---
@@ -72,7 +72,6 @@ function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () =
   )
 }
 
-// NUEVO: Componente de Pop-up de Notificación
 function NotificationPopup({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void; }) {
   const isSuccess = type === 'success';
   const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
@@ -111,7 +110,6 @@ export default function ManageAssistantsPage() {
   const [isInviting, setIsInviting] = useState(false);
   const [newAssistantName, setNewAssistantName] = useState('');
   const [newAssistantEmail, setNewAssistantEmail] = useState('');
-  // NUEVO: Estado para manejar las notificaciones
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const router = useRouter();
 
@@ -166,6 +164,8 @@ export default function ManageAssistantsPage() {
     }
   };
 
+  // CAMBIO: Se reestructura la función para cerrar el modal de confirmación
+  // tanto en caso de éxito como de error.
   const confirmDelete = async () => {
     if (!assistantToDelete) return;
     setIsDeleting(true);
@@ -178,10 +178,12 @@ export default function ManageAssistantsPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Falló al eliminar al asistente.');
       
-      setNotification({ message: 'Asistente eliminado exitosamente.', type: 'success' });
-      setAssistantToDelete(null);
       setAssistants(assistants.filter(a => a.id !== assistantToDelete.id));
+      setAssistantToDelete(null); // Cerrar modal de confirmación
+      setNotification({ message: 'Asistente eliminado exitosamente.', type: 'success' });
+
     } catch (error) {
+      setAssistantToDelete(null); // Cerrar modal de confirmación
       if (error instanceof Error) { setNotification({ message: error.message, type: 'error' }); } 
       else { setNotification({ message: 'Ocurrió un error inesperado.', type: 'error' }); }
     } finally {
@@ -197,7 +199,6 @@ export default function ManageAssistantsPage() {
 
   return (
     <>
-      {/* CAMBIO: Se renderiza el pop-up de notificación */}
       {notification && (
         <NotificationPopup 
           message={notification.message}
