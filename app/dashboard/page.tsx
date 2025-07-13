@@ -52,7 +52,7 @@ function Sidebar({ profile }: { profile: Profile | null }) {
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center px-6">
         {/* --- LOGO INTEGRADO --- */}
-        <Image src="/logo.png" alt="Logo del Sistema Médico" width={150} height={40} />
+        <Image src="/logo.png" alt="Logo del Sistema Médico" width={160} height={50} style={{ objectFit: "contain" }} />
       </div>
       <nav className="flex-grow px-4">
         <ul className="space-y-2">

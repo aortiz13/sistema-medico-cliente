@@ -53,8 +53,15 @@ function Sidebar({ profile }: { profile: Profile | null }) {
   
   return (
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
-      <div className="h-24 flex items-center px-6">
-        <Image src="/logo.png" alt="Logo del Sistema Médico" width={150} height={40} />
+      {/* CAMBIO: Se ajusta el contenedor y el estilo de la imagen del logo */}
+      <div className="h-24 flex items-center justify-center px-4">
+        <Image 
+          src="/logo.png" 
+          alt="Logo del Sistema Médico" 
+          width={160} 
+          height={50} 
+          style={{ objectFit: "contain" }} // Esta línea asegura que el logo se vea completo
+        />
       </div>
       <nav className="flex-grow px-4">
         <ul className="space-y-2">
@@ -160,7 +167,6 @@ export default function PatientProfilePage() {
     router.push('/');
   }
   
-  // CAMBIO: La firma de la función ahora acepta 'undefined' para resolver el error de tipo.
   const calculateAge = (dob: string | null | undefined) => {
     if (!dob) return 'N/A';
     const birthDate = new Date(dob);
