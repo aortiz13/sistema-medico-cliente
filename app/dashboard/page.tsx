@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, BarChart3, Bot
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, ChevronRight, FilePlus2, Activity
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -31,90 +31,84 @@ interface Consultation {
   patients: { full_name: string; } | null;
 }
 
-// --- Componentes de UI Rediseñados ---
-
+// --- Componente de la Barra Lateral ---
 function Sidebar({ profile }: { profile: Profile | null }) {
+  const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
+    const pathname = usePathname();
+    const isActive = pathname === href;
+
+    return (
+      <li>
+        <Link href={href} className={`flex items-center p-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-white shadow-soft' : 'text-text-secondary hover:bg-base-200 hover:text-text-primary'}`}>
+          <Icon size={22} />
+          <span className="ml-4 font-semibold">{children}</span>
+        </Link>
+      </li>
+    );
+  };
+  
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex-col flex-shrink-0 hidden md:flex">
-      <div className="h-20 flex items-center px-8">
-        <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
+    <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
+      <div className="h-24 flex items-center px-6">
+        <div className="w-full h-12 bg-base-200 rounded-lg flex items-center justify-center">
+          <span className="text-sm text-text-secondary">Tu Logo Aquí</span>
+        </div>
       </div>
-      <nav className="flex-grow px-6">
+      <nav className="flex-grow px-4">
         <ul className="space-y-2">
-          <li>
-            <Link href="/dashboard" className="flex items-center p-3 rounded-lg text-white bg-blue-600 font-semibold shadow-md">
-              <LayoutDashboard size={20} />
-              <span className="ml-4">Panel Principal</span>
-            </Link>
-          </li>
-          <li>
-            <Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-              <Search size={20} />
-              <span className="ml-4">Todas las Consultas</span>
-            </Link>
-          </li>
+          <NavLink href="/dashboard" icon={LayoutDashboard}>Panel Principal</NavLink>
+          <NavLink href="/dashboard/all-consultations" icon={Search}>Consultas</NavLink>
           {profile?.role === 'doctor' && (
             <>
-              <li>
-                <Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                  <Users size={20} />
-                  <span className="ml-4">Gestionar Asistentes</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/dashboard/ai-settings" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                  <Bot size={20} />
-                  <span className="ml-4">Plantilla de IA</span>
-                </Link>
-              </li>
+              <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
+              <NavLink href="/dashboard/ai-settings" icon={Bot}>Plantilla IA</NavLink>
             </>
           )}
         </ul>
       </nav>
-      <div className="p-6 border-t border-gray-200">
-        <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <LifeBuoy size={20} />
-          <span className="ml-4">Ayuda y Soporte</span>
+      <div className="p-4 border-t border-base-300">
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
+          <LifeBuoy size={22} />
+          <span className="ml-4 font-semibold">Ayuda</span>
         </a>
-        <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <Settings size={20} />
-          <span className="ml-4">Configuración</span>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
+          <Settings size={22} />
+          <span className="ml-4 font-semibold">Configuración</span>
         </a>
       </div>
     </aside>
   );
 }
 
+// --- Componente de la Cabecera ---
 function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () => void }) {
   return (
-    <header className="bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10 py-4 px-6 md:py-6 md:px-8">
+    <header className="bg-base-100/80 backdrop-blur-sm sticky top-0 z-10 py-5 px-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-gray-800">Bienvenido, {profile?.full_name?.split(' ')[0]}</h2>
-          <p className="text-sm text-gray-500 hidden md:block">Aquí tienes el resumen de tu actividad.</p>
-        </div>
-        <div className="flex items-center space-x-4 md:space-x-6">
-          <div className="relative hidden md:block">
+        <h1 className="text-2xl font-bold text-text-primary">Panel Principal</h1>
+        <div className="flex items-center space-x-5">
+          <div className="relative">
             <input 
               type="text"
               placeholder="Buscar..."
-              className="w-full md:w-72 p-2 pl-10 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-72 p-2.5 pl-10 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
           </div>
-          <button className="p-2 rounded-full hover:bg-gray-200">
-            <Bell size={22} className="text-gray-600" />
+          <button className="relative p-2 text-text-secondary rounded-full hover:bg-base-200 hover:text-text-primary transition-colors">
+            <Bell size={24} />
+            <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-accent"></span>
           </button>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+          <div className="flex items-center space-x-3 border-l border-base-300 pl-5">
+            <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg">
               {profile?.full_name?.charAt(0) || 'U'}
             </div>
-            <div className="hidden md:block">
-              <p className="font-semibold text-gray-800">{profile?.full_name}</p>
-              <p className="text-xs text-gray-500 capitalize">{profile?.role}</p>
+            <div>
+              <p className="font-bold text-text-primary">{profile?.full_name}</p>
+              <p className="text-xs text-text-secondary capitalize">{profile?.role}</p>
             </div>
-            <button onClick={onLogout} title="Cerrar Sesión" className="p-2 text-gray-500 hover:text-red-600">
-              <LogOut size={20} />
+            <button onClick={onLogout} title="Cerrar Sesión" className="p-2 text-text-secondary hover:text-accent transition-colors">
+              <LogOut size={22} />
             </button>
           </div>
         </div>
@@ -123,20 +117,22 @@ function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () =
   )
 }
 
+// --- Componente de Tarjeta de Estadísticas ---
 function StatCard({ title, value, icon: Icon, color }: { title: string, value: string | number, icon: React.ElementType, color: string }) {
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4">
-      <div className={`p-3 rounded-full ${color}`}>
-        <Icon size={20} className="md:size-24 text-white" />
+    <div className="bg-base-100 p-6 rounded-xl border border-base-300 shadow-soft flex items-center space-x-5">
+      <div className={`p-4 rounded-lg ${color}`}>
+        <Icon size={28} className="text-white" />
       </div>
       <div>
-        <p className="text-sm text-gray-500">{title}</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-800">{value}</p>
+        <p className="text-sm font-semibold text-text-secondary">{title}</p>
+        <p className="text-3xl font-bold text-text-primary">{value}</p>
       </div>
     </div>
   )
 }
 
+// NUEVO: Se añade la función que faltaba
 function formatClinicalNoteFromJSON(data: any): string {
   if (!data) return "No se pudo generar la nota clínica.";
 
@@ -151,7 +147,9 @@ function formatClinicalNoteFromJSON(data: any): string {
   return note;
 }
 
+
 export default function Dashboard() {
+  // --- Lógica y Estados (sin cambios funcionales) ---
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null);
   const [patients, setPatients] = useState<Patient[]>([])
@@ -166,7 +164,6 @@ export default function Dashboard() {
   const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
   
-  // NUEVO: Estado para el tipo de consulta
   const [consultationType, setConsultationType] = useState('new_patient');
 
   const [isRecording, setIsRecording] = useState(false)
@@ -196,17 +193,14 @@ export default function Dashboard() {
     const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false })
     if (error) console.error("Error al cargar pacientes:", error); else setPatients(data || [])
   }
-
   const loadConsultations = async () => {
-    const { data, error } = await supabase.from('consultations').select(`*, patients!inner(full_name)`).order('created_at', { ascending: false }).limit(20)
+    const { data, error } = await supabase.from('consultations').select(`*, patients!inner(full_name)`).order('created_at', { ascending: false }).limit(5)
     if(error) console.error("Error al cargar consultas:", error); else setConsultations(data || [])
   }
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
   }
-
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPatientName || !user) {
@@ -234,7 +228,6 @@ export default function Dashboard() {
       await loadPatients();
     }
   };
-
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -253,15 +246,12 @@ export default function Dashboard() {
       setAudioBlob(null);
     } catch { alert('Error al acceder al micrófono') }
   }
-
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false)
   }
-
-  // CAMBIO: La función ahora envía el tipo de consulta a la API
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
@@ -272,7 +262,7 @@ export default function Dashboard() {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
       formData.append('patientId', selectedPatient)
-      formData.append('consultationType', consultationType) // Se añade el tipo
+      formData.append('consultationType', consultationType)
 
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
       
@@ -336,133 +326,124 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div className="h-screen bg-gray-50 flex items-center justify-center">Cargando...</div>
+    return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>
   }
 
   return (
-    <div className="h-screen flex bg-gray-50 overflow-hidden">
+    <>
       {isPatientModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md relative">
-            <button onClick={() => setIsPatientModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors"><X size={24} /></button>
-            <h2 className="text-2xl font-bold mb-6">Nuevo Paciente</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+          <div className="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-md relative">
+            <button onClick={() => setIsPatientModalOpen(false)} className="absolute top-4 right-4 text-text-secondary hover:text-accent transition-colors"><X size={24} /></button>
+            <h2 className="text-2xl font-bold mb-6 text-text-primary">Nuevo Paciente</h2>
             <form onSubmit={handleCreatePatient}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                  <input type="text" value={newPatientName} onChange={(e) => setNewPatientName(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: Carlos Sánchez" required />
+                  <label className="block text-sm font-semibold text-text-secondary mb-1">Nombre Completo</label>
+                  <input type="text" value={newPatientName} onChange={(e) => setNewPatientName(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ej: Carlos Sánchez" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono (Opcional)</label>
-                  <input type="tel" value={newPatientPhone} onChange={(e) => setNewPatientPhone(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: 11-2233-4455" />
+                  <label className="block text-sm font-semibold text-text-secondary mb-1">Teléfono (Opcional)</label>
+                  <input type="tel" value={newPatientPhone} onChange={(e) => setNewPatientPhone(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ej: 11-2233-4455" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
-                  <input type="email" value={newPatientEmail} onChange={(e) => setNewPatientEmail(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ejemplo@correo.com" />
+                  <label className="block text-sm font-semibold text-text-secondary mb-1">Email (Opcional)</label>
+                  <input type="email" value={newPatientEmail} onChange={(e) => setNewPatientEmail(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="ejemplo@correo.com" />
                 </div>
               </div>
               <div className="mt-8 flex justify-end space-x-4">
-                <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-4 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
-                <button type="submit" disabled={isSavingPatient} className="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 transition-colors">{isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}</button>
+                <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-5 py-2.5 rounded-lg text-text-primary bg-base-200 hover:bg-base-300 font-semibold transition-colors">Cancelar</button>
+                <button type="submit" disabled={isSavingPatient} className="px-5 py-2.5 rounded-lg text-white bg-primary hover:bg-primary-light disabled:bg-gray-400 font-semibold transition-colors shadow-soft">{isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <Sidebar profile={profile} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header profile={profile} onLogout={handleLogout} />
+      <div className="h-screen flex bg-base-200 overflow-hidden">
+        <Sidebar profile={profile} />
         
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-500" />
-            <StatCard title="Consultas Hoy" value="12" icon={FileText} color="bg-green-500" />
-            <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
-          </div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header profile={profile} onLogout={handleLogout} />
+          
+          <main className="flex-1 p-8 overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-400" />
+              <StatCard title="Consultas Hoy" value="12" icon={Activity} color="bg-green-500" />
+              <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
+              <StatCard title="Tareas Pendientes" value="3" icon={FilePlus2} color="bg-purple-500" />
+            </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center"><Mic className="w-6 h-6 mr-3 text-blue-600" />Nueva Consulta</h2>
-                <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
-                  <UserPlus size={16} />
-                  <span>Nuevo Paciente</span>
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-600 mb-2">1. Tipo de Consulta</label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input type="radio" name="consultationType" value="new_patient" checked={consultationType === 'new_patient'} onChange={(e) => setConsultationType(e.target.value)} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" />
-                    <span className="ml-2 text-sm text-gray-700">Primera Vez (Historia Clínica)</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input type="radio" name="consultationType" value="follow_up" checked={consultationType === 'follow_up'} onChange={(e) => setConsultationType(e.target.value)} className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" />
-                    <span className="ml-2 text-sm text-gray-700">Seguimiento (Nota SOAP)</span>
-                  </label>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-soft border border-base-300 p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-text-primary flex items-center"><Mic className="w-6 h-6 mr-3 text-primary" />Nueva Consulta</h2>
+                  <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-light transition-colors shadow-soft">
+                    <UserPlus size={16} />
+                    <span className="font-semibold">Nuevo Paciente</span>
+                  </button>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">2. Seleccionar Paciente</label>
-                  <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Seleccionar...</option>
-                    {patients.map((patient) => (
-                      <option key={patient.id} value={patient.id}>{patient.full_name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">3. Grabar Audio</label>
-                  <div className="flex space-x-3">
-                    {!isRecording ? (
-                      <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-red-500 text-white px-5 py-3 rounded-lg hover:bg-red-600 disabled:bg-gray-300 transition-colors shadow-sm"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>
-                    ) : (
-                      <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-sm"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>
-                    )}
-                    {audioBlob && (
-                      <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-blue-500 text-white px-5 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors shadow-sm"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>
-                    )}
+                <div className="bg-base-200 p-4 rounded-lg">
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-text-secondary mb-2">1. Tipo de Consulta</label>
+                    <div className="flex space-x-4">
+                      <label className="flex items-center cursor-pointer"><input type="radio" name="consultationType" value="new_patient" checked={consultationType === 'new_patient'} onChange={(e) => setConsultationType(e.target.value)} className="h-4 w-4 text-primary border-gray-300 focus:ring-primary" /><span className="ml-2 text-sm text-text-primary">Primera Vez</span></label>
+                      <label className="flex items-center cursor-pointer"><input type="radio" name="consultationType" value="follow_up" checked={consultationType === 'follow_up'} onChange={(e) => setConsultationType(e.target.value)} className="h-4 w-4 text-primary border-gray-300 focus:ring-primary" /><span className="ml-2 text-sm text-text-primary">Seguimiento</span></label>
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-text-secondary mb-2">2. Seleccionar Paciente</label>
+                      <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">Seleccionar...</option>
+                        {patients.map((patient) => (
+                          <option key={patient.id} value={patient.id}>{patient.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text-secondary mb-2">3. Grabar Audio</label>
+                      <div className="flex space-x-3">
+                        {!isRecording ? (
+                          <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-accent text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-300 transition-all shadow-soft"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>
+                        ) : (
+                          <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>
+                        )}
+                        {audioBlob && (
+                          <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-light disabled:bg-gray-300 transition-colors shadow-soft"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {isRecording && <div className="text-center text-accent font-medium pt-4">🔴 Grabando...</div>}
+                  {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
                 </div>
               </div>
-              {isRecording && <div className="text-center text-red-500 font-medium pt-4">🔴 Grabando...</div>}
-              {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
-            </div>
 
-            <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col" style={{height: '500px'}}>
-              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center flex-shrink-0"><FileText className="w-6 h-6 mr-3 text-blue-600" />Consultas Recientes</h2>
-              <div className="space-y-3 flex-1 overflow-y-auto pr-2">
-                {consultations.length === 0 ? <p className="text-gray-500 text-center py-8">No hay consultas aún.</p> : (
-                  consultations.map((consultation) => (
-                    <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
-                      <div className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all">
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-semibold text-gray-800 text-sm">
-                            <Link 
-                              href={`/dashboard/patient/${consultation.patient_id}`}
-                              className="hover:underline text-blue-600"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {consultation.patients?.full_name || 'Paciente desconocido'}
-                            </Link>
-                          </h3>
-                          <p className="text-xs text-gray-500">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
+              <div className="lg:col-span-1 bg-base-100 rounded-xl shadow-soft border border-base-300 p-6 flex flex-col">
+                <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center flex-shrink-0"><FileText className="w-6 h-6 mr-3 text-primary" />Consultas Recientes</h2>
+                <div className="space-y-3 flex-1 overflow-y-auto -mr-3 pr-3">
+                  {consultations.length === 0 ? <p className="text-text-secondary text-center py-8">No hay consultas aún.</p> : (
+                    consultations.map((consultation) => (
+                      <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
+                        <div className="border border-base-300 rounded-lg p-3 cursor-pointer hover:bg-base-200 hover:border-secondary transition-all">
+                          <div className="flex justify-between items-start">
+                            <p className="font-bold text-text-primary text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
+                            <p className="text-xs text-text-secondary">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
+                          </div>
+                          <p className="mt-1 text-sm text-text-secondary truncate">{consultation.formatted_notes}</p>
                         </div>
-                        <p className="mt-1 text-xs text-gray-600 truncate">{consultation.formatted_notes}</p>
-                      </div>
-                    </Link>
-                  ))
-                )}
+                      </Link>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
