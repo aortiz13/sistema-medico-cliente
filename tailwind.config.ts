@@ -9,30 +9,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Tu paleta de colores personalizada
+        // Paleta de colores basada en tu logo
         primary: {
-          DEFAULT: "#2E53A1", // Azul principal
-          light: "#4A6FBF",
+          DEFAULT: "#39B6E3", // Azul del logo
+          dark: "#2E9AC4",   // Un tono más oscuro para hover
         },
-        secondary: "#39B6E3", // Azul secundario/turquesa
-        accent: "#E74C3C", // Rojo para alertas y acciones importantes
+        secondary: "#2E53A1", // Azul oscuro para acentos
+        accent: {
+          DEFAULT: "#E74C3C", // Rojo para alertas
+          hover: "#C0392B",
+        },
+        success: "#2ECC71", // Verde para estados de éxito
+        warning: "#F39C12", // Naranja para advertencias
         
-        // Colores de soporte para fondos y texto
-        'base-100': "#FFFFFF", // Blanco puro
-        'base-200': "#F8F9FA", // Gris muy claro para fondos
-        'base-300': "#E9ECEF", // Gris para bordes
+        // Colores de soporte para la interfaz
+        'base-100': "#FFFFFF", // Blanco puro para fondos de tarjetas
+        'base-200': "#F8F9FA", // Gris muy claro para el fondo principal
+        'base-300': "#E9ECEF", // Gris para bordes sutiles
         'text-primary': "#212529", // Negro suave para texto principal
-        'text-secondary': "#6C757D", // Gris para texto secundario
+        'text-secondary': "#6C757D", // Gris para texto secundario y descriptivo
       },
       fontFamily: {
-        // Se establece 'Inter' como la fuente principal para un look moderno
         sans: ['Inter', 'sans-serif'],
       },
       boxShadow: {
-        // Sombras sutiles para dar profundidad
         'soft': '0 4px 12px rgba(0, 0, 0, 0.05)',
         'medium': '0 8px 24px rgba(0, 0, 0, 0.08)',
       },
+      borderRadius: {
+        'xl': '1rem', // Bordes más redondeados para un look moderno
+      }
     },
   },
   plugins: [],

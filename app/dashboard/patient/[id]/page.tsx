@@ -88,17 +88,19 @@ function Sidebar({ profile }: { profile: Profile | null }) {
     </aside>
   );
 }
+
 function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () => void }) {
   return (
     <header className="bg-base-100/80 backdrop-blur-sm sticky top-0 z-10 py-5 px-8">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-text-primary">Ficha del Paciente</h1>
         <div className="flex items-center space-x-5">
           <button className="relative p-2 text-text-secondary rounded-full hover:bg-base-200 hover:text-text-primary transition-colors">
             <Bell size={24} />
             <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-accent"></span>
           </button>
           <div className="flex items-center space-x-3 border-l border-base-300 pl-5">
-            <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg">
+            <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">
               {profile?.full_name?.charAt(0) || 'U'}
             </div>
             <div>
@@ -121,7 +123,6 @@ export default function PatientProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isGeneratingHistory, setIsGeneratingHistory] = useState(false);
   const params = useParams();
   const router = useRouter();
@@ -261,7 +262,7 @@ export default function PatientProfilePage() {
             <div className="mb-8">
               <Link href="/dashboard/all-consultations" className="inline-flex items-center space-x-2 text-text-secondary hover:text-primary transition-colors">
                 <ArrowLeft className="w-5 h-5" />
-                <span>Volver a Consultas</span>
+                <span className="font-semibold">Volver a Consultas</span>
               </Link>
             </div>
 
@@ -283,7 +284,7 @@ export default function PatientProfilePage() {
                   <button
                     onClick={handleDownloadHistory}
                     disabled={isGeneratingHistory}
-                    className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-light disabled:bg-gray-400 transition-colors shadow-soft"
+                    className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark disabled:bg-gray-400 transition-colors shadow-soft"
                   >
                     <BookOpen className="w-5 h-5" />
                     <span className="font-semibold">{isGeneratingHistory ? 'Generando...' : 'Historial Completo'}</span>
@@ -298,11 +299,11 @@ export default function PatientProfilePage() {
                   <h2 className="text-xl font-bold text-text-primary mb-4">Información Médica Clave</h2>
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-sm font-semibold text-text-secondary flex items-center"><AlertTriangle className="w-4 h-4 mr-2 text-red-500"/>Alergias</h3>
+                      <h3 className="text-sm font-semibold text-text-secondary flex items-center"><AlertTriangle className="w-4 h-4 mr-2 text-accent"/>Alergias</h3>
                       <p className="text-text-primary mt-1 pl-6">{patient?.allergies || 'No se registran alergias.'}</p>
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-text-secondary flex items-center"><HeartPulse className="w-4 h-4 mr-2 text-yellow-500"/>Condiciones Crónicas</h3>
+                      <h3 className="text-sm font-semibold text-text-secondary flex items-center"><HeartPulse className="w-4 h-4 mr-2 text-warning"/>Condiciones Crónicas</h3>
                       <p className="text-text-primary mt-1 pl-6">{patient?.chronic_conditions || 'No se registran condiciones crónicas.'}</p>
                     </div>
                   </div>
@@ -327,7 +328,7 @@ export default function PatientProfilePage() {
                   ) : (
                     consultations.map(consultation => (
                       <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
-                        <div className="border border-base-300 rounded-lg p-4 cursor-pointer hover:bg-base-200 hover:border-secondary transition-all">
+                        <div className="border border-base-300 rounded-lg p-4 cursor-pointer hover:bg-base-200 hover:border-primary transition-all">
                           <div className="flex justify-between items-center mb-2">
                             <p className="font-semibold text-primary">Consulta del {new Date(consultation.created_at).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</p>
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Ver Detalle</span>
