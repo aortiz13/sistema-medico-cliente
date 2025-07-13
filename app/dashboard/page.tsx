@@ -4,9 +4,10 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image' // Se importa el componente de Imagen de Next.js
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, ChevronRight, FilePlus2, Activity
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, Activity
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -50,9 +51,8 @@ function Sidebar({ profile }: { profile: Profile | null }) {
   return (
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center px-6">
-        <div className="w-full h-12 bg-base-200 rounded-lg flex items-center justify-center">
-          <span className="text-sm text-text-secondary">Tu Logo Aquí</span>
-        </div>
+        {/* --- LOGO INTEGRADO --- */}
+        <Image src="/logo.png" alt="Logo del Sistema Médico" width={150} height={40} />
       </div>
       <nav className="flex-grow px-4">
         <ul className="space-y-2">
@@ -132,10 +132,8 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
   )
 }
 
-// NUEVO: Se añade la función que faltaba
 function formatClinicalNoteFromJSON(data: any): string {
   if (!data) return "No se pudo generar la nota clínica.";
-
   let note = `**NOTA CLÍNICA**\n\n`;
   note += `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
   note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
@@ -143,13 +141,11 @@ function formatClinicalNoteFromJSON(data: any): string {
   note += `**Diagnóstico:**\n${data.diagnostico || 'No se menciona'}\n\n`;
   note += `**Solicitud de laboratorio y gabinete:**\n${data.solicitud_laboratorio_gabinete || 'No se menciona'}\n\n`;
   note += `**Tratamiento:**\n${data.tratamiento || 'No se menciona'}\n\n`;
-  
   return note;
 }
 
 
 export default function Dashboard() {
-  // --- Lógica y Estados (sin cambios funcionales) ---
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null);
   const [patients, setPatients] = useState<Patient[]>([])
@@ -367,11 +363,10 @@ export default function Dashboard() {
           <Header profile={profile} onLogout={handleLogout} />
           
           <main className="flex-1 p-8 overflow-y-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-400" />
               <StatCard title="Consultas Hoy" value="12" icon={Activity} color="bg-green-500" />
               <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
-              <StatCard title="Tareas Pendientes" value="3" icon={FilePlus2} color="bg-purple-500" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
