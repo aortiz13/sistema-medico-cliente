@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -12,7 +12,8 @@ import {
 
 // --- Interfaces ---
 interface Profile { id: string; full_name: string; role: string; }
-interface Assistant { id: string; full_name: string; patients: { count: number }[]; }
+// CAMBIO: Se simplifica la interfaz del asistente
+interface Assistant { id: string; full_name: string; }
 
 // --- Componentes de UI ---
 function Sidebar({ profile }: { profile: Profile | null }) {
@@ -100,8 +101,12 @@ export default function ManageAssistantsPage() {
 
   const fetchAssistants = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('profiles').select(`id, full_name, patients (count)`).eq('role', 'asistente');
-    if (error) { setError("No se pudieron cargar los asistentes."); } 
+    // CAMBIO: Se simplifica la consulta para evitar conflictos con RLS
+    const { data, error } = await supabase.from('profiles').select(`id, full_name`).eq('role', 'asistente');
+    if (error) { 
+      console.error("Error fetching assistants:", error);
+      setError("No se pudieron cargar los asistentes."); 
+    } 
     else { setAssistants(data as Assistant[]); }
     setLoading(false);
   }
@@ -121,6 +126,8 @@ export default function ManageAssistantsPage() {
       alert('¡Invitación enviada exitosamente!');
       setNewAssistantName('');
       setNewAssistantEmail('');
+      // Refrescar la lista después de invitar
+      fetchAssistants();
     } catch (error) {
       if (error instanceof Error) { alert('Error: ' + error.message); } 
       else { alert('Ocurrió un error inesperado.'); }
@@ -211,7 +218,8 @@ export default function ManageAssistantsPage() {
                         <div className="p-3 bg-blue-100 rounded-full mr-4"><UserIcon className="w-6 h-6 text-secondary" /></div>
                         <div>
                           <p className="font-bold text-lg text-text-primary">{assistant.full_name}</p>
-                          <p className="text-sm text-text-secondary">{assistant.patients[0].count} {assistant.patients[0].count === 1 ? 'paciente' : 'pacientes'} a cargo</p>
+                          {/* CAMBIO: Se elimina el contador de pacientes */}
+                          <p className="text-sm text-text-secondary">Asistente</p>
                         </div>
                       </div>
                       <button onClick={() => setAssistantToDelete(assistant)} className="flex items-center space-x-2 text-sm text-accent hover:text-accent-hover p-2 rounded-md hover:bg-red-100">
