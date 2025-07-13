@@ -39,7 +39,7 @@ interface Consultation {
 function Sidebar({ profile }: { profile: Profile | null }) {
   const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
     const pathname = usePathname();
-    const isActive = pathname === href;
+    const isActive = pathname === href || (href.startsWith('/dashboard/patient') && pathname.startsWith('/dashboard/patient'));
 
     return (
       <li>
@@ -55,12 +55,7 @@ function Sidebar({ profile }: { profile: Profile | null }) {
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center justify-center px-6">
         <div className="relative w-40 h-12">
-          <Image
-            src="/logo.png"
-            alt="Logo del Sistema Médico"
-            fill
-            style={{ objectFit: "contain" }}
-          />
+          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} />
         </div>
       </div>
       <nav className="flex-grow px-4">
@@ -342,3 +337,8 @@ export default function PatientProfilePage() {
               </div>
             </div>
           </div>
+        </main>
+      </div>
+    </div>
+  )
+}
