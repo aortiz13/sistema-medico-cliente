@@ -342,8 +342,3 @@ export default function PatientProfilePage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
-  )
-}

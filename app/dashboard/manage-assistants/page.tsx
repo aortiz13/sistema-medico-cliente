@@ -7,12 +7,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { 
   Users, Trash2, ShieldAlert, User as UserIcon, LogOut, 
-  LayoutDashboard, Settings, Bell, LifeBuoy, Bot, Search, Send, UserPlus, X
+  LayoutDashboard, Settings, Bell, LifeBuoy, Bot, Search, Send, UserPlus, X,
+  CheckCircle, AlertCircle // Se importan nuevos íconos para el pop-up
 } from 'lucide-react'
 
 // --- Interfaces ---
 interface Profile { id: string; full_name: string; role: string; }
-// CAMBIO: Se simplifica la interfaz del asistente
 interface Assistant { id: string; full_name: string; }
 
 // --- Componentes de UI ---
@@ -72,6 +72,35 @@ function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () =
   )
 }
 
+// NUEVO: Componente de Pop-up de Notificación
+function NotificationPopup({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void; }) {
+  const isSuccess = type === 'success';
+  const bgColor = isSuccess ? 'bg-green-100' : 'bg-red-100';
+  const textColor = isSuccess ? 'text-success' : 'text-accent';
+  const Icon = isSuccess ? CheckCircle : AlertCircle;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
+        <div className={`mx-auto flex items-center justify-center h-16 w-16 rounded-full ${bgColor} mb-4`}>
+          <Icon className={`h-8 w-8 ${textColor}`} />
+        </div>
+        <h2 className="text-xl font-bold text-text-primary mb-2">
+          {isSuccess ? 'Éxito' : 'Error'}
+        </h2>
+        <p className="text-text-secondary mb-6">{message}</p>
+        <button
+          onClick={onClose}
+          className="w-full px-6 py-2.5 rounded-lg text-white bg-primary hover:bg-primary-dark font-semibold transition-colors"
+        >
+          Aceptar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 export default function ManageAssistantsPage() {
   const [assistants, setAssistants] = useState<Assistant[]>([])
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -82,6 +111,8 @@ export default function ManageAssistantsPage() {
   const [isInviting, setIsInviting] = useState(false);
   const [newAssistantName, setNewAssistantName] = useState('');
   const [newAssistantEmail, setNewAssistantEmail] = useState('');
+  // NUEVO: Estado para manejar las notificaciones
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -101,7 +132,6 @@ export default function ManageAssistantsPage() {
 
   const fetchAssistants = async () => {
     setLoading(true);
-    // CAMBIO: Se simplifica la consulta para evitar conflictos con RLS
     const { data, error } = await supabase.from('profiles').select(`id, full_name`).eq('role', 'asistente');
     if (error) { 
       console.error("Error fetching assistants:", error);
@@ -123,14 +153,14 @@ export default function ManageAssistantsPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Falló al enviar la invitación.');
-      alert('¡Invitación enviada exitosamente!');
+      
+      setNotification({ message: '¡Invitación enviada exitosamente!', type: 'success' });
       setNewAssistantName('');
       setNewAssistantEmail('');
-      // Refrescar la lista después de invitar
       fetchAssistants();
     } catch (error) {
-      if (error instanceof Error) { alert('Error: ' + error.message); } 
-      else { alert('Ocurrió un error inesperado.'); }
+      if (error instanceof Error) { setNotification({ message: error.message, type: 'error' }); } 
+      else { setNotification({ message: 'Ocurrió un error inesperado.', type: 'error' }); }
     } finally {
       setIsInviting(false);
     }
@@ -147,12 +177,13 @@ export default function ManageAssistantsPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Falló al eliminar al asistente.');
-      alert('Asistente eliminado exitosamente.');
+      
+      setNotification({ message: 'Asistente eliminado exitosamente.', type: 'success' });
       setAssistantToDelete(null);
       setAssistants(assistants.filter(a => a.id !== assistantToDelete.id));
     } catch (error) {
-      if (error instanceof Error) { alert('Error: ' + error.message); } 
-      else { alert('Ocurrió un error inesperado.'); }
+      if (error instanceof Error) { setNotification({ message: error.message, type: 'error' }); } 
+      else { setNotification({ message: 'Ocurrió un error inesperado.', type: 'error' }); }
     } finally {
       setIsDeleting(false);
     }
@@ -166,6 +197,15 @@ export default function ManageAssistantsPage() {
 
   return (
     <>
+      {/* CAMBIO: Se renderiza el pop-up de notificación */}
+      {notification && (
+        <NotificationPopup 
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
       {assistantToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
           <div className="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
@@ -177,7 +217,7 @@ export default function ManageAssistantsPage() {
             <p className="text-text-secondary mb-6">Todos sus pacientes serán reasignados a tu cuenta. Esta acción no se puede deshacer.</p>
             <div className="flex justify-center space-x-4">
               <button onClick={() => setAssistantToDelete(null)} disabled={isDeleting} className="px-6 py-2.5 rounded-lg text-text-primary bg-base-200 hover:bg-base-300 font-semibold">Cancelar</button>
-              <button onClick={confirmDelete} disabled={isDeleting} className="px-6 py-2.5 rounded-lg text-white bg-accent hover:bg-accent-hover disabled:opacity-50 font-semibold">{isDeleting ? 'Eliminando...' : 'Sí, eliminar'}</button>
+              <button onClick={confirmDelete} disabled={isDeleting} className="px-6 py-2.5 rounded-lg text-white bg-accent hover:opacity-90 disabled:opacity-50 font-semibold">{isDeleting ? 'Eliminando...' : 'Sí, eliminar'}</button>
             </div>
           </div>
         </div>
@@ -218,7 +258,6 @@ export default function ManageAssistantsPage() {
                         <div className="p-3 bg-blue-100 rounded-full mr-4"><UserIcon className="w-6 h-6 text-secondary" /></div>
                         <div>
                           <p className="font-bold text-lg text-text-primary">{assistant.full_name}</p>
-                          {/* CAMBIO: Se elimina el contador de pacientes */}
                           <p className="text-sm text-text-secondary">Asistente</p>
                         </div>
                       </div>
