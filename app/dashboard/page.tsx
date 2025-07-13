@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image' // Se importa el componente de Imagen de Next.js
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, Activity
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, ChevronRight, FilePlus2, Activity
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -50,9 +50,16 @@ function Sidebar({ profile }: { profile: Profile | null }) {
   
   return (
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
-      <div className="h-24 flex items-center px-6">
-        {/* --- LOGO INTEGRADO --- */}
-        <Image src="/logo.png" alt="Logo del Sistema Médico" width={160} height={50} style={{ objectFit: "contain" }} />
+      {/* CAMBIO: Se usa un contenedor relativo para el logo */}
+      <div className="h-24 flex items-center justify-center px-6">
+        <div className="relative w-40 h-12">
+          <Image
+            src="/logo.png"
+            alt="Logo del Sistema Médico"
+            fill
+            style={{ objectFit: "contain" }}
+          />
+        </div>
       </div>
       <nav className="flex-grow px-4">
         <ul className="space-y-2">
