@@ -37,6 +37,7 @@ function Sidebar({ profile }: { profile: Profile | null }) {
   const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
     const pathname = usePathname();
     const isActive = pathname === href;
+
     return (
       <li>
         <Link href={href} className={`flex items-center p-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-white shadow-soft' : 'text-text-secondary hover:bg-base-200 hover:text-text-primary'}`}>
@@ -51,7 +52,12 @@ function Sidebar({ profile }: { profile: Profile | null }) {
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center justify-center px-6">
         <div className="relative w-40 h-12">
-          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} />
+          <Image 
+            src="/logo.png" 
+            alt="Logo del Sistema Médico" 
+            fill 
+            style={{ objectFit: "contain" }} 
+          />
         </div>
       </div>
       <nav className="flex-grow px-4">
