@@ -5,8 +5,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// PLANTILLA 1: Para Pacientes Nuevos (Historia Clínica)
-const NEW_PATIENT_PROMPT = `
+// Plantilla específica para EXTRACCIÓN de datos en JSON
+const JSON_EXTRACTION_PROMPT = `
 Eres un asistente médico experto en análisis de datos. Tu única tarea es analizar la transcripción de una consulta y extraer información específica. Debes devolver la respuesta EXCLUSIVAMENTE en formato JSON.
 La estructura del JSON debe ser:
 {
@@ -24,42 +24,27 @@ La estructura del JSON debe ser:
 Si no encuentras información para un campo, usa un string vacío "" o null. Tu respuesta DEBE ser solo el JSON.
 `;
 
-// PLANTILLA 2: Para Consultas de Seguimiento (Nota SOAP)
-const FOLLOW_UP_PROMPT = `
-Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP. Debes rellenar TODOS los siguientes campos. Si no encuentras información para un campo, escribe "No se menciona".
-
-**NOTA DE EVOLUCIÓN (SOAP)**
-
-**S. Subjetiva (sintomatología):** (Describe los síntomas que el paciente relata)
-
-**O. Objetiva (signos y laboratorio):** (Describe los hallazgos de la exploración física, signos vitales y resultados de laboratorio relevantes)
-
-**A. Análisis:** (Tu análisis de la situación actual del paciente basado en lo subjetivo y objetivo)
-
-**P. Plan:** (Describe los pasos a seguir: cambios en el tratamiento, nuevos estudios, próxima cita, etc.)
-
-**Diagnóstico:** (Lista de diagnósticos activos o actualizados)
-**Tratamiento:** (Lista de medicamentos y/o tratamientos actuales)
+// Plantilla específica para REDACCIÓN de la nota clínica
+const CLINICAL_NOTE_PROMPT = `
+Eres un asistente médico altamente calificado. Tu tarea es analizar la transcripción de una consulta médica y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español. Usa los siguientes títulos en negrita:
+- Padecimiento actual
+- Tratamiento previo
+- Exploración física
+- Diagnóstico
+- Solicitud de laboratorio y gabinete
+- Tratamiento
+Si no hay información para un título, escribe "No se menciona".
 `;
-
-function formatClinicalNoteFromJSON(data: any): string {
-    if (!data) return "No se pudo generar la nota clínica.";
-    let note = `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
-    note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
-    note += `**Exploración física:**\n${data.exploracion_fisica || 'No se menciona'}\n\n`;
-    note += `**Diagnóstico:**\n${data.diagnostico || 'No se menciona'}\n\n`;
-    note += `**Solicitud de laboratorio y gabinete:**\n${data.solicitud_laboratorio_gabinete || 'No se menciona'}\n\n`;
-    note += `**Tratamiento:**\n${data.tratamiento || 'No se menciona'}`;
-    return note;
-}
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const audioFile = formData.get('audio') as File;
     const consultationType = formData.get('consultationType') as string;
+    // CAMBIO: Se añade la recepción del patientId que faltaba
     const patientId = formData.get('patientId') as string;
 
+    // CAMBIO: Se añade patientId a la validación
     if (!audioFile || !consultationType || !patientId) {
       return NextResponse.json({ success: false, error: 'Faltan datos requeridos (audio, tipo de consulta o ID de paciente).' }, { status: 400 })
     }
@@ -75,8 +60,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'El audio estaba vacío o era inaudible.' });
     }
 
+    // Usamos el prompt correcto según el tipo de consulta
     const isNewPatient = consultationType === 'new_patient';
-    const systemPrompt = isNewPatient ? NEW_PATIENT_PROMPT : FOLLOW_UP_PROMPT;
+    const systemPrompt = isNewPatient ? JSON_EXTRACTION_PROMPT : CLINICAL_NOTE_PROMPT;
     const responseFormat = isNewPatient ? { type: "json_object" } : { type: "text" };
 
     const completion = await openai.chat.completions.create({
@@ -88,7 +74,7 @@ export async function POST(request: NextRequest) {
       response_format: responseFormat,
       temperature: 0.2,
       max_tokens: 2000,
-    });
+    })
 
     const aiResponseContent = completion.choices[0]?.message?.content;
     if (!aiResponseContent) {
@@ -101,12 +87,14 @@ export async function POST(request: NextRequest) {
     if (isNewPatient) {
       try {
         structuredData = JSON.parse(aiResponseContent);
-        clinicalNote = formatClinicalNoteFromJSON(structuredData); 
+        // La nota clínica se construirá en el frontend
+        clinicalNote = "Historia Clínica generada a partir de datos estructurados."; 
       } catch (e) {
         console.error("Fallo al parsear JSON:", e);
         clinicalNote = "Error: La IA no devolvió un JSON válido. Contenido recibido:\n" + aiResponseContent;
       }
     } else {
+      // Para notas de seguimiento, la respuesta es el texto directo
       clinicalNote = aiResponseContent;
     }
 
