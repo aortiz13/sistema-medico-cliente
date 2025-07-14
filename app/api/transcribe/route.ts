@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { createClient } from '@supabase/supabase-js'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Plantilla específica para EXTRACCIÓN de datos en JSON
-const JSON_EXTRACTION_PROMPT = `
+// PLANTILLA 1: Para Pacientes Nuevos (Historia Clínica)
+// Esta plantilla está optimizada para devolver un JSON estructurado.
+const NEW_PATIENT_PROMPT = `
 Eres un asistente médico experto en análisis de datos. Tu única tarea es analizar la transcripción de una consulta y extraer información específica. Debes devolver la respuesta EXCLUSIVAMENTE en formato JSON.
 La estructura del JSON debe ser:
 {
@@ -25,16 +25,23 @@ La estructura del JSON debe ser:
 Si no encuentras información para un campo, usa un string vacío "" o null. Tu respuesta DEBE ser solo el JSON.
 `;
 
-// Plantilla específica para REDACCIÓN de la nota clínica
-const CLINICAL_NOTE_PROMPT = `
-Eres un asistente médico altamente calificado. Tu tarea es analizar la transcripción de una consulta médica y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español. Usa los siguientes títulos en negrita:
-- Padecimiento actual
-- Tratamiento previo
-- Exploración física
-- Diagnóstico
-- Solicitud de laboratorio y gabinete
-- Tratamiento
-Si no hay información para un título, escribe "No se menciona".
+// PLANTILLA 2: Para Consultas de Seguimiento (Nota SOAP)
+// Esta plantilla está optimizada para devolver texto plano bien formateado.
+const FOLLOW_UP_PROMPT = `
+Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP. Debes rellenar TODOS los siguientes campos. Si no encuentras información para un campo, escribe "No se menciona".
+
+**NOTA DE EVOLUCIÓN (SOAP)**
+
+**S. Subjetiva (sintomatología):** (Describe los síntomas que el paciente relata)
+
+**O. Objetiva (signos y laboratorio):** (Describe los hallazgos de la exploración física, signos vitales y resultados de laboratorio relevantes)
+
+**A. Análisis:** (Tu análisis de la situación actual del paciente basado en lo subjetivo y objetivo)
+
+**P. Plan:** (Describe los pasos a seguir: cambios en el tratamiento, nuevos estudios, próxima cita, etc.)
+
+**Diagnóstico:** (Lista de diagnósticos activos o actualizados)
+**Tratamiento:** (Lista de medicamentos y/o tratamientos actuales)
 `;
 
 export async function POST(request: NextRequest) {
@@ -59,50 +66,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'El audio estaba vacío o era inaudible.' });
     }
 
+    // Seleccionar el prompt y el formato de respuesta según el tipo de consulta
+    const isNewPatient = consultationType === 'new_patient';
+    const systemPrompt = isNewPatient ? NEW_PATIENT_PROMPT : FOLLOW_UP_PROMPT;
+    const responseFormat = isNewPatient ? { type: "json_object" } : { type: "text" };
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo-1106', // Modelo optimizado para JSON
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Transcripción: "${transcriptText}"` }
+      ],
+      response_format: responseFormat,
+      temperature: 0.2,
+      max_tokens: 2000,
+    });
+
+    const aiResponseContent = completion.choices[0]?.message?.content;
+    if (!aiResponseContent) {
+      throw new Error("La IA no devolvió contenido.");
+    }
+
     let structuredData = null;
     let clinicalNote = '';
 
-    // --- LÓGICA DE DOS PASOS ---
-    if (consultationType === 'new_patient') {
-      // 1. Primera llamada para extraer el JSON
-      const jsonCompletion = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo-1106',
-        messages: [{ role: 'system', content: JSON_EXTRACTION_PROMPT }, { role: 'user', content: `Transcripción: "${transcriptText}"`}],
-        response_format: { type: "json_object" },
-        temperature: 0.1,
-      });
-      const aiJsonContent = jsonCompletion.choices[0]?.message?.content;
-      if (aiJsonContent) {
-        try {
-          structuredData = JSON.parse(aiJsonContent);
-        } catch (e) {
-          console.error("Fallo al parsear el JSON de extracción:", e);
-        }
+    if (isNewPatient) {
+      try {
+        structuredData = JSON.parse(aiResponseContent);
+        // La nota clínica se construirá en el frontend a partir del JSON
+        clinicalNote = "Historia Clínica generada a partir de datos estructurados."; 
+      } catch (e) {
+        console.error("Fallo al parsear JSON:", e);
+        // Si falla, la nota será el texto directo para depuración
+        clinicalNote = "Error: La IA no devolvió un JSON válido. Contenido recibido:\n" + aiResponseContent;
       }
-
-      // 2. Segunda llamada para redactar la nota
-      const noteCompletion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "system", content: CLINICAL_NOTE_PROMPT }, { role: "user", content: `Transcripción: "${transcriptText}"`}],
-        temperature: 0.5,
-      });
-      clinicalNote = noteCompletion.choices[0]?.message?.content?.trim() || 'No se pudo generar la nota clínica.';
-
-    } else { // Si es una nota de seguimiento (SOAP)
-      const { data: templateData } = await createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-        .from('ai_prompt_template')
-        .select('prompt_text')
-        .eq('template_type', 'follow_up')
-        .single();
-      
-      const soapPrompt = templateData?.prompt_text || 'Genera una nota SOAP.';
-      
-      const soapCompletion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "system", content: soapPrompt }, { role: "user", content: `Transcripción: "${transcriptText}"`}],
-        temperature: 0.5,
-      });
-      clinicalNote = soapCompletion.choices[0]?.message?.content?.trim() || 'No se pudo generar la nota de seguimiento.';
+    } else {
+      // Para notas de seguimiento, la respuesta es el texto directo
+      clinicalNote = aiResponseContent;
     }
 
     return NextResponse.json({
