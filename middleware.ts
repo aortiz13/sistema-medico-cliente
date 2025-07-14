@@ -2,9 +2,6 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Puesto de Control 1: Ver si el middleware se ejecuta
-  console.log(`Middleware: Ejecutándose para la ruta: ${request.nextUrl.pathname}`);
-  
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -33,18 +30,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  // Puesto de Control 2: Ver si se encontró un usuario
-  if (user) {
-    console.log(`Middleware: Usuario encontrado. ID: ${user.id}. Sesión refrescada.`);
-  } else {
-    console.log('Middleware: No se encontró un usuario en la sesión.');
-  }
+  // Esta línea es crucial: refresca la sesión del usuario en el servidor ANTES de que la petición llegue a la API.
+  await supabase.auth.getUser()
 
   return response
 }
 
+// Configuración para que el middleware se ejecute en todas las rutas excepto en los archivos estáticos.
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico).*)',
