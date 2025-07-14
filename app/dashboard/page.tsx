@@ -4,10 +4,10 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image' // Se importa el componente de Imagen de Next.js
+import Image from 'next/image'
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, ChevronRight, FilePlus2, Activity
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, Activity
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -50,14 +50,13 @@ function Sidebar({ profile }: { profile: Profile | null }) {
   
   return (
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
-      {/* CAMBIO: Se usa un contenedor relativo para el logo */}
       <div className="h-24 flex items-center justify-center px-6">
         <div className="relative w-40 h-12">
-          <Image
-            src="/logo.png"
-            alt="Logo del Sistema Médico"
-            fill
-            style={{ objectFit: "contain" }}
+          <Image 
+            src="/logo.png" 
+            alt="Logo del Sistema Médico" 
+            fill 
+            style={{ objectFit: "contain" }} 
           />
         </div>
       </div>
@@ -107,7 +106,7 @@ function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () =
             <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-accent"></span>
           </button>
           <div className="flex items-center space-x-3 border-l border-base-300 pl-5">
-            <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg">
+            <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">
               {profile?.full_name?.charAt(0) || 'U'}
             </div>
             <div>
@@ -356,7 +355,7 @@ export default function Dashboard() {
               </div>
               <div className="mt-8 flex justify-end space-x-4">
                 <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-5 py-2.5 rounded-lg text-text-primary bg-base-200 hover:bg-base-300 font-semibold transition-colors">Cancelar</button>
-                <button type="submit" disabled={isSavingPatient} className="px-5 py-2.5 rounded-lg text-white bg-primary hover:bg-primary-light disabled:bg-gray-400 font-semibold transition-colors shadow-soft">{isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}</button>
+                <button type="submit" disabled={isSavingPatient} className="px-5 py-2.5 rounded-lg text-white bg-secondary hover:opacity-90 disabled:bg-gray-400 font-semibold transition-colors shadow-soft">{isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}</button>
               </div>
             </form>
           </div>
@@ -373,14 +372,14 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-400" />
               <StatCard title="Consultas Hoy" value="12" icon={Activity} color="bg-green-500" />
-              <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-blue-500" />
+              <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-secondary" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
               <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-soft border border-base-300 p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-text-primary flex items-center"><Mic className="w-6 h-6 mr-3 text-primary" />Nueva Consulta</h2>
-                  <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-light transition-colors shadow-soft">
+                  <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-secondary text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors shadow-soft">
                     <UserPlus size={16} />
                     <span className="font-semibold">Nuevo Paciente</span>
                   </button>
@@ -414,13 +413,13 @@ export default function Dashboard() {
                           <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>
                         )}
                         {audioBlob && (
-                          <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-light disabled:bg-gray-300 transition-colors shadow-soft"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>
+                          <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-dark disabled:bg-gray-300 transition-colors shadow-soft"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>
                         )}
                       </div>
                     </div>
                   </div>
                   {isRecording && <div className="text-center text-accent font-medium pt-4">🔴 Grabando...</div>}
-                  {audioBlob && !isRecording && <div className="text-center text-green-600 font-medium pt-4">✅ Audio listo para procesar</div>}
+                  {audioBlob && !isRecording && <div className="text-center text-success font-medium pt-4">✅ Audio listo para procesar</div>}
                 </div>
               </div>
 
@@ -430,7 +429,7 @@ export default function Dashboard() {
                   {consultations.length === 0 ? <p className="text-text-secondary text-center py-8">No hay consultas aún.</p> : (
                     consultations.map((consultation) => (
                       <Link href={`/dashboard/consultation/${consultation.id}`} key={consultation.id}>
-                        <div className="border border-base-300 rounded-lg p-3 cursor-pointer hover:bg-base-200 hover:border-secondary transition-all">
+                        <div className="border border-base-300 rounded-lg p-3 cursor-pointer hover:bg-base-200 hover:border-primary transition-all">
                           <div className="flex justify-between items-start">
                             <p className="font-bold text-text-primary text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
                             <p className="text-xs text-text-secondary">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
