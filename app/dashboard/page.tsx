@@ -7,14 +7,30 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Activity
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, Activity
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
 // --- Interfaces ---
-interface Profile { id: string; full_name: string; role: string; }
-interface Patient { id: string; full_name: string; phone?: string; created_at: string; }
-interface Consultation { id: string; created_at: string; status: string; formatted_notes: string; patient_id: string | null; patients: { full_name: string; } | null; }
+interface Profile {
+  id: string;
+  full_name: string;
+  role: string;
+}
+interface Patient {
+  id: string;
+  full_name: string;
+  phone?: string;
+  created_at: string;
+}
+interface Consultation {
+  id: string;
+  created_at: string;
+  status: string;
+  formatted_notes: string;
+  patient_id: string | null;
+  patients: { full_name: string; } | null;
+}
 
 // --- Componente de la Barra Lateral ---
 function Sidebar({ profile }: { profile: Profile | null }) {
@@ -24,7 +40,8 @@ function Sidebar({ profile }: { profile: Profile | null }) {
     return (
       <li>
         <Link href={href} className={`flex items-center p-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-white shadow-soft' : 'text-text-secondary hover:bg-base-200 hover:text-text-primary'}`}>
-          <Icon size={22} /><span className="ml-4 font-semibold">{children}</span>
+          <Icon size={22} />
+          <span className="ml-4 font-semibold">{children}</span>
         </Link>
       </li>
     );
@@ -41,15 +58,23 @@ function Sidebar({ profile }: { profile: Profile | null }) {
         <ul className="space-y-2">
           <NavLink href="/dashboard" icon={LayoutDashboard}>Panel Principal</NavLink>
           <NavLink href="/dashboard/all-consultations" icon={Search}>Consultas</NavLink>
-          {/* CAMBIO: Se elimina el enlace a la plantilla de IA */}
           {profile?.role === 'doctor' && (
-            <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
+            <>
+              <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
+              <NavLink href="/dashboard/ai-settings" icon={Bot}>Plantilla IA</NavLink>
+            </>
           )}
         </ul>
       </nav>
       <div className="p-4 border-t border-base-300">
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><LifeBuoy size={22} /><span className="ml-4 font-semibold">Ayuda</span></a>
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><Settings size={22} /><span className="ml-4 font-semibold">Configuración</span></a>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
+          <LifeBuoy size={22} />
+          <span className="ml-4 font-semibold">Ayuda</span>
+        </a>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
+          <Settings size={22} />
+          <span className="ml-4 font-semibold">Configuración</span>
+        </a>
       </div>
     </aside>
   );
@@ -107,6 +132,7 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
   )
 }
 
+// --- Función Auxiliar para Formatear Notas ---
 function formatClinicalNoteFromJSON(data: any): string {
   if (!data) return "No se pudo generar la nota clínica.";
   let note = `**NOTA CLÍNICA**\n\n`;
@@ -164,14 +190,17 @@ export default function Dashboard() {
     const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false })
     if (error) console.error("Error al cargar pacientes:", error); else setPatients(data || [])
   }
+
   const loadConsultations = async () => {
     const { data, error } = await supabase.from('consultations').select(`*, patients!inner(full_name)`).order('created_at', { ascending: false }).limit(5)
     if(error) console.error("Error al cargar consultas:", error); else setConsultations(data || [])
   }
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
   }
+
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPatientName || !user) {
@@ -199,6 +228,7 @@ export default function Dashboard() {
       await loadPatients();
     }
   };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -217,12 +247,14 @@ export default function Dashboard() {
       setAudioBlob(null);
     } catch { alert('Error al acceder al micrófono') }
   }
+
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false)
   }
+
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
@@ -242,9 +274,11 @@ export default function Dashboard() {
       }
 
       const result = await response.json()
-      if (result.success && result.structuredData) {
+      if (result.success) {
         
-        const clinicalNote = formatClinicalNoteFromJSON(result.structuredData);
+        const clinicalNote = consultationType === 'new_patient' && result.structuredData 
+          ? formatClinicalNoteFromJSON(result.structuredData)
+          : result.clinicalNote;
 
         const { error: consultationError } = await supabase
           .from('consultations')
@@ -258,7 +292,7 @@ export default function Dashboard() {
         
         if (consultationError) throw consultationError;
 
-        if (consultationType === 'new_patient') {
+        if (consultationType === 'new_patient' && result.structuredData) {
           const patientData = result.structuredData;
           const { error: patientUpdateError } = await supabase
             .from('patients')
@@ -368,22 +402,14 @@ export default function Dashboard() {
                       <label className="block text-sm font-semibold text-text-secondary mb-2">2. Seleccionar Paciente</label>
                       <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary">
                         <option value="">Seleccionar...</option>
-                        {patients.map((patient) => (
-                          <option key={patient.id} value={patient.id}>{patient.full_name}</option>
-                        ))}
+                        {patients.map((patient) => (<option key={patient.id} value={patient.id}>{patient.full_name}</option>))}
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-text-secondary mb-2">3. Grabar Audio</label>
                       <div className="flex space-x-3">
-                        {!isRecording ? (
-                          <button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-accent text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-300 transition-all shadow-soft"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>
-                        ) : (
-                          <button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>
-                        )}
-                        {audioBlob && (
-                          <button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-dark disabled:bg-gray-300 transition-colors shadow-soft"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>
-                        )}
+                        {!isRecording ? (<button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-accent text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-300 transition-all shadow-soft"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>) : (<button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>)}
+                        {audioBlob && (<button onClick={processAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-dark disabled:bg-gray-300 transition-colors shadow-soft"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>)}
                       </div>
                     </div>
                   </div>
