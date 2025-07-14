@@ -6,7 +6,6 @@ const openai = new OpenAI({
 })
 
 // PLANTILLA 1: Para Pacientes Nuevos (Historia Clínica)
-// Esta plantilla está optimizada para devolver un JSON estructurado.
 const NEW_PATIENT_PROMPT = `
 Eres un asistente médico experto en análisis de datos. Tu única tarea es analizar la transcripción de una consulta y extraer información específica. Debes devolver la respuesta EXCLUSIVAMENTE en formato JSON.
 La estructura del JSON debe ser:
@@ -26,7 +25,6 @@ Si no encuentras información para un campo, usa un string vacío "" o null. Tu 
 `;
 
 // PLANTILLA 2: Para Consultas de Seguimiento (Nota SOAP)
-// Esta plantilla está optimizada para devolver texto plano bien formateado.
 const FOLLOW_UP_PROMPT = `
 Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP. Debes rellenar TODOS los siguientes campos. Si no encuentras información para un campo, escribe "No se menciona".
 
@@ -44,7 +42,6 @@ Eres un asistente médico experto en notas de seguimiento. Analiza la transcripc
 **Tratamiento:** (Lista de medicamentos y/o tratamientos actuales)
 `;
 
-// Función para generar una nota legible a partir del JSON
 function formatClinicalNoteFromJSON(data: any): string {
     if (!data) return "No se pudo generar la nota clínica.";
     let note = `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
@@ -94,6 +91,13 @@ export async function POST(request: NextRequest) {
     });
 
     const aiResponseContent = completion.choices[0]?.message?.content;
+
+    // --- PUESTO DE CONTROL PARA DEPURACIÓN ---
+    // Este log imprimirá la respuesta cruda de OpenAI en los registros de Vercel.
+    console.log("--- Respuesta Cruda de OpenAI ---");
+    console.log(aiResponseContent);
+    console.log("---------------------------------");
+    
     if (!aiResponseContent) {
       throw new Error("La IA no devolvió contenido.");
     }
@@ -104,7 +108,6 @@ export async function POST(request: NextRequest) {
     if (isNewPatient) {
       try {
         structuredData = JSON.parse(aiResponseContent);
-        // Construimos la nota legible a partir del JSON recibido
         clinicalNote = formatClinicalNoteFromJSON(structuredData); 
       } catch (e) {
         console.error("Fallo al parsear JSON:", e);
