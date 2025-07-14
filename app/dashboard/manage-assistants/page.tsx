@@ -164,8 +164,6 @@ export default function ManageAssistantsPage() {
     }
   };
 
-  // CAMBIO: Se reestructura la función para cerrar el modal de confirmación
-  // tanto en caso de éxito como de error.
   const confirmDelete = async () => {
     if (!assistantToDelete) return;
     setIsDeleting(true);
@@ -179,11 +177,11 @@ export default function ManageAssistantsPage() {
       if (!response.ok) throw new Error(result.error || 'Falló al eliminar al asistente.');
       
       setAssistants(assistants.filter(a => a.id !== assistantToDelete.id));
-      setAssistantToDelete(null); // Cerrar modal de confirmación
+      setAssistantToDelete(null);
       setNotification({ message: 'Asistente eliminado exitosamente.', type: 'success' });
 
     } catch (error) {
-      setAssistantToDelete(null); // Cerrar modal de confirmación
+      setAssistantToDelete(null);
       if (error instanceof Error) { setNotification({ message: error.message, type: 'error' }); } 
       else { setNotification({ message: 'Ocurrió un error inesperado.', type: 'error' }); }
     } finally {

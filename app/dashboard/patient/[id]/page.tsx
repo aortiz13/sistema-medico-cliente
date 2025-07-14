@@ -1,56 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useParams, useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import { 
-  ArrowLeft, User as UserIcon, Calendar, AlertTriangle, Stethoscope, FileText, 
-  HeartPulse, Mail, Download, BookOpen, LogOut, LayoutDashboard, 
-  Settings, Users, Bell, LifeBuoy, Bot, Search 
-} from 'lucide-react'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+// ... (resto de las importaciones)
 
-// --- Interfaces ---
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
-interface Patient {
-  id: string;
-  full_name: string;
-  document_id: string | null;
-  phone: string | null;
-  email: string | null;
-  date_of_birth: string | null;
-  allergies: string | null;
-  chronic_conditions: string | null;
-}
-interface Consultation {
-  id: string;
-  created_at: string;
-  formatted_notes: string;
-}
-
-// --- Componentes de UI (Reutilizados del Dashboard) ---
+// --- Componente de la Barra Lateral ---
 function Sidebar({ profile }: { profile: Profile | null }) {
   const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
     const pathname = usePathname();
-    const isActive = pathname === href || (href.startsWith('/dashboard/patient') && pathname.startsWith('/dashboard/patient'));
-
+    const isActive = pathname === href;
     return (
       <li>
         <Link href={href} className={`flex items-center p-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-white shadow-soft' : 'text-text-secondary hover:bg-base-200 hover:text-text-primary'}`}>
-          <Icon size={22} />
-          <span className="ml-4 font-semibold">{children}</span>
+          <Icon size={22} /><span className="ml-4 font-semibold">{children}</span>
         </Link>
       </li>
     );
   };
-  
   return (
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center justify-center px-6">
@@ -62,23 +27,15 @@ function Sidebar({ profile }: { profile: Profile | null }) {
         <ul className="space-y-2">
           <NavLink href="/dashboard" icon={LayoutDashboard}>Panel Principal</NavLink>
           <NavLink href="/dashboard/all-consultations" icon={Search}>Consultas</NavLink>
+          {/* CAMBIO: Se elimina el enlace a la plantilla de IA */}
           {profile?.role === 'doctor' && (
-            <>
-              <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
-              <NavLink href="/dashboard/ai-settings" icon={Bot}>Plantilla IA</NavLink>
-            </>
+            <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
           )}
         </ul>
       </nav>
       <div className="p-4 border-t border-base-300">
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
-          <LifeBuoy size={22} />
-          <span className="ml-4 font-semibold">Ayuda</span>
-        </a>
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
-          <Settings size={22} />
-          <span className="ml-4 font-semibold">Configuración</span>
-        </a>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><LifeBuoy size={22} /><span className="ml-4 font-semibold">Ayuda</span></a>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><Settings size={22} /><span className="ml-4 font-semibold">Configuración</span></a>
       </div>
     </aside>
   );

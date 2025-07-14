@@ -51,7 +51,12 @@ function Sidebar({ profile }: { profile: Profile | null }) {
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center justify-center px-6">
         <div className="relative w-40 h-12">
-          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} />
+          <Image 
+            src="/logo.png" 
+            alt="Logo del Sistema Médico" 
+            fill 
+            style={{ objectFit: "contain" }} 
+          />
         </div>
       </div>
       <nav className="flex-grow px-4">
@@ -276,7 +281,7 @@ export default function Dashboard() {
       const result = await response.json()
       if (result.success) {
         
-        const clinicalNote = consultationType === 'new_patient' && result.structuredData 
+        const clinicalNote = (consultationType === 'new_patient' && result.structuredData)
           ? formatClinicalNoteFromJSON(result.structuredData)
           : result.clinicalNote;
 
@@ -294,23 +299,32 @@ export default function Dashboard() {
 
         if (consultationType === 'new_patient' && result.structuredData) {
           const patientData = result.structuredData;
-          const { error: patientUpdateError } = await supabase
-            .from('patients')
-            .update({ 
-              date_of_birth: patientData.ficha_identificacion?.fecha_nacimiento,
-              allergies: patientData.antecedentes_personales_no_patologicos?.alergias,
-              chronic_conditions: JSON.stringify(patientData.antecedentes_personales_patologicos, null, 2),
-              document_id: patientData.ficha_identificacion?.dni,
-              email: patientData.ficha_identificacion?.email,
-            })
-            .eq('id', selectedPatient)
+          
+          const patientUpdatePayload: { [key: string]: any } = {
+            date_of_birth: patientData.ficha_identificacion?.fecha_nacimiento,
+            allergies: patientData.antecedentes_personales_no_patologicos?.alergias,
+            chronic_conditions: JSON.stringify(patientData.antecedentes_personales_patologicos || {}, null, 2),
+            document_id: patientData.ficha_identificacion?.dni,
+            email: patientData.ficha_identificacion?.email,
+          };
 
-          if (patientUpdateError) {
-            alert("La consulta se guardó, pero hubo un error al actualizar el perfil del paciente: " + patientUpdateError.message);
+          Object.keys(patientUpdatePayload).forEach(key => 
+            (patientUpdatePayload[key] === undefined || patientUpdatePayload[key] === null) && delete patientUpdatePayload[key]
+          );
+
+          if (Object.keys(patientUpdatePayload).length > 0) {
+            const { error: patientUpdateError } = await supabase
+              .from('patients')
+              .update(patientUpdatePayload)
+              .eq('id', selectedPatient)
+
+            if (patientUpdateError) {
+              alert("La consulta se guardó, pero hubo un error al actualizar el perfil del paciente: " + patientUpdateError.message);
+            }
           }
         }
 
-        alert('¡Consulta procesada y perfil actualizado exitosamente!')
+        alert('¡Consulta procesada exitosamente!')
         setAudioBlob(null)
         setSelectedPatient('')
         await loadConsultations()
@@ -335,7 +349,7 @@ export default function Dashboard() {
   }
 
   return (
-    <>
+    <div className="h-screen flex bg-base-200 overflow-hidden">
       {isPatientModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
           <div className="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-md relative">
