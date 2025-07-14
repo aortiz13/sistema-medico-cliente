@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const patientId = formData.get('patientId') as string;
 
     if (!audioFile || !consultationType || !patientId) {
-      return NextResponse.json({ error: 'Faltan datos requeridos.' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Faltan datos requeridos (audio, tipo de consulta o ID de paciente).' }, { status: 400 })
     }
 
     const transcription = await openai.audio.transcriptions.create({
@@ -91,13 +91,6 @@ export async function POST(request: NextRequest) {
     });
 
     const aiResponseContent = completion.choices[0]?.message?.content;
-
-    // --- PUESTO DE CONTROL PARA DEPURACIÓN ---
-    // Este log imprimirá la respuesta cruda de OpenAI en los registros de Vercel.
-    console.log("--- Respuesta Cruda de OpenAI ---");
-    console.log(aiResponseContent);
-    console.log("---------------------------------");
-    
     if (!aiResponseContent) {
       throw new Error("La IA no devolvió contenido.");
     }

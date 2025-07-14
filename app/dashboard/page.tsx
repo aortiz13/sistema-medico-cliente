@@ -7,80 +7,48 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { 
   Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, Activity
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Activity
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
 // --- Interfaces ---
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
-interface Patient {
-  id: string;
-  full_name: string;
-  phone?: string;
-  created_at: string;
-}
-interface Consultation {
-  id: string;
-  created_at: string;
-  status: string;
-  formatted_notes: string;
-  patient_id: string | null;
-  patients: { full_name: string; } | null;
-}
+interface Profile { id: string; full_name: string; role: string; }
+interface Patient { id: string; full_name: string; phone?: string; created_at: string; }
+interface Consultation { id: string; created_at: string; status: string; formatted_notes: string; patient_id: string | null; patients: { full_name: string; } | null; }
 
 // --- Componente de la Barra Lateral ---
 function Sidebar({ profile }: { profile: Profile | null }) {
   const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
     const pathname = usePathname();
     const isActive = pathname === href;
-
     return (
       <li>
         <Link href={href} className={`flex items-center p-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-white shadow-soft' : 'text-text-secondary hover:bg-base-200 hover:text-text-primary'}`}>
-          <Icon size={22} />
-          <span className="ml-4 font-semibold">{children}</span>
+          <Icon size={22} /><span className="ml-4 font-semibold">{children}</span>
         </Link>
       </li>
     );
   };
-  
   return (
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center justify-center px-6">
         <div className="relative w-40 h-12">
-          <Image 
-            src="/logo.png" 
-            alt="Logo del Sistema Médico" 
-            fill 
-            style={{ objectFit: "contain" }} 
-          />
+          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} />
         </div>
       </div>
       <nav className="flex-grow px-4">
         <ul className="space-y-2">
           <NavLink href="/dashboard" icon={LayoutDashboard}>Panel Principal</NavLink>
           <NavLink href="/dashboard/all-consultations" icon={Search}>Consultas</NavLink>
+          {/* CAMBIO: Se elimina el enlace a la plantilla de IA */}
           {profile?.role === 'doctor' && (
-            <>
-              <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
-              <NavLink href="/dashboard/ai-settings" icon={Bot}>Plantilla IA</NavLink>
-            </>
+            <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
           )}
         </ul>
       </nav>
       <div className="p-4 border-t border-base-300">
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
-          <LifeBuoy size={22} />
-          <span className="ml-4 font-semibold">Ayuda</span>
-        </a>
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200 transition-colors">
-          <Settings size={22} />
-          <span className="ml-4 font-semibold">Configuración</span>
-        </a>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><LifeBuoy size={22} /><span className="ml-4 font-semibold">Ayuda</span></a>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><Settings size={22} /><span className="ml-4 font-semibold">Configuración</span></a>
       </div>
     </aside>
   );
