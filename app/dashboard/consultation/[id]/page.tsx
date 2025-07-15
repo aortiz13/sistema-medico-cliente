@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { 
   ArrowLeft, User, Calendar, FileText, Mic, Download, LogOut,
   LayoutDashboard, Settings, Users, Bell, LifeBuoy, Bot, Search 
@@ -17,11 +18,14 @@ interface Profile {
   full_name: string;
   role: string;
 }
+interface FormattedNote {
+  note_content: string;
+}
 interface ConsultationDetail {
     id: string;
     created_at: string;
     transcription: string;
-    formatted_notes: string;
+    formatted_notes: FormattedNote | null; // Usar el tipo específico
     patients: {
       full_name: string;
       id: string;
@@ -30,26 +34,36 @@ interface ConsultationDetail {
 
 // --- Componentes de UI Reutilizados ---
 function Sidebar({ profile }: { profile: Profile | null }) {
+    const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
+    const pathname = usePathname();
+    const isActive = pathname === href;
+    return (
+      <li>
+        <Link href={href} className={`flex items-center p-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-white shadow-soft' : 'text-text-secondary hover:bg-base-200 hover:text-text-primary'}`}>
+          <Icon size={22} /><span className="ml-4 font-semibold">{children}</span>
+        </Link>
+      </li>
+    );
+  };
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex-col flex-shrink-0 hidden md:flex">
-      <div className="h-20 flex items-center px-8">
-        <h1 className="text-2xl font-bold text-blue-600">Sistema Médico</h1>
+    <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
+      <div className="h-24 flex items-center justify-center px-6">
+        <div className="relative w-40 h-12">
+          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} onError={(e) => e.currentTarget.src = 'https://placehold.co/160x48/39B6E3/FFFFFF?text=Logo'}/>
+        </div>
       </div>
-      <nav className="flex-grow px-6">
+      <nav className="flex-grow px-4">
         <ul className="space-y-2">
-          <li><Link href="/dashboard" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"><LayoutDashboard size={20} /><span className="ml-4">Panel Principal</span></Link></li>
-          <li><Link href="/dashboard/all-consultations" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"><Search size={20} /><span className="ml-4">Todas las Consultas</span></Link></li>
+          <NavLink href="/dashboard" icon={LayoutDashboard}>Panel Principal</NavLink>
+          <NavLink href="/dashboard/all-consultations" icon={Search}>Consultas</NavLink>
           {profile?.role === 'doctor' && (
-            <>
-              <li><Link href="/dashboard/manage-assistants" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"><Users size={20} /><span className="ml-4">Gestionar Asistentes</span></Link></li>
-              <li><Link href="/dashboard/ai-settings" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"><Bot size={20} /><span className="ml-4">Plantilla de IA</span></Link></li>
-            </>
+            <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
           )}
         </ul>
       </nav>
-      <div className="p-6 border-t border-gray-200">
-        <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"><LifeBuoy size={20} /><span className="ml-4">Ayuda y Soporte</span></a>
-        <a href="#" className="flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"><Settings size={20} /><span className="ml-4">Configuración</span></a>
+      <div className="p-4 border-t border-base-300">
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><LifeBuoy size={22} /><span className="ml-4 font-semibold">Ayuda</span></a>
+        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><Settings size={22} /><span className="ml-4 font-semibold">Configuración</span></a>
       </div>
     </aside>
   );
@@ -57,17 +71,20 @@ function Sidebar({ profile }: { profile: Profile | null }) {
 
 function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () => void }) {
     return (
-      <header className="bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10 py-4 px-6 md:py-6 md:px-8">
+      <header className="bg-base-100/80 backdrop-blur-sm sticky top-0 z-10 py-5 px-8">
         <div className="flex items-center justify-end">
-          <div className="flex items-center space-x-4 md:space-x-6">
-            <button className="p-2 rounded-full hover:bg-gray-200"><Bell size={22} className="text-gray-600" /></button>
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">{profile?.full_name?.charAt(0) || 'U'}</div>
-              <div className="hidden md:block">
-                <p className="font-semibold text-gray-800">{profile?.full_name}</p>
-                <p className="text-xs text-gray-500 capitalize">{profile?.role}</p>
+          <div className="flex items-center space-x-5">
+            <button className="relative p-2 text-text-secondary rounded-full hover:bg-base-200 hover:text-text-primary transition-colors">
+              <Bell size={24} />
+              <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-accent"></span>
+            </button>
+            <div className="flex items-center space-x-3 border-l border-base-300 pl-5">
+              <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">{profile?.full_name?.charAt(0) || 'U'}</div>
+              <div>
+                <p className="font-bold text-text-primary">{profile?.full_name}</p>
+                <p className="text-xs text-text-secondary capitalize">{profile?.role}</p>
               </div>
-              <button onClick={onLogout} title="Cerrar Sesión" className="p-2 text-gray-500 hover:text-red-600"><LogOut size={20} /></button>
+              <button onClick={onLogout} title="Cerrar Sesión" className="p-2 text-text-secondary hover:text-accent transition-colors"><LogOut size={22} /></button>
             </div>
           </div>
         </div>
@@ -110,12 +127,11 @@ export default function ConsultationDetailPage() {
         setConsultation(consultationRes.data as ConsultationDetail);
 
       } catch (err) {
-  // Mantenemos 'err' para poder usarlo
-  if (err instanceof Error) {
-    console.error("Error al cargar los datos:", err.message); // Usamos err.message
-  }
-  setError("No se pudieron cargar los datos de la consulta.");
-} finally {
+        if (err instanceof Error) {
+          console.error("Error al cargar los datos:", err.message);
+        }
+        setError("No se pudieron cargar los datos de la consulta.");
+      } finally {
         setLoading(false);
       }
     };
@@ -140,13 +156,12 @@ export default function ConsultationDetailPage() {
     html2canvas(input, { 
       scale: 2, 
       useCORS: true,
-      // CAMBIO: Se aplica una solución más agresiva para garantizar la compatibilidad de colores.
+      backgroundColor: '#ffffff',
       onclone: (clonedDoc) => {
         const content = clonedDoc.getElementById('pdf-content');
         if (content) {
           content.style.backgroundColor = 'white';
           const allElements = content.querySelectorAll('*');
-          // Se recorren todos los elementos y se fuerza un color de texto seguro.
           allElements.forEach((el) => {
             (el as HTMLElement).style.color = '#000000';
           });
@@ -161,10 +176,23 @@ export default function ConsultationDetailPage() {
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / canvasHeight;
-        const imgWidth = pdfWidth;
         const imgHeight = pdfWidth / ratio;
-        let height = imgHeight > pdfHeight ? pdfHeight : imgHeight;
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, height);
+        let height = imgHeight;
+        let position = 0;
+
+        if (imgHeight > pdfHeight) {
+          height = pdfHeight;
+        }
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
+        let heightLeft = imgHeight - height;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+          heightLeft -= pdfHeight;
+        }
         pdf.save(`consulta-${consultation?.patients?.full_name}-${new Date(consultation!.created_at).toLocaleDateString()}.pdf`);
       })
       .catch(err => {
@@ -232,7 +260,8 @@ export default function ConsultationDetailPage() {
                     Notas Clínicas (Generadas por IA)
                   </h2>
                   <div className="bg-gray-50 p-4 rounded-md text-gray-800 whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                    {consultation.formatted_notes}
+                    {/* CORRECCIÓN: Se accede a la propiedad .note_content */}
+                    {consultation.formatted_notes?.note_content || 'Nota no disponible.'}
                   </div>
                 </div>
 

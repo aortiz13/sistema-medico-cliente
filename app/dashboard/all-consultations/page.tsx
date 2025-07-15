@@ -12,12 +12,14 @@ interface Patient {
   full_name: string;
   document_id: string | null;
 }
-
+interface FormattedNote {
+  note_content: string;
+}
 interface Consultation {
   id: string;
   created_at: string;
   status: string;
-  formatted_notes: string;
+  formatted_notes: FormattedNote | null; // Usar el tipo específico
   patient_id: string | null;
 }
 
@@ -39,7 +41,6 @@ export default function AllConsultationsPage() {
       setError(null);
       
       try {
-        // Pedimos ambas listas de datos en paralelo
         const [consultationsRes, patientsRes] = await Promise.all([
           supabase.from('consultations').select('*').order('created_at', { ascending: false }),
           supabase.from('patients').select('*')
@@ -48,27 +49,23 @@ export default function AllConsultationsPage() {
         if (consultationsRes.error) throw consultationsRes.error;
         if (patientsRes.error) throw patientsRes.error;
 
-        // Creamos un "mapa" de pacientes para encontrarlos fácilmente por su ID
         const patientMap = new Map(patientsRes.data.map(p => [p.id, p]));
         
         setConsultations(consultationsRes.data || []);
         setPatientsMap(patientMap);
 
       } catch (err) { 
-  if (err instanceof Error) {
-    console.error("Error al cargar datos:", err.message);
-    setError("No se pudieron cargar los datos.");
-  } else {
-    setError("Ocurrió un error desconocido.");
-  }
-} finally {
+        if (err instanceof Error) {
+          console.error("Error al cargar datos:", err.message);
+        }
+        setError("No se pudieron cargar los datos.");
+      } finally {
         setLoading(false);
       }
     }
     fetchInitialData();
   }, []);
 
-  // CAMBIO: El filtrado ahora se hace en el lado del cliente (frontend)
   const filteredConsultations = useMemo(() => {
     return consultations
       .filter(c => {
@@ -111,7 +108,6 @@ export default function AllConsultationsPage() {
           <p className="text-gray-500 mb-6">Busca y filtra a través de todo el historial de consultas.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-            {/* Filtros */}
             <div className="relative">
               <label className="text-sm font-medium text-gray-600">Nombre y Apellido</label>
               <input type="text" placeholder="Buscar por nombre..." value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} className="w-full mt-1 p-2 pl-8 border border-gray-300 rounded-md" />
@@ -154,19 +150,21 @@ export default function AllConsultationsPage() {
                     const patient = consultation.patient_id ? patientsMap.get(consultation.patient_id) : null;
                     return (
                       <tr key={consultation.id} className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" onClick={() => router.push(`/dashboard/consultation/${consultation.id}`)}>
-<td className="py-3 px-4 font-medium">
-  <Link 
-    href={`/dashboard/patient/${consultation.patient_id}`} 
-    className="text-blue-600 hover:underline"
-    onClick={(e) => e.stopPropagation()} // Evita que se active el link de la fila
-  >
-    {patient?.full_name || 'N/A'}
-  </Link>
-</td>
-
+                        <td className="py-3 px-4 font-medium">
+                          <Link 
+                            href={`/dashboard/patient/${consultation.patient_id}`} 
+                            className="text-blue-600 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {patient?.full_name || 'N/A'}
+                          </Link>
+                        </td>
                         <td className="py-3 px-4">{patient?.document_id || 'N/A'}</td>
                         <td className="py-3 px-4">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</td>
-                        <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">{consultation.formatted_notes}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600 truncate max-w-xs">
+                          {/* CORRECCIÓN: Se accede a la propiedad .note_content */}
+                          {consultation.formatted_notes?.note_content || 'Nota no disponible.'}
+                        </td>
                       </tr>
                     )
                   })
