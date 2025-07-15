@@ -24,13 +24,17 @@ interface Patient {
   email?: string;
   created_at: string;
 }
+
+// Define un tipo específico para el objeto de las notas
 interface FormattedNote {
   note_content: string;
 }
+
 interface Consultation {
   id: string;
   created_at: string;
   status: string;
+  // Usa el tipo FormattedNote en lugar de 'any' para mayor seguridad
   formatted_notes: FormattedNote | null;
   patient_id: string | null;
   patients?: { full_name: string; } | null;
@@ -254,8 +258,6 @@ export default function Dashboard() {
       const result = await response.json()
       if (result.success && result.clinicalNote) {
 
-        // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
-        // Se crea un objeto JSON válido para la columna 'formatted_notes'.
         const notesAsJson = {
           note_content: result.clinicalNote 
         };
@@ -264,14 +266,13 @@ export default function Dashboard() {
           patient_id: selectedPatient,
           doctor_id: user.id,
           transcription: result.transcription,
-          formatted_notes: notesAsJson, // Se envía el objeto JSON a Supabase.
+          formatted_notes: notesAsJson,
           status: 'completed'
         };
 
         const { error: consultationError } = await supabase
           .from('consultations')
           .insert([dataToInsert]);
-        // --- FIN DE LA CORRECCIÓN DEFINITIVA ---
 
         if (consultationError) {
           console.error("Error al insertar en Supabase:", consultationError);
@@ -398,9 +399,7 @@ export default function Dashboard() {
                             <p className="text-xs text-text-secondary">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
                           </div>
                           <p className="mt-1 text-sm text-text-secondary truncate">
-                            {typeof consultation.formatted_notes === 'object' && consultation.formatted_notes?.note_content 
-                              ? consultation.formatted_notes.note_content 
-                              : 'Nota no disponible'}
+                            {consultation.formatted_notes?.note_content || 'Nota no disponible'}
                           </p>
                         </div>
                       </Link>
