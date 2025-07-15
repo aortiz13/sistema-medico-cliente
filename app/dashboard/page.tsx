@@ -238,61 +238,53 @@ export default function Dashboard() {
 
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
-      alert('Selecciona un paciente y graba audio')
+      alert('Por favor, selecciona un paciente y graba un audio.')
       return
     }
     setIsProcessingAudio(true)
     try {
-      const formData = new FormData()
-      formData.append('audio', audioBlob, 'audio.wav')
-      formData.append('patientId', selectedPatient)
-      formData.append('consultationType', consultationType)
+      // 1. Crear un nombre de archivo único para el audio
+      const fileName = `${user.id}/${selectedPatient}_${Date.now()}.wav`;
 
-      const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Respuesta de error no es JSON' }));
-        throw new Error(errorData.error || `Error de red o API: ${response.status} ${response.statusText}`);
+      // 2. Subir el archivo de audio a Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('consultation-audios')
+        .upload(fileName, audioBlob);
+      
+      if (uploadError) {
+        throw new Error(`Error al subir el audio: ${uploadError.message}`);
       }
 
-      const result = await response.json()
-      if (result.success && result.clinicalNote) {
-
-        const notesAsJson = {
-          note_content: result.clinicalNote 
-        };
-        
-        const dataToInsert = {
+      // 3. Insertar una nueva consulta con el estado 'pending'
+      // El trigger de la base de datos se encargará del resto.
+      const { error: insertError } = await supabase
+        .from('consultations')
+        .insert({
           patient_id: selectedPatient,
           doctor_id: user.id,
-          transcription: result.transcription,
-          formatted_notes: notesAsJson,
-          status: 'completed'
-        };
+          status: 'pending', // El trigger se activará con este estado
+          audio_storage_path: uploadData.path, // Guardamos la ruta del archivo
+          consultation_type: consultationType, // Pasamos el tipo de consulta
+        });
 
-        const { error: consultationError } = await supabase
-          .from('consultations')
-          .insert([dataToInsert]);
-
-        if (consultationError) {
-          console.error("Error al insertar en Supabase:", consultationError);
-          throw consultationError;
-        }
-
-        alert('¡Consulta procesada exitosamente!')
-        setAudioBlob(null)
-        setSelectedPatient('')
-        await loadConsultations()
-
-      } else { 
-        alert('Error al procesar audio: ' + (result.error || 'La API no devolvió una nota clínica válida.')) 
+      if (insertError) {
+        throw new Error(`Error al crear el registro de la consulta: ${insertError.message}`);
       }
-    } catch (err) { 
-      console.error("Error general en processAudio:", err);
+
+      alert('Consulta enviada a procesar. Se actualizará en unos momentos.');
+      setAudioBlob(null);
+      setSelectedPatient('');
+      // Opcional: podrías recargar las consultas para ver el estado 'pending'
+      await loadConsultations();
+
+   
+    } catch (err: unknown) { // CORRECCIÓN: Se cambia 'any' por 'unknown'
+      console.error("Error en processAudio:", err);
+      // Se verifica que 'err' sea una instancia de Error antes de acceder a 'message'
       if (err instanceof Error) {
-        alert(err.message);
+        alert(`Error: ${err.message}`);
       } else {
-        alert('Error inesperado. Revisa la consola para más detalles.');
+        alert('Ocurrió un error inesperado.');
       }
     } finally { 
       setIsProcessingAudio(false) 
