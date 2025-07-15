@@ -59,7 +59,7 @@ function Sidebar({ profile }: { profile: Profile | null }) {
           {profile?.role === 'doctor' && (
             <>
               <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
-              <NavLink href="/dashboard/ai-settings" icon={Bot}>Plantilla IA</NavLink>
+
             </>
           )}
         </ul>

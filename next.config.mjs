@@ -2,7 +2,7 @@
 const nextConfig = {
   // Configuración existente para ignorar errores de 'código limpio'
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // CAMBIO: Se añade esta configuración para ignorar errores de tipos de TypeScript
   // durante el despliegue. Esta es la solución al problema actual.
@@ -10,7 +10,7 @@ const nextConfig = {
     // !! ADVERTENCIA !!
     // Permite que la compilación de producción se complete exitosamente
     // incluso si el proyecto tiene errores de tipos.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 };
 
