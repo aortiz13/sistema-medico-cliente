@@ -251,56 +251,26 @@ export default function Dashboard() {
       const result = await response.json()
       if (result.success) {
         
-        const clinicalNote = (consultationType === 'new_patient' && result.structuredData)
-          ? formatClinicalNoteFromJSON(result.structuredData)
-          : result.clinicalNote;
-
+        // La única acción es guardar la consulta con la nota recibida.
         const { error: consultationError } = await supabase
           .from('consultations')
           .insert([{
               patient_id: selectedPatient,
               doctor_id: user.id,
               transcription: result.transcription,
-              formatted_notes: clinicalNote,
+              formatted_notes: result.clinicalNote, // Se usa la nota de texto
               status: 'completed'
           }])
         
         if (consultationError) throw consultationError;
 
-        if (consultationType === 'new_patient' && result.structuredData) {
-          const patientData = result.structuredData;
-          
-          const patientUpdatePayload: { [key: string]: any } = {
-            date_of_birth: patientData.ficha_identificacion?.fecha_nacimiento,
-            allergies: patientData.antecedentes_personales_no_patologicos?.alergias,
-            chronic_conditions: JSON.stringify(patientData.antecedentes_personales_patologicos || {}, null, 2),
-            document_id: patientData.ficha_identificacion?.dni,
-            email: patientData.ficha_identificacion?.email,
-          };
-
-          Object.keys(patientUpdatePayload).forEach(key => 
-            (patientUpdatePayload[key] === undefined || patientUpdatePayload[key] === null) && delete patientUpdatePayload[key]
-          );
-
-          if (Object.keys(patientUpdatePayload).length > 0) {
-            const { error: patientUpdateError } = await supabase
-              .from('patients')
-              .update(patientUpdatePayload)
-              .eq('id', selectedPatient)
-
-            if (patientUpdateError) {
-              alert("La consulta se guardó, pero hubo un error al actualizar el perfil del paciente: " + patientUpdateError.message);
-            }
-          }
-        }
-
-        alert('¡Consulta procesada exitosamente!')
+        alert('¡Consulta procesada y guardada exitosamente!')
         setAudioBlob(null)
         setSelectedPatient('')
         await loadConsultations()
 
       } else { 
-        alert('Error al procesar audio: ' + (result.error || 'La IA no devolvió datos estructurados.')) 
+        alert('Error al procesar audio: ' + (result.error || 'La IA no devolvió una respuesta válida.')) 
       }
     } catch (err) { 
       console.error("Error general en processAudio:", err);

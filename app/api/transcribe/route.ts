@@ -5,43 +5,30 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// PLANTILLA 1: Para Pacientes Nuevos (Historia Clínica)
-// Esta plantilla está optimizada para devolver un JSON estructurado.
+// PLANTILLA 1: Para Pacientes Nuevos (Historia Clínica en Texto)
 const NEW_PATIENT_PROMPT = `
-Eres un asistente médico experto en análisis de datos. Tu única tarea es analizar la transcripción de una consulta y extraer información específica. Debes devolver la respuesta EXCLUSIVAMENTE en formato JSON.
-La estructura del JSON debe ser:
-{
-  "padecimiento_actual": "string",
-  "tratamiento_previo": "string",
-  "exploracion_fisica": "string",
-  "diagnostico": "string",
-  "solicitud_laboratorio_gabinete": "string",
-  "tratamiento": "string",
-  "ficha_identificacion": { "nombre": "string", "edad": "string", "fecha_nacimiento": "YYYY-MM-DD o null", "fecha_consulta": "YYYY-MM-DD o null", "ocupacion": "string", "aseguradora": "string" },
-  "antecedentes_heredo_familiares": { "madre": "string", "padre": "string", "hermanos": "string", "cancer": "string", "tuberculosis": "string", "diabetes": "string", "hipertension": "string", "tiroides": "string", "artritis": "string", "otros": "string" },
-  "antecedentes_personales_no_patologicos": { "ejercicio": "string", "alergias": "string", "tabaquismo": "string", "alcoholismo": "string", "toxicomania": "string", "ginecologicos": "string", "homeopatia": "string", "naturista": "string", "otras": "string" },
-  "antecedentes_personales_patologicos": { "diabetes": "string", "hipertension": "string", "cirugias": "string", "fracturas": "string", "internamiento": "string", "otras": "string", "medicamentos_o_tratamientos": "string" }
-}
-Si no encuentras información para un campo, usa un string vacío "" o null. Tu respuesta DEBE ser solo el JSON.
+Eres un asistente médico experto. Tu tarea es analizar la transcripción de una consulta y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español.
+Usa los siguientes títulos en negrita, seguidos de dos puntos:
+**Padecimiento actual:**
+**Tratamiento previo:**
+**Exploración física:**
+**Diagnóstico:**
+**Solicitud de laboratorio y gabinete:**
+**Tratamiento:**
+Si no encuentras información para un campo, escribe "No se menciona".
 `;
 
-// PLANTILLA 2: Para Consultas de Seguimiento (Nota SOAP)
-// Esta plantilla está optimizada para devolver texto plano bien formateado.
+// PLANTILLA 2: Para Consultas de Seguimiento (Nota SOAP en Texto)
 const FOLLOW_UP_PROMPT = `
-Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP. Debes rellenar TODOS los siguientes campos. Si no encuentras información para un campo, escribe "No se menciona".
-
-**NOTA DE EVOLUCIÓN (SOAP)**
-
-**S. Subjetiva (sintomatología):** (Describe los síntomas que el paciente relata)
-
-**O. Objetiva (signos y laboratorio):** (Describe los hallazgos de la exploración física, signos vitales y resultados de laboratorio relevantes)
-
-**A. Análisis:** (Tu análisis de la situación actual del paciente basado en lo subjetivo y objetivo)
-
-**P. Plan:** (Describe los pasos a seguir: cambios en el tratamiento, nuevos estudios, próxima cita, etc.)
-
-**Diagnóstico:** (Lista de diagnósticos activos o actualizados)
-**Tratamiento:** (Lista de medicamentos y/o tratamientos actuales)
+Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP.
+Usa los siguientes títulos en negrita, seguidos de dos puntos:
+**S. Subjetiva (sintomatología):**
+**O. Objetiva (signos y laboratorio):**
+**A. Análisis:**
+**P. Plan:**
+**Diagnóstico:**
+**Tratamiento:**
+Si no encuentras información para un campo, escribe "No se menciona".
 `;
 
 export async function POST(request: NextRequest) {
@@ -52,9 +39,10 @@ export async function POST(request: NextRequest) {
     const patientId = formData.get('patientId') as string;
 
     if (!audioFile || !consultationType || !patientId) {
-      return NextResponse.json({ success: false, error: 'Faltan datos requeridos (audio, tipo de consulta o ID de paciente).' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Faltan datos requeridos.' }, { status: 400 })
     }
 
+    // 1. Transcribir el audio
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
@@ -62,52 +50,33 @@ export async function POST(request: NextRequest) {
     });
 
     const transcriptText = transcription.text;
-    if (!transcriptText || transcriptText.trim() === '') {
+    if (!transcriptText || transcriptText.trim().length < 5) { // Ignorar transcripciones muy cortas
       return NextResponse.json({ success: false, error: 'El audio estaba vacío o era inaudible.' });
     }
 
-    const isNewPatient = consultationType === 'new_patient';
-    const systemPrompt = isNewPatient ? NEW_PATIENT_PROMPT : FOLLOW_UP_PROMPT;
-    const responseFormat = isNewPatient ? { type: "json_object" } : { type: "text" };
+    // 2. Seleccionar el prompt correcto y generar la nota
+    const systemPrompt = consultationType === 'new_patient' ? NEW_PATIENT_PROMPT : FOLLOW_UP_PROMPT;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo-1106',
+      model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Transcripción: "${transcriptText}"` }
+        { role: 'user', content: `Transcripción de la consulta: "${transcriptText}"` }
       ],
-      response_format: responseFormat,
-      temperature: 0.2,
-      max_tokens: 2000,
+      temperature: 0.5,
+      max_tokens: 1500,
     });
 
-    const aiResponseContent = completion.choices[0]?.message?.content;
-    if (!aiResponseContent) {
-      throw new Error("La IA no devolvió contenido.");
+    const clinicalNote = completion.choices[0]?.message?.content;
+    if (!clinicalNote) {
+      throw new Error("La IA no devolvió una nota clínica.");
     }
 
-    let structuredData = null;
-    let clinicalNote = '';
-
-    if (isNewPatient) {
-      try {
-        structuredData = JSON.parse(aiResponseContent);
-        // La nota clínica se construirá en el frontend a partir del JSON
-        clinicalNote = "Historia Clínica generada a partir de datos estructurados."; 
-      } catch (e) {
-        console.error("Fallo al parsear JSON:", e);
-        clinicalNote = "Error: La IA no devolvió un JSON válido. Contenido recibido:\n" + aiResponseContent;
-      }
-    } else {
-      // Para notas de seguimiento, la respuesta es el texto directo
-      clinicalNote = aiResponseContent;
-    }
-
+    // 3. Devolver la respuesta simple al frontend
     return NextResponse.json({
       success: true,
       transcription: transcriptText,
-      structuredData: structuredData,
-      clinicalNote: clinicalNote,
+      clinicalNote: clinicalNote.trim(),
     });
 
   } catch (error) {
