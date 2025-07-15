@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
     const consultationType = formData.get('consultationType') as string;
-
+    
     console.log(`API /api/transcribe: Tipo de consulta: ${consultationType}`);
 
     if (!audioFile) {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // 2. Generar la nota clínica
     const systemPrompt = consultationType === 'new_patient' ? NEW_PATIENT_PROMPT : FOLLOW_UP_PROMPT;
     console.log("API /api/transcribe: Usando prompt para generar nota clínica.");
-
+    
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       clinicalNote: clinicalNote.trim(),
     };
     console.log("API /api/transcribe: Enviando respuesta exitosa al frontend:", responsePayload);
-
+    
     return NextResponse.json(responsePayload);
 
   } catch (error) {

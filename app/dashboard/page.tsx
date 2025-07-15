@@ -1,5 +1,3 @@
-// app/dashboard/page.tsx
-
 'use client'
 
 import { useEffect, useState, useRef, FormEvent } from 'react'
@@ -26,13 +24,16 @@ interface Patient {
   email?: string;
   created_at: string;
 }
+interface FormattedNote {
+  note_content: string;
+}
 interface Consultation {
   id: string;
   created_at: string;
   status: string;
-  formatted_notes: string;
+  formatted_notes: FormattedNote | null;
   patient_id: string | null;
-  patients: { full_name: string; } | null;
+  patients?: { full_name: string; } | null;
 }
 
 // --- Componentes de UI ---
@@ -52,7 +53,7 @@ function Sidebar({ profile }: { profile: Profile | null }) {
     <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
       <div className="h-24 flex items-center justify-center px-6">
         <div className="relative w-40 h-12">
-          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} />
+          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} onError={(e) => e.currentTarget.src = 'https://placehold.co/160x48/39B6E3/FFFFFF?text=Logo'}/>
         </div>
       </div>
       <nav className="flex-grow px-4">
@@ -113,17 +114,6 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
     </div>
   )
 }
-
-function formatClinicalNoteFromJSON(data: Record<string, string | number | undefined>): string {
-    if (!data) return "No se pudo generar la nota clínica.";
-    let note = `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
-    note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
-    note += `**Exploración física:**\n${data.exploracion_fisica || 'No se menciona'}\n\n`;
-    note += `**Diagnóstico:**\n${data.diagnostico || 'No se menciona'}\n\n`;
-    note += `**Solicitud de laboratorio y gabinete:**\n${data.solicitud_laboratorio_gabinete || 'No se menciona'}\n\n`;
-    note += `**Tratamiento:**\n${data.tratamiento || 'No se menciona'}`;
-    return note;
-  }
   
 export default function Dashboard() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -242,11 +232,7 @@ export default function Dashboard() {
     setIsRecording(false)
   }
 
-  // app/dashboard/page.tsx
-
-// ... (otras partes de la función)
-
-const processAudio = async () => {
+  const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
       return
@@ -255,42 +241,42 @@ const processAudio = async () => {
     try {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
-      formData.append('consultationType', consultationType)
       formData.append('patientId', selectedPatient)
+      formData.append('consultationType', consultationType)
 
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
 
       if (!response.ok) {
-        throw new Error(`Error de red o API: ${response.status} ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({ error: 'Respuesta de error no es JSON' }));
+        throw new Error(errorData.error || `Error de red o API: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json()
-      if (result.success) {
+      if (result.success && result.clinicalNote) {
 
-        // --- CAMBIO CLAVE AQUÍ ---
-        // Siempre guardaremos un objeto JSON.
-        // La nota clínica generada por la IA se guardará bajo la clave "note".
-        const notesToSave = {
-            note: result.clinicalNote 
+        // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
+        // Se crea un objeto JSON válido para la columna 'formatted_notes'.
+        const notesAsJson = {
+          note_content: result.clinicalNote 
         };
-        // -------------------------
+        
+        const dataToInsert = {
+          patient_id: selectedPatient,
+          doctor_id: user.id,
+          transcription: result.transcription,
+          formatted_notes: notesAsJson, // Se envía el objeto JSON a Supabase.
+          status: 'completed'
+        };
 
         const { error: consultationError } = await supabase
           .from('consultations')
-          .insert([{
-              patient_id: selectedPatient,
-              doctor_id: user.id,
-              transcription: result.transcription,
-              formatted_notes: notesToSave, // Usamos el objeto JSON que acabamos de crear
-              status: 'completed'
-          }])
+          .insert([dataToInsert]);
+        // --- FIN DE LA CORRECCIÓN DEFINITIVA ---
 
-        if (consultationError) throw consultationError;
-
-        // El resto de la lógica para actualizar el paciente puede permanecer igual,
-        // pero ten en cuenta que `result.structuredData` no existe en la respuesta de la API.
-        // Esta sección necesitará ser ajustada o eliminada si no planeas
-        // obtener datos estructurados desde la API /api/transcribe.
+        if (consultationError) {
+          console.error("Error al insertar en Supabase:", consultationError);
+          throw consultationError;
+        }
 
         alert('¡Consulta procesada exitosamente!')
         setAudioBlob(null)
@@ -298,10 +284,9 @@ const processAudio = async () => {
         await loadConsultations()
 
       } else { 
-        alert('Error al procesar audio: ' + (result.error || 'Error desconocido.')) 
+        alert('Error al procesar audio: ' + (result.error || 'La API no devolvió una nota clínica válida.')) 
       }
     } catch (err) { 
-      // El resto del manejo de errores
       console.error("Error general en processAudio:", err);
       if (err instanceof Error) {
         alert(err.message);
@@ -312,8 +297,6 @@ const processAudio = async () => {
       setIsProcessingAudio(false) 
     }
   }
-
-// ... (resto del componente)
 
   if (loading) {
     return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>
@@ -414,7 +397,11 @@ const processAudio = async () => {
                             <p className="font-bold text-text-primary text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
                             <p className="text-xs text-text-secondary">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
                           </div>
-                          <p className="mt-1 text-sm text-text-secondary truncate">{consultation.formatted_notes}</p>
+                          <p className="mt-1 text-sm text-text-secondary truncate">
+                            {typeof consultation.formatted_notes === 'object' && consultation.formatted_notes?.note_content 
+                              ? consultation.formatted_notes.note_content 
+                              : 'Nota no disponible'}
+                          </p>
                         </div>
                       </Link>
                     ))
