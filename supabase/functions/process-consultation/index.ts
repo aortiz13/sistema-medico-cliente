@@ -1,11 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import OpenAI from 'https://deno.land/x/openai@v4.24.1/mod.ts';
+// Se importa el archivo que acabas de crear
 import { corsHeaders } from '../_shared/cors.ts'
 
 console.log("Función 'process-consultation' inicializada.");
 
 // --- ¡IMPORTANTE! DEFINE TUS PLANTILLAS AQUÍ ---
-// Plantilla para la nota clínica de seguimiento (SOAP)
 const FOLLOW_UP_PROMPT = `
 Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP.
 Usa los siguientes títulos en negrita, seguidos de dos puntos:
@@ -18,7 +18,6 @@ Usa los siguientes títulos en negrita, seguidos de dos puntos:
 Si no encuentras información para un campo, escribe "No se menciona".
 `;
 
-// Plantilla para la nota clínica de un paciente nuevo
 const NEW_PATIENT_PROMPT = `
 Eres un asistente médico experto. Tu tarea es analizar la transcripción de una consulta y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español.
 Usa los siguientes títulos en negrita, seguidos de dos puntos:
@@ -33,7 +32,6 @@ Si no encuentras información para un campo, escribe "No se menciona".
 
 
 Deno.serve(async (req) => {
-  // Manejar la solicitud pre-vuelo (preflight) de CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -41,10 +39,11 @@ Deno.serve(async (req) => {
   try {
     console.log("Nueva solicitud recibida.");
     
-    // Se usa la SERVICE_ROLE_KEY para tener permisos de administrador y poder actualizar la tabla.
+    // Se usa la SERVICE_ROLE_KEY para tener permisos de administrador
     const supabaseAdminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      // CORRECCIÓN: Usamos el nombre del secreto corregido
+      Deno.env.get('SB_SERVICE_ROLE_KEY') ?? ''
     );
 
     const { record } = await req.json();
@@ -59,7 +58,7 @@ Deno.serve(async (req) => {
       apiKey: Deno.env.get('OPENAI_API_KEY'),
     });
 
-    // 1. Descargar el audio desde Supabase Storage
+    // 1. Descargar el audio
     console.log(`Descargando audio desde: ${audio_path}`);
     const { data: audioBlob, error: downloadError } = await supabaseAdminClient.storage
       .from('consultation-audios')
@@ -68,7 +67,7 @@ Deno.serve(async (req) => {
     if (downloadError) throw downloadError;
     console.log("Audio descargado exitosamente.");
 
-    // 2. Transcribir el audio con Whisper
+    // 2. Transcribir
     console.log("Enviando audio a OpenAI para transcripción...");
     const transcription = await openai.audio.transcriptions.create({
       file: new File([audioBlob], "audio.mp3"),
@@ -79,7 +78,7 @@ Deno.serve(async (req) => {
     if (!transcriptText) throw new Error("La transcripción de OpenAI resultó vacía.");
     console.log("Transcripción recibida:", transcriptText);
 
-    // 3. Seleccionar la plantilla correcta y generar la nota clínica
+    // 3. Generar nota
     const systemPrompt = consultation_type === 'new_patient' ? NEW_PATIENT_PROMPT : FOLLOW_UP_PROMPT;
     console.log(`Generando nota con plantilla para: ${consultation_type || 'follow_up'}`);
     
@@ -93,12 +92,11 @@ Deno.serve(async (req) => {
     const clinicalNote = noteCompletion.choices[0].message.content || 'No se pudo generar la nota.';
     console.log("Nota clínica generada:", clinicalNote);
 
-    // 4. Crear el objeto JSON para guardar en la base de datos
     const notesAsJson = {
       note_content: clinicalNote
     };
 
-    // 5. Actualizar la consulta en la base de datos
+    // 4. Actualizar la consulta en la DB
     console.log(`Actualizando la fila ${consultation_id} en la base de datos...`);
     const { error: updateError } = await supabaseAdminClient
       .from('consultations')
@@ -120,12 +118,11 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error en el procesamiento de la consulta:", error);
     
-    // Intenta actualizar la fila con el mensaje de error, si es posible
     const { record } = await req.json().catch(() => ({ record: null }));
     if (record && record.consultation_id) {
         const supabaseAdminClient = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          Deno.env.get('SB_SERVICE_ROLE_KEY') ?? ''
         );
         const errorAsJson = { error_message: error.message };
         await supabaseAdminClient
