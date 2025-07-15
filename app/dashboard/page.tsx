@@ -1,3 +1,5 @@
+// app/dashboard/page.tsx
+
 'use client'
 
 import { useEffect, useState, useRef, FormEvent } from 'react'
@@ -5,9 +7,9 @@ import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { 
-  Mic, Square, FileText, LogOut, UserPlus, X, Send, Users, 
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Bot, Activity
+import {
+  Mic, Square, FileText, LogOut, UserPlus, X, Users,
+  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Activity
 } from 'lucide-react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -21,6 +23,7 @@ interface Patient {
   id: string;
   full_name: string;
   phone?: string;
+  email?: string;
   created_at: string;
 }
 interface Consultation {
@@ -59,7 +62,6 @@ function Sidebar({ profile }: { profile: Profile | null }) {
           {profile?.role === 'doctor' && (
             <>
               <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
-
             </>
           )}
         </ul>
@@ -112,18 +114,17 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
   )
 }
 
-function formatClinicalNoteFromJSON(data: any): string {
-  if (!data) return "No se pudo generar la nota clínica.";
-  let note = `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
-  note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
-  note += `**Exploración física:**\n${data.exploracion_fisica || 'No se menciona'}\n\n`;
-  note += `**Diagnóstico:**\n${data.diagnostico || 'No se menciona'}\n\n`;
-  note += `**Solicitud de laboratorio y gabinete:**\n${data.solicitud_laboratorio_gabinete || 'No se menciona'}\n\n`;
-  note += `**Tratamiento:**\n${data.tratamiento || 'No se menciona'}`;
-  return note;
-}
-
-
+function formatClinicalNoteFromJSON(data: Record<string, any>): string {
+    if (!data) return "No se pudo generar la nota clínica.";
+    let note = `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
+    note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
+    note += `**Exploración física:**\n${data.exploracion_fisica || 'No se menciona'}\n\n`;
+    note += `**Diagnóstico:**\n${data.diagnostico || 'No se menciona'}\n\n`;
+    note += `**Solicitud de laboratorio y gabinete:**\n${data.solicitud_laboratorio_gabinete || 'No se menciona'}\n\n`;
+    note += `**Tratamiento:**\n${data.tratamiento || 'No se menciona'}`;
+    return note;
+  }
+  
 export default function Dashboard() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -148,11 +149,6 @@ export default function Dashboard() {
   const audioStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    console.log("--- DIAGNÓSTICO DE VARIABLES DE ENTORNO ---");
-    console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log("Supabase Anon Key:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-    console.log("-------------------------------------------");
-
     const checkUserAndProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -191,24 +187,32 @@ export default function Dashboard() {
       return;
     }
     setIsSavingPatient(true);
-    const { error } = await supabase
-      .from('patients')
-      .insert([{ 
-        full_name: newPatientName, 
-        phone: newPatientPhone,
-        email: newPatientEmail,
-        user_id: user.id 
-      }]);
-    setIsSavingPatient(false);
-    if (error) {
-      alert("Error al crear el paciente: " + error.message);
-    } else {
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .insert([{ 
+          full_name: newPatientName, 
+          phone: newPatientPhone,
+          email: newPatientEmail,
+          user_id: user.id 
+        }]);
+      
+      if (error) throw error;
+
       alert("¡Paciente creado exitosamente!");
       setNewPatientName('');
       setNewPatientPhone('');
       setNewPatientEmail('');
       setIsPatientModalOpen(false);
       await loadPatients();
+    } catch (err) {
+        if (err instanceof Error) {
+            alert("Error al crear el paciente: " + err.message);
+        } else {
+            alert("Ocurrió un error inesperado al crear el paciente.");
+        }
+    } finally {
+      setIsSavingPatient(false);
     }
   };
 
@@ -278,7 +282,7 @@ export default function Dashboard() {
         if (consultationType === 'new_patient' && result.structuredData) {
           const patientData = result.structuredData;
           
-          const patientUpdatePayload: { [key: string]: any } = {
+          const patientUpdatePayload: Record<string, any> = {
             date_of_birth: patientData.ficha_identificacion?.fecha_nacimiento,
             allergies: patientData.antecedentes_personales_no_patologicos?.alergias,
             chronic_conditions: JSON.stringify(patientData.antecedentes_personales_patologicos || {}, null, 2),

@@ -1,7 +1,41 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-// ... (resto de las importaciones)
+import { supabase } from '@/lib/supabase' // Ya debería estar aquí
+import { useParams, useRouter, usePathname } from 'next/navigation' // Ya debería estar aquí
+import Link from 'next/link' // AÑADIR
+import Image from 'next/image' // AÑADIR
+import { 
+  ArrowLeft, User as UserIcon, Calendar, BookOpen, AlertTriangle, 
+  HeartPulse, Stethoscope, Bell, LogOut, LifeBuoy, Settings, 
+  LayoutDashboard, Search, Users // 👈 Iconos añadidos aquí
+} from 'lucide-react' // AÑADIR/COMPLETAR
+import jsPDF from 'jspdf' // Ya debería estar aquí
+import html2canvas from 'html2canvas' // Ya debería estar aquí
+
+// --- Interfaces ---
+interface Profile { // 👈 AÑADE ESTA INTERFAZ
+  id: string;
+  full_name: string;
+  role: string;
+}
+
+interface Patient { // 👈 AÑADE ESTA INTERFAZ TAMBIÉN
+  id: string;
+  full_name: string | null;
+  document_id: string | null;
+  date_of_birth: string | null;
+  allergies: string | null;
+  chronic_conditions: string | null;
+  phone: string | null;
+  email: string | null;
+}
+
+interface Consultation { // 👈 AÑADE ESTA INTERFAZ
+  id: string;
+  created_at: string;
+  formatted_notes: string;
+}
 
 // --- Componente de la Barra Lateral ---
 function Sidebar({ profile }: { profile: Profile | null }) {
@@ -106,7 +140,7 @@ export default function PatientProfilePage() {
         setPatient(patientRes.data);
         setConsultations(consultationsRes.data || []);
 
-      } catch (err: any) {
+      } catch {
         setError("No se pudieron cargar los datos del paciente.");
       } finally {
         setLoading(false);

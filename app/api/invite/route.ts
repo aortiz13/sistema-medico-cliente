@@ -4,35 +4,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
-  const { email, fullName } = await request.json()
-  const cookieStore = cookies()
+  const { email, fullName } = await request.json();
 
-  // CAMBIO: Se corrige la inicialización del cliente de Supabase para resolver el error de tipo.
+  // Paso 1: Resolver la Promise de las cookies PRIMERO
+  const cookieStore = await cookies();
+
+  // Paso 2: Usar el valor resuelto para configurar Supabase
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        async get(name: string) {
-          return (await cookieStore).get(name)?.value
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
-          // En una API Route, no podemos modificar las cookies de la solicitud.
+        set(_name: string, _value: string, _options: CookieOptions) {
+          // Dejar vacío
         },
-        remove(name: string, options: CookieOptions) {
-          // Igual que 'set', lo dejamos vacío.
+        remove(_name: string, _options: CookieOptions) {
+          // Dejar vacío
         },
       },
     }
-  )
+  );
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'No estás autenticado.' }, { status: 401 });
 
-  const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  if (adminProfile?.role !== 'doctor') {
-    return NextResponse.json({ error: 'No tienes permisos.' }, { status: 403 });
+  if (!user) {
+    return NextResponse.json({ error: 'No estás autenticado.' }, { status: 401 });
   }
+
 
   if (!email || !fullName) {
     return NextResponse.json({ error: 'El nombre y el email son requeridos.' }, { status: 400 });

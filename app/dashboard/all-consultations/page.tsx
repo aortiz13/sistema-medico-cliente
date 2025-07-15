@@ -54,10 +54,14 @@ export default function AllConsultationsPage() {
         setConsultations(consultationsRes.data || []);
         setPatientsMap(patientMap);
 
-      } catch (err: any) {
-        console.error("Error al cargar datos:", err);
-        setError("No se pudieron cargar los datos.");
-      } finally {
+      } catch (err) { 
+  if (err instanceof Error) {
+    console.error("Error al cargar datos:", err.message);
+    setError("No se pudieron cargar los datos.");
+  } else {
+    setError("Ocurrió un error desconocido.");
+  }
+} finally {
         setLoading(false);
       }
     }

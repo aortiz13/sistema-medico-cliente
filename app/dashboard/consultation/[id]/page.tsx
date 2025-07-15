@@ -109,7 +109,7 @@ export default function ConsultationDetailPage() {
         setProfile(profileRes.data);
         setConsultation(consultationRes.data as ConsultationDetail);
 
-      } catch (err: any) {
+      } catch{
         console.error("Error al cargar los datos:", err);
         setError("No se pudieron cargar los datos de la consulta.");
       } finally {
