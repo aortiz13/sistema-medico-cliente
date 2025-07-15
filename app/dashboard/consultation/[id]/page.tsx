@@ -109,10 +109,13 @@ export default function ConsultationDetailPage() {
         setProfile(profileRes.data);
         setConsultation(consultationRes.data as ConsultationDetail);
 
-      } catch{
-        console.error("Error al cargar los datos:", err);
-        setError("No se pudieron cargar los datos de la consulta.");
-      } finally {
+      } catch (err) {
+  // Mantenemos 'err' para poder usarlo
+  if (err instanceof Error) {
+    console.error("Error al cargar los datos:", err.message); // Usamos err.message
+  }
+  setError("No se pudieron cargar los datos de la consulta.");
+} finally {
         setLoading(false);
       }
     };

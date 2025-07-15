@@ -140,9 +140,13 @@ export default function PatientProfilePage() {
         setPatient(patientRes.data);
         setConsultations(consultationsRes.data || []);
 
-      } catch {
-        setError("No se pudieron cargar los datos del paciente.");
-      } finally {
+      } catch (err) {
+  // Mantenemos 'err' para poder usarlo
+  if (err instanceof Error) {
+    console.error("Error al cargar los datos:", err.message); // Usamos err.message
+  }
+  setError("No se pudieron cargar los datos de la consulta.");
+} finally {
         setLoading(false);
       }
     };

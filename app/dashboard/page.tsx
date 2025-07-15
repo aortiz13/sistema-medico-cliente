@@ -114,7 +114,7 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
   )
 }
 
-function formatClinicalNoteFromJSON(data: Record<string, any>): string {
+function formatClinicalNoteFromJSON(data: Record<string, string | number | undefined>): string {
     if (!data) return "No se pudo generar la nota clínica.";
     let note = `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
     note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
@@ -196,7 +196,7 @@ export default function Dashboard() {
           email: newPatientEmail,
           user_id: user.id 
         }]);
-      
+
       if (error) throw error;
 
       alert("¡Paciente creado exitosamente!");
@@ -255,14 +255,14 @@ export default function Dashboard() {
       formData.append('consultationType', consultationType)
 
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
-      
+
       if (!response.ok) {
         throw new Error(`Error de red o API: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json()
       if (result.success) {
-        
+
         const clinicalNote = (consultationType === 'new_patient' && result.structuredData)
           ? formatClinicalNoteFromJSON(result.structuredData)
           : result.clinicalNote;
@@ -276,13 +276,13 @@ export default function Dashboard() {
               formatted_notes: clinicalNote,
               status: 'completed'
           }])
-        
+
         if (consultationError) throw consultationError;
 
         if (consultationType === 'new_patient' && result.structuredData) {
           const patientData = result.structuredData;
-          
-          const patientUpdatePayload: Record<string, any> = {
+
+          const patientUpdatePayload: Record<string, string | null | undefined> = {
             date_of_birth: patientData.ficha_identificacion?.fecha_nacimiento,
             allergies: patientData.antecedentes_personales_no_patologicos?.alergias,
             chronic_conditions: JSON.stringify(patientData.antecedentes_personales_patologicos || {}, null, 2),
