@@ -264,8 +264,8 @@ export default function Dashboard() {
       if (result.success) {
 
         const clinicalNote = (consultationType === 'new_patient' && result.structuredData)
-          ? formatClinicalNoteFromJSON(result.structuredData)
-          : result.clinicalNote;
+  ? result.structuredData // Guarda el objeto JSON directamente
+  : { "note": result.clinicalNote }; // Envuelve la nota de seguimiento en un objeto JSON
 
         const { error: consultationError } = await supabase
           .from('consultations')
