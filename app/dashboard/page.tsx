@@ -30,11 +30,9 @@ interface Consultation {
   id: string;
   created_at: string;
   status: string;
-  // La columna formatted_notes puede ser un objeto JSON o un string, lo manejamos como 'any'
-  formatted_notes: any;
+  formatted_notes: string;
   patient_id: string | null;
-  // Hacemos la relación de pacientes opcional para evitar errores si no se encuentra
-  patients?: { full_name: string; } | null;
+  patients: { full_name: string; } | null;
 }
 
 // --- Componentes de UI ---
@@ -115,6 +113,17 @@ function StatCard({ title, value, icon: Icon, color }: { title: string, value: s
     </div>
   )
 }
+
+function formatClinicalNoteFromJSON(data: Record<string, string | number | undefined>): string {
+    if (!data) return "No se pudo generar la nota clínica.";
+    let note = `**Padecimiento actual:**\n${data.padecimiento_actual || 'No se menciona'}\n\n`;
+    note += `**Tratamiento previo:**\n${data.tratamiento_previo || 'No se menciona'}\n\n`;
+    note += `**Exploración física:**\n${data.exploracion_fisica || 'No se menciona'}\n\n`;
+    note += `**Diagnóstico:**\n${data.diagnostico || 'No se menciona'}\n\n`;
+    note += `**Solicitud de laboratorio y gabinete:**\n${data.solicitud_laboratorio_gabinete || 'No se menciona'}\n\n`;
+    note += `**Tratamiento:**\n${data.tratamiento || 'No se menciona'}`;
+    return note;
+  }
   
 export default function Dashboard() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -233,7 +242,11 @@ export default function Dashboard() {
     setIsRecording(false)
   }
 
-  const processAudio = async () => {
+  // app/dashboard/page.tsx
+
+// ... (otras partes de la función)
+
+const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
       return
@@ -242,25 +255,25 @@ export default function Dashboard() {
     try {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
-      formData.append('patientId', selectedPatient)
       formData.append('consultationType', consultationType)
+      formData.append('patientId', selectedPatient)
 
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Error de red o API: ${response.status} ${response.statusText}`);
+        throw new Error(`Error de red o API: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json()
       if (result.success) {
 
-        // --- INICIO DE LA CORRECCIÓN ---
-        // La API devuelve `clinicalNote` como un string. 
-        // Lo envolvemos en un objeto JSON para que la base de datos lo acepte.
-        const notesAsJson = {
-          note_content: result.clinicalNote 
+        // --- CAMBIO CLAVE AQUÍ ---
+        // Siempre guardaremos un objeto JSON.
+        // La nota clínica generada por la IA se guardará bajo la clave "note".
+        const notesToSave = {
+            note: result.clinicalNote 
         };
+        // -------------------------
 
         const { error: consultationError } = await supabase
           .from('consultations')
@@ -268,33 +281,16 @@ export default function Dashboard() {
               patient_id: selectedPatient,
               doctor_id: user.id,
               transcription: result.transcription,
-              formatted_notes: notesAsJson, // ¡Importante! Usamos el objeto JSON.
+              formatted_notes: notesToSave, // Usamos el objeto JSON que acabamos de crear
               status: 'completed'
-          }]);
-        // --- FIN DE LA CORRECCIÓN ---
+          }])
 
-        if (consultationError) {
-          console.error("Error al insertar en Supabase:", consultationError);
-          throw consultationError;
-        }
+        if (consultationError) throw consultationError;
 
-        // NOTA: La lógica para actualizar el perfil del paciente se ha comentado
-        // porque la API `/api/transcribe` actual no devuelve `structuredData`.
-        // Si en el futuro modificas la API para que devuelva datos estructurados,
-        // puedes descomentar y adaptar esta sección.
-        /*
-        if (consultationType === 'new_patient' && result.structuredData) {
-          const patientData = result.structuredData;
-          const patientUpdatePayload = { ... }; // Construye tu payload aquí
-          const { error: patientUpdateError } = await supabase
-            .from('patients')
-            .update(patientUpdatePayload)
-            .eq('id', selectedPatient)
-          if (patientUpdateError) {
-            alert("La consulta se guardó, pero hubo un error al actualizar el perfil del paciente: " + patientUpdateError.message);
-          }
-        }
-        */
+        // El resto de la lógica para actualizar el paciente puede permanecer igual,
+        // pero ten en cuenta que `result.structuredData` no existe en la respuesta de la API.
+        // Esta sección necesitará ser ajustada o eliminada si no planeas
+        // obtener datos estructurados desde la API /api/transcribe.
 
         alert('¡Consulta procesada exitosamente!')
         setAudioBlob(null)
@@ -302,9 +298,10 @@ export default function Dashboard() {
         await loadConsultations()
 
       } else { 
-        alert('Error al procesar audio: ' + (result.error || 'Error desconocido retornado por la API.')) 
+        alert('Error al procesar audio: ' + (result.error || 'Error desconocido.')) 
       }
     } catch (err) { 
+      // El resto del manejo de errores
       console.error("Error general en processAudio:", err);
       if (err instanceof Error) {
         alert(err.message);
@@ -315,6 +312,8 @@ export default function Dashboard() {
       setIsProcessingAudio(false) 
     }
   }
+
+// ... (resto del componente)
 
   if (loading) {
     return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>
@@ -415,12 +414,7 @@ export default function Dashboard() {
                             <p className="font-bold text-text-primary text-sm">{consultation.patients?.full_name || 'Paciente desconocido'}</p>
                             <p className="text-xs text-text-secondary">{new Date(consultation.created_at).toLocaleDateString('es-AR')}</p>
                           </div>
-                          <p className="mt-1 text-sm text-text-secondary truncate">
-                            {/* Mostramos el contenido de la nota desde el objeto JSON */}
-                            {typeof consultation.formatted_notes === 'object' && consultation.formatted_notes?.note_content 
-                              ? consultation.formatted_notes.note_content 
-                              : 'Nota no disponible'}
-                          </p>
+                          <p className="mt-1 text-sm text-text-secondary truncate">{consultation.formatted_notes}</p>
                         </div>
                       </Link>
                     ))
