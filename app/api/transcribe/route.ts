@@ -5,7 +5,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// PLANTILLA 1: Para Pacientes Nuevos (Historia Clínica en Texto)
 const NEW_PATIENT_PROMPT = `
 Eres un asistente médico experto. Tu tarea es analizar la transcripción de una consulta y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español.
 Usa los siguientes títulos en negrita, seguidos de dos puntos:
@@ -18,7 +17,6 @@ Usa los siguientes títulos en negrita, seguidos de dos puntos:
 Si no encuentras información para un campo, escribe "No se menciona".
 `;
 
-// PLANTILLA 2: Para Consultas de Seguimiento (Nota SOAP en Texto)
 const FOLLOW_UP_PROMPT = `
 Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP.
 Usa los siguientes títulos en negrita, seguidos de dos puntos:
@@ -32,30 +30,37 @@ Si no encuentras información para un campo, escribe "No se menciona".
 `;
 
 export async function POST(request: NextRequest) {
+  console.log("API /api/transcribe: Solicitud recibida.");
   try {
-    const formData = await request.formData()
+    const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
     const consultationType = formData.get('consultationType') as string;
-    const patientId = formData.get('patientId') as string;
 
-    if (!audioFile || !consultationType || !patientId) {
-      return NextResponse.json({ success: false, error: 'Faltan datos requeridos.' }, { status: 400 })
+    console.log(`API /api/transcribe: Tipo de consulta: ${consultationType}`);
+
+    if (!audioFile) {
+      console.error("API /api/transcribe: No se encontró el archivo de audio.");
+      return NextResponse.json({ success: false, error: 'Falta el archivo de audio.' }, { status: 400 });
     }
 
     // 1. Transcribir el audio
+    console.log("API /api/transcribe: Iniciando transcripción con Whisper...");
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
       language: 'es',
     });
-
     const transcriptText = transcription.text;
-    if (!transcriptText || transcriptText.trim().length < 5) { // Ignorar transcripciones muy cortas
+    console.log("API /api/transcribe: Texto transcrito:", transcriptText);
+
+    if (!transcriptText || transcriptText.trim().length < 5) {
+      console.error("API /api/transcribe: La transcripción está vacía o es muy corta.");
       return NextResponse.json({ success: false, error: 'El audio estaba vacío o era inaudible.' });
     }
 
-    // 2. Seleccionar el prompt correcto y generar la nota
+    // 2. Generar la nota clínica
     const systemPrompt = consultationType === 'new_patient' ? NEW_PATIENT_PROMPT : FOLLOW_UP_PROMPT;
+    console.log("API /api/transcribe: Usando prompt para generar nota clínica.");
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -68,22 +73,27 @@ export async function POST(request: NextRequest) {
     });
 
     const clinicalNote = completion.choices[0]?.message?.content;
+    console.log("API /api/transcribe: Nota clínica generada por IA:", clinicalNote);
+
     if (!clinicalNote) {
       throw new Error("La IA no devolvió una nota clínica.");
     }
 
-    // 3. Devolver la respuesta simple al frontend
-    return NextResponse.json({
+    // 3. Devolver la respuesta al frontend
+    const responsePayload = {
       success: true,
       transcription: transcriptText,
       clinicalNote: clinicalNote.trim(),
-    });
+    };
+    console.log("API /api/transcribe: Enviando respuesta exitosa al frontend:", responsePayload);
+
+    return NextResponse.json(responsePayload);
 
   } catch (error) {
-    console.error('Error en el procesamiento de audio:', error)
+    console.error('API /api/transcribe: Error en el bloque catch:', error);
     if (error instanceof Error) {
-        return NextResponse.json({ success: false, error: `Error en el servidor: ${error.message}` })
+        return NextResponse.json({ success: false, error: `Error en el servidor: ${error.message}` }, { status: 500 });
     }
-    return NextResponse.json({ success: false, error: 'Ocurrió un error desconocido.' })
+    return NextResponse.json({ success: false, error: 'Ocurrió un error desconocido en el servidor.' }, { status: 500 });
   }
 }
