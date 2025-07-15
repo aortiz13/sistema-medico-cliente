@@ -242,7 +242,11 @@ export default function Dashboard() {
     setIsRecording(false)
   }
 
-  const processAudio = async () => {
+  // app/dashboard/page.tsx
+
+// ... (otras partes de la función)
+
+const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
       alert('Selecciona un paciente y graba audio')
       return
@@ -251,8 +255,8 @@ export default function Dashboard() {
     try {
       const formData = new FormData()
       formData.append('audio', audioBlob, 'audio.wav')
-      formData.append('patientId', selectedPatient)
       formData.append('consultationType', consultationType)
+      formData.append('patientId', selectedPatient)
 
       const response = await fetch('/api/transcribe', { method: 'POST', body: formData })
 
@@ -263,9 +267,13 @@ export default function Dashboard() {
       const result = await response.json()
       if (result.success) {
 
-        const clinicalNote = (consultationType === 'new_patient' && result.structuredData)
-  ? result.structuredData // Guarda el objeto JSON directamente
-  : { "note": result.clinicalNote }; // Envuelve la nota de seguimiento en un objeto JSON
+        // --- CAMBIO CLAVE AQUÍ ---
+        // Siempre guardaremos un objeto JSON.
+        // La nota clínica generada por la IA se guardará bajo la clave "note".
+        const notesToSave = {
+            note: result.clinicalNote 
+        };
+        // -------------------------
 
         const { error: consultationError } = await supabase
           .from('consultations')
@@ -273,38 +281,16 @@ export default function Dashboard() {
               patient_id: selectedPatient,
               doctor_id: user.id,
               transcription: result.transcription,
-              formatted_notes: clinicalNote,
+              formatted_notes: notesToSave, // Usamos el objeto JSON que acabamos de crear
               status: 'completed'
           }])
 
         if (consultationError) throw consultationError;
 
-        if (consultationType === 'new_patient' && result.structuredData) {
-          const patientData = result.structuredData;
-
-          const patientUpdatePayload: Record<string, string | null | undefined> = {
-            date_of_birth: patientData.ficha_identificacion?.fecha_nacimiento,
-            allergies: patientData.antecedentes_personales_no_patologicos?.alergias,
-            chronic_conditions: JSON.stringify(patientData.antecedentes_personales_patologicos || {}, null, 2),
-            document_id: patientData.ficha_identificacion?.dni,
-            email: patientData.ficha_identificacion?.email,
-          };
-
-          Object.keys(patientUpdatePayload).forEach(key => 
-            (patientUpdatePayload[key] === undefined || patientUpdatePayload[key] === null) && delete patientUpdatePayload[key]
-          );
-
-          if (Object.keys(patientUpdatePayload).length > 0) {
-            const { error: patientUpdateError } = await supabase
-              .from('patients')
-              .update(patientUpdatePayload)
-              .eq('id', selectedPatient)
-
-            if (patientUpdateError) {
-              alert("La consulta se guardó, pero hubo un error al actualizar el perfil del paciente: " + patientUpdateError.message);
-            }
-          }
-        }
+        // El resto de la lógica para actualizar el paciente puede permanecer igual,
+        // pero ten en cuenta que `result.structuredData` no existe en la respuesta de la API.
+        // Esta sección necesitará ser ajustada o eliminada si no planeas
+        // obtener datos estructurados desde la API /api/transcribe.
 
         alert('¡Consulta procesada exitosamente!')
         setAudioBlob(null)
@@ -312,9 +298,10 @@ export default function Dashboard() {
         await loadConsultations()
 
       } else { 
-        alert('Error al procesar audio: ' + (result.error || 'La IA no devolvió datos estructurados.')) 
+        alert('Error al procesar audio: ' + (result.error || 'Error desconocido.')) 
       }
     } catch (err) { 
+      // El resto del manejo de errores
       console.error("Error general en processAudio:", err);
       if (err instanceof Error) {
         alert(err.message);
@@ -325,6 +312,8 @@ export default function Dashboard() {
       setIsProcessingAudio(false) 
     }
   }
+
+// ... (resto del componente)
 
   if (loading) {
     return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>
