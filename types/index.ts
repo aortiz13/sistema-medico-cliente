@@ -9,14 +9,14 @@ export interface Profile {
 export interface Patient {
   id: string;
   full_name: string | null;
-  document_id: string | null;
-  date_of_birth: string | null;
-  allergies: string | null;
-  chronic_conditions: string | null;
-  phone: string | null;
-  email: string | null;
-  created_at: string; // Añadido si se usa en Patient para ordenamiento
-  user_id?: string; // Propiedad opcional si se usa para crear un paciente
+  document_id?: string | null; // <-- Ahora opcional
+  date_of_birth?: string | null; // <-- Ahora opcional
+  allergies?: string | null; // <-- Ahora opcional
+  chronic_conditions?: string | null; // <-- Ahora opcional
+  phone?: string | null; // <-- Ya era opcional, pero aseguremos
+  email?: string | null; // <-- Ya era opcional, pero aseguremos
+  created_at: string;
+  user_id?: string;
 }
 
 export interface FormattedNote {
@@ -27,11 +27,11 @@ export interface Consultation {
   id: string;
   created_at: string;
   status: string;
-  transcription?: string; // Puede no estar disponible inicialmente
+  transcription?: string;
   formatted_notes: FormattedNote | null;
   patient_id: string | null;
-  doctor_id?: string; // Añadido para el Dashboard
-  audio_storage_path?: string; // Añadido para el Dashboard
-  consultation_type?: string; // Añadido para el Dashboard
-  patients?: { full_name: string; id: string; } | null; // Usado en algunas consultas
+  doctor_id?: string;
+  audio_storage_path?: string;
+  consultation_type?: string;
+  patients?: { full_name: string; id: string; } | null;
 }

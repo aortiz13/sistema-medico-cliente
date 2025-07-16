@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import jsPDF from 'jspdf';
@@ -13,27 +13,30 @@ import {
 // Importa componentes de UI y hooks
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
-import { useAuth } from '@/hooks/useAuth'; // Importa el hook de autenticación
-import { useConsultations } from '@/hooks/useConsultations'; // Importa el hook de consultas
-import { supabase } from '@/lib/supabase'; // Importa supabase si sigue siendo necesario directamente aquí
+import { useAuth } from '@/hooks/useAuth';
+import { useConsultations } from '@/hooks/useConsultations';
+import { usePdfGenerator } from '@/hooks/usePdfGenerator';
+import { supabase } from '@/lib/supabase';
+import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 
 // Importa las interfaces desde types/index.ts
 import { Patient, Consultation } from '@/types';
 
 export default function PatientProfilePage() {
-  const { user, profile, loading: loadingAuth, handleLogout } = useAuth(); // Usa el hook de autenticación
-  const { consultations, loadConsultations } = useConsultations(); // Usamos loadConsultations para cargar las consultas del paciente
+  const { user, profile, loading: loadingAuth, handleLogout } = useAuth();
+  const { isGeneratingPDF, generatePdf } = usePdfGenerator();
 
   const [patient, setPatient] = useState<Patient | null>(null);
-  const [loadingPatientData, setLoadingPatientData] = useState(true); // Nuevo estado de carga para los datos específicos del paciente
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [loadingPatientData, setLoadingPatientData] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isGeneratingHistory, setIsGeneratingHistory] = useState(false);
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
   useEffect(() => {
-    if (!id || !user) return; // Espera a que el usuario esté cargado
+    if (!id || !user) return;
+
     const fetchPatientSpecificData = async () => {
       setLoadingPatientData(true);
       setError(null);
@@ -42,22 +45,12 @@ export default function PatientProfilePage() {
         if (patientError) throw patientError;
         setPatient(patientRes);
 
-        // Cargar consultas específicas del paciente usando la función del hook de consultas
         const { data: consultationsRes, error: consultationsError } = await supabase.from('consultations')
-          .select('id, created_at, formatted_notes')
+          .select('id, created_at, formatted_notes, status, patient_id')
           .eq('patient_id', id)
           .order('created_at', { ascending: false });
 
         if (consultationsError) throw consultationsError;
-        // El hook useConsultations ya mantiene su propio estado 'consultations',
-        // pero aquí necesitamos las consultas filtradas por paciente para este componente.
-        // Podríamos extender useConsultations para filtrar, o simplemente fetchear aquí como está.
-        // Para simplificar, asumimos que 'consultations' en este componente ahora se refiere a las del paciente.
-        // (Nota: Si useConsultations se extiende para filtrar, esta parte se haría con ese hook)
-        // Por ahora, para no reintroducir un estado duplicado en el hook de consultas,
-        // simplemente mantenemos el estado local de 'consultations' aquí para las consultas del paciente.
-        // Idealmente, useConsultations debería tener una función `loadConsultationsByPatient(patientId)`
-        // y este componente la usaría para obtener las consultas y las asignaría a su propio estado local.
         setConsultations(consultationsRes || []);
 
       } catch (err) {
@@ -73,7 +66,7 @@ export default function PatientProfilePage() {
     if (user) {
       fetchPatientSpecificData();
     }
-  }, [id, user, router]); // Dependencia de 'user' para esperar autenticación
+  }, [id, user]);
 
   const calculateAge = (dob: string | null | undefined) => {
     if (!dob) return 'N/A';
@@ -89,71 +82,22 @@ export default function PatientProfilePage() {
 
   const handleDownloadHistory = async () => {
     if (!patient) return;
-    setIsGeneratingHistory(true);
 
-    const reportElement = document.createElement('div');
-    reportElement.id = 'full-history-report';
-    reportElement.style.position = 'absolute';
-    reportElement.style.left = '-9999px';
-    reportElement.style.width = '1000px';
-    reportElement.style.padding = '40px';
-    reportElement.style.backgroundColor = 'white';
+    const fileName = `historial-completo-${patient.full_name || 'paciente'}.pdf`;
 
-    let reportHTML = `
-      <div style="font-family: sans-serif; color: #333;">
-        <h1 style="font-size: 28px; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">Historia Clínica Completa</h1>
-        <h2 style="font-size: 22px; font-weight: bold;">${patient.full_name}</h2>
-        <p><strong>DNI:</strong> ${patient.document_id || 'No registrado'}</p>
-        <p><strong>Fecha de Nacimiento:</strong> ${patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'No registrada'}</p>
-        <hr style="margin: 20px 0;" />
-    `;
-
-    consultations.forEach(consult => {
-      reportHTML += `
-        <div style="margin-bottom: 30px; page-break-inside: avoid;">
-          <h3 style="font-size: 18px; font-weight: bold; background-color: #f3f4f6; padding: 10px; border-radius: 5px;">Consulta del ${new Date(consult.created_at).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</h3>
-          <div style="white-space: pre-wrap; padding: 10px; font-size: 14px;">${consult.formatted_notes}</div>
-        </div>
-      `;
+    generatePdf('full-history-report', fileName, {
+      onClone: (clonedDoc) => {
+        const content = clonedDoc.getElementById('full-history-report');
+        if (content) {
+          content.style.backgroundColor = 'white';
+          const allElements = content.querySelectorAll('*');
+          allElements.forEach((el) => {
+            (el as HTMLElement).style.color = '#000000';
+          });
+        }
+      }
     });
-
-    reportHTML += '</div>';
-    reportElement.innerHTML = reportHTML;
-    document.body.appendChild(reportElement);
-
-    const input = document.getElementById('full-history-report');
-    if (input) {
-        await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-            .then((canvas) => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                let pdfHeight = pdf.internal.pageSize.getHeight();
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                const ratio = canvasWidth / canvasHeight;
-                let finalHeight = pdfWidth / ratio;
-
-                let heightLeft = finalHeight;
-                let position = 0;
-
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
-                heightLeft -= pdfHeight;
-
-                while (heightLeft > 0) {
-                    position = heightLeft - finalHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
-                    heightLeft -= pdfHeight;
-                }
-                pdf.save(`historial-completo-${patient.full_name}.pdf`);
-            });
-    }
-
-    document.body.removeChild(reportElement);
-    setIsGeneratingHistory(false);
   };
-
 
   if (loadingAuth || loadingPatientData) {
     return <div className="h-screen bg-base-200 flex items-center justify-center">Cargando...</div>;
@@ -169,7 +113,7 @@ export default function PatientProfilePage() {
             <div className="mb-8">
               <Link href="/dashboard/all-consultations" className="inline-flex items-center space-x-2 text-text-secondary hover:text-primary transition-colors">
                 <ArrowLeft className="w-5 h-5" />
-                <span className="font-semibold">Volver a Consultas</span>
+                <span>Volver a Consultas</span>
               </Link>
             </div>
 
@@ -190,14 +134,31 @@ export default function PatientProfilePage() {
                 <div className="flex space-x-2 mt-4 md:mt-0">
                   <button
                     onClick={handleDownloadHistory}
-                    disabled={isGeneratingHistory}
+                    disabled={isGeneratingPDF}
                     className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark disabled:bg-gray-400 transition-colors shadow-soft"
                   >
                     <BookOpen className="w-5 h-5" />
-                    <span className="font-semibold">{isGeneratingHistory ? 'Generando...' : 'Historial Completo'}</span>
+                    <span className="font-semibold">{isGeneratingPDF ? 'Generando...' : 'Historial Completo'}</span>
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* Este div es creado temporalmente para la generación del PDF. No es visible */}
+            <div id="full-history-report" style={{ position: 'absolute', left: '-9999px', width: '1000px', padding: '40px', backgroundColor: 'white', color: '#333', fontFamily: 'sans-serif' }}>
+                <h1 style={{ fontSize: '28px', fontWeight: 'bold', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '20px' }}>Historia Clínica Completa</h1>
+                <h2 style={{ fontSize: '22px', fontWeight: 'bold' }}>{patient?.full_name}</h2>
+                <p><strong>DNI:</strong> {patient?.document_id || 'No registrado'}</p>
+                <p><strong>Fecha de Nacimiento:</strong> {patient?.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'No registrada'}</p>
+                <hr style={{ margin: '20px 0' }} />
+                {consultations.map(consult => (
+                  <div key={consult.id} style={{ marginBottom: '30px', pageBreakInside: 'avoid' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', backgroundColor: '#f3f4f6', padding: '10px', borderRadius: '5px' }}>Consulta del {new Date(consult.created_at).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</h3>
+                    <div style={{ whiteSpace: 'pre-wrap', padding: '10px', fontSize: '14px' }}>
+                      <MarkdownRenderer text={consult.formatted_notes?.note_content} /> {/* <-- Corregido 'consultation' a 'consult' */}
+                    </div>
+                  </div>
+                ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -240,7 +201,9 @@ export default function PatientProfilePage() {
                             <p className="font-semibold text-primary">Consulta del {new Date(consultation.created_at).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</p>
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Ver Detalle</span>
                           </div>
-                          <p className="text-sm text-text-secondary truncate">{consultation.formatted_notes}</p>
+                          <div className="text-sm text-text-secondary truncate">
+                            <MarkdownRenderer text={consultation.formatted_notes?.note_content} />
+                          </div>
                         </div>
                       </Link>
                     ))
