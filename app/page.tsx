@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 // Importa tu cliente de Supabase
-// Asegúrate de que la ruta sea correcta si tu archivo supabase.ts no está en lib/supabase.ts
 import { supabase } from '@/lib/supabase';
 
 export default function AuthenticationPage() {
@@ -47,7 +46,39 @@ export default function AuthenticationPage() {
   };
 
   return (
+    // Contenedor principal para centrar y aplicar el fondo
     <div className="relative h-screen flex items-center justify-center bg-background">
+      {/* El fondo con la imagen y el gradiente del ejemplo de Shadcn UI */}
+      {/* Para replicar el fondo del ejemplo de Shadcn UI, puedes usar un div con estilos específicos */}
+      <div className="absolute inset-0 hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+        <div className="absolute inset-0 bg-zinc-900" />
+        <div className="relative z-20 flex items-center text-lg font-medium">
+          {/* Aquí podrías poner tu logo o el nombre de tu sistema */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mr-2 h-6 w-6"
+          >
+            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+          </svg>
+          Sistema Médico MVP
+        </div>
+        <div className="relative z-20 mt-auto">
+          <blockquote className="space-y-2">
+            <p className="text-lg">
+              &ldquo;Este sistema ha simplificado drásticamente la gestión de pacientes y consultas, permitiéndonos enfocarnos en lo que realmente importa: la salud.&rdquo;
+            </p>
+            <footer className="text-sm">Dr. Juan Pérez</footer>
+          </blockquote>
+        </div>
+      </div>
+
+      {/* Contenedor del formulario de login */}
       <div className="lg:p-8">
         <Card className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <CardHeader className="flex flex-col space-y-2 text-center">
@@ -59,7 +90,7 @@ export default function AuthenticationPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <form onSubmit={handleLogin} className="grid gap-4"> {/* Envuelve los campos en un formulario */}
+            <form onSubmit={handleLogin} className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input

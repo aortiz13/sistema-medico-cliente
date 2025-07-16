@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -76,3 +75,15 @@
     --sidebar-ring: oklch(0.439 0 0);
   }
   }
+
+
+body {
+  /* Estas propiedades ya las tenías, asegúrate de que estén aquí */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* El color de fondo del body se gestionará con la clase bg-background en el div principal */
+  /* Quita cualquier background-color fijo aquí para que Tailwind lo controle */
+}
+
+
