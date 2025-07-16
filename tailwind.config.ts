@@ -54,6 +54,8 @@ const config: Config = {
   			},
   			'success-custom': '#2ECC71',
   			'warning-custom': '#F39C12',
+        // Nuevo color para el fondo del panel izquierdo
+        'auth-background': 'hsl(213.8 100% 96.9%)', // Un azul grisáceo muy claro, similar al ejemplo
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
