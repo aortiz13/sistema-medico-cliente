@@ -76,20 +76,3 @@
     --sidebar-ring: oklch(0.439 0 0);
   }
   }
-}
-
-body {
-  background-color: #F8F9FA; /* Usamos el color 'base-200' como fondo por defecto */
-  color: #212529; /* Usamos 'text-primary' como color de texto por defecto */
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  background-color: #F8F9FA; /* Usamos el color 'base-200' como fondo por defecto */
-  color: #212529; /* Usamos 'text-primary' como color de texto por defecto */
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
