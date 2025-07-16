@@ -20,12 +20,24 @@ export default async function RootLayout({ // Hacemos el layout asíncrono para 
   children: React.ReactNode;
 }>) {
   // Configura el cliente de Supabase para Server Components
-  // MODIFICACIÓN: Pasamos una función que devuelve la instancia de cookies()
+  // MODIFICACIÓN: Forzamos el tipo de cookieStore usando ReturnType<typeof cookies>
+  const cookieStore: ReturnType<typeof cookies> = cookies();
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: () => cookies(), // Esta es la forma más directa y recomendada
+      cookies: {
+        get: (name: string) => {
+          return cookieStore.get(name)?.value; // Usar la instancia obtenida
+        },
+        set: (name: string, value: string, options: CookieOptions) => {
+          cookieStore.set(name, value, options); // Usar la instancia obtenida
+        },
+        remove: (name: string, options: CookieOptions) => {
+          cookieStore.set(name, '', { ...options, maxAge: 0 }); // Usar la instancia obtenida
+        },
+      },
     }
   );
 
@@ -62,3 +74,4 @@ export default async function RootLayout({ // Hacemos el layout asíncrono para 
     </html>
   );
 }
+
