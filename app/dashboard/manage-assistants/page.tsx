@@ -4,7 +4,9 @@ import { useEffect, useState, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import {
-  Users, Trash2, User as UserIcon, Send,
+  Users, Trash2, ShieldAlert, User as UserIcon, LogOut,
+  LayoutDashboard, Settings, Bell, LifeBuoy, Bot, Search, Send, UserPlus, X, // <-- UserPlus añadido aquí
+  CheckCircle, AlertCircle
 } from 'lucide-react';
 
 // Importa los componentes de UI reutilizados

@@ -12,7 +12,7 @@ import {
 // Importa los componentes de UI reutilizados
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
-import { StatCard } from '@/components/common/StatCard'; // Asumiendo que StatCard se movería aquí si no lo está ya
+import { StatCard } from '@/components/common/StatCard';  // Asumiendo que StatCard se movería aquí si no lo está ya
 
 // --- Interfaces ---
 interface Profile {

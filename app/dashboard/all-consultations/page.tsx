@@ -35,7 +35,7 @@ interface Consultation {
 export default function AllConsultationsPage() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [patientsMap, setPatientsMap] = useState<Map<string, Patient>>(new Map());
-  const [profile, setProfile] = useState<Profile | null>(null); // Añadido para el Sidebar/Header
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function AllConsultationsPage() {
 
         const patientMap = new Map(patientsRes.data.map(p => [p.id, p]));
 
-        setProfile(profileRes.data); // Establece el perfil
+        setProfile(profileRes.data);
         setConsultations(consultationsRes.data || []);
         setPatientsMap(patientMap);
 
@@ -121,10 +121,9 @@ export default function AllConsultationsPage() {
 
   return (
     <div className="min-h-screen flex bg-gray-50 overflow-hidden">
-      <Sidebar profile={profile} /> {/* Usa el componente Sidebar */}
+      <Sidebar profile={profile} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Usa el componente Header con un título personalizado y sin barra de búsqueda */}
         <Header profile={profile} onLogout={handleLogout} title="Todas las Consultas" showSearch={false} />
 
         <main className="flex-1 p-8 overflow-y-auto">
@@ -205,8 +204,8 @@ export default function AllConsultationsPage() {
                 </table>
               </div>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );
