@@ -1,15 +1,18 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useRef, FormEvent } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
+import { useState, useEffect, useRef, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import {
-  Mic, Square, FileText, LogOut, UserPlus, X, Users,
-  LayoutDashboard, Settings, Search, Bell, LifeBuoy, Activity
-} from 'lucide-react'
-import { User as SupabaseUser } from '@supabase/supabase-js'
+  Mic, Square, FileText, UserPlus, X, Users, Activity,
+} from 'lucide-react';
+
+// Importa los componentes de UI reutilizados
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
+import { StatCard } from '@/components/common/StatCard'; // Asumiendo que StatCard se movería aquí si no lo está ya
 
 // --- Interfaces ---
 interface Profile {
@@ -24,155 +27,72 @@ interface Patient {
   email?: string;
   created_at: string;
 }
-
-// Define un tipo específico para el objeto de las notas
 interface FormattedNote {
   note_content: string;
 }
-
 interface Consultation {
   id: string;
   created_at: string;
   status: string;
-  // Usa el tipo FormattedNote en lugar de 'any' para mayor seguridad
   formatted_notes: FormattedNote | null;
   patient_id: string | null;
   patients?: { full_name: string; } | null;
 }
 
-// --- Componentes de UI ---
-function Sidebar({ profile }: { profile: Profile | null }) {
-  const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
-    const pathname = usePathname();
-    const isActive = pathname === href;
-    return (
-      <li>
-        <Link href={href} className={`flex items-center p-3 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-white shadow-soft' : 'text-text-secondary hover:bg-base-200 hover:text-text-primary'}`}>
-          <Icon size={22} /><span className="ml-4 font-semibold">{children}</span>
-        </Link>
-      </li>
-    );
-  };
-  return (
-    <aside className="w-64 bg-base-100 border-r border-base-300 flex-col flex-shrink-0 hidden md:flex">
-      <div className="h-24 flex items-center justify-center px-6">
-        <div className="relative w-40 h-12">
-          <Image src="/logo.png" alt="Logo del Sistema Médico" fill style={{ objectFit: "contain" }} onError={(e) => e.currentTarget.src = 'https://placehold.co/160x48/39B6E3/FFFFFF?text=Logo'}/>
-        </div>
-      </div>
-      <nav className="flex-grow px-4">
-        <ul className="space-y-2">
-          <NavLink href="/dashboard" icon={LayoutDashboard}>Panel Principal</NavLink>
-          <NavLink href="/dashboard/all-consultations" icon={Search}>Consultas</NavLink>
-          {profile?.role === 'doctor' && (
-            <>
-              <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
-            </>
-          )}
-        </ul>
-      </nav>
-      <div className="p-4 border-t border-base-300">
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><LifeBuoy size={22} /><span className="ml-4 font-semibold">Ayuda</span></a>
-        <a href="#" className="flex items-center p-3 rounded-lg text-text-secondary hover:bg-base-200"><Settings size={22} /><span className="ml-4 font-semibold">Configuración</span></a>
-      </div>
-    </aside>
-  );
-}
-
-function Header({ profile, onLogout }: { profile: Profile | null, onLogout: () => void }) {
-  return (
-    <header className="bg-base-100/80 backdrop-blur-sm sticky top-0 z-10 py-5 px-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Panel Principal</h1>
-        <div className="flex items-center space-x-5">
-          <div className="relative">
-            <input type="text" placeholder="Buscar..." className="w-72 p-2.5 pl-10 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary" />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-          </div>
-          <button className="relative p-2 text-text-secondary rounded-full hover:bg-base-200 hover:text-text-primary transition-colors">
-            <Bell size={24} />
-            <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-accent"></span>
-          </button>
-          <div className="flex items-center space-x-3 border-l border-base-300 pl-5">
-            <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">{profile?.full_name?.charAt(0) || 'U'}</div>
-            <div>
-              <p className="font-bold text-text-primary">{profile?.full_name}</p>
-              <p className="text-xs text-text-secondary capitalize">{profile?.role}</p>
-            </div>
-            <button onClick={onLogout} title="Cerrar Sesión" className="p-2 text-text-secondary hover:text-accent transition-colors"><LogOut size={22} /></button>
-          </div>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-function StatCard({ title, value, icon: Icon, color }: { title: string, value: string | number, icon: React.ElementType, color: string }) {
-  return (
-    <div className="bg-base-100 p-6 rounded-xl border border-base-300 shadow-soft flex items-center space-x-5">
-      <div className={`p-4 rounded-lg ${color}`}><Icon size={28} className="text-white" /></div>
-      <div>
-        <p className="text-sm font-semibold text-text-secondary">{title}</p>
-        <p className="text-3xl font-bold text-text-primary">{value}</p>
-      </div>
-    </div>
-  )
-}
-  
 export default function Dashboard() {
-  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [patients, setPatients] = useState<Patient[]>([])
-  const [selectedPatient, setSelectedPatient] = useState('')
-  const [consultations, setConsultations] = useState<Consultation[]>([])
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-  
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState('');
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
-  
+
   const [consultationType, setConsultationType] = useState('new_patient');
 
-  const [isRecording, setIsRecording] = useState(false)
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     const checkUserAndProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/')
+        router.push('/');
       } else {
-        setUser(user)
+        setUser(user);
         const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setProfile(userProfile);
         await loadPatients();
         await loadConsultations();
         setLoading(false);
       }
-    }
-    checkUserAndProfile()
-  }, [router])
+    };
+    checkUserAndProfile();
+  }, [router]);
 
   const loadPatients = async () => {
-    const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false })
-    if (error) console.error("Error al cargar pacientes:", error); else setPatients(data || [])
-  }
+    const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false });
+    if (error) console.error("Error al cargar pacientes:", error); else setPatients(data || []);
+  };
 
   const loadConsultations = async () => {
-    const { data, error } = await supabase.from('consultations').select(`*, patients!inner(full_name)`).order('created_at', { ascending: false }).limit(5)
-    if(error) console.error("Error al cargar consultas:", error); else setConsultations(data || [])
-  }
+    const { data, error } = await supabase.from('consultations').select(`*, patients!inner(full_name)`).order('created_at', { ascending: false }).limit(5);
+    if(error) console.error("Error al cargar consultas:", error); else setConsultations(data || []);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
-  }
+  };
 
   const handleCreatePatient = async (e: FormEvent) => {
     e.preventDefault();
@@ -184,11 +104,11 @@ export default function Dashboard() {
     try {
       const { error } = await supabase
         .from('patients')
-        .insert([{ 
-          full_name: newPatientName, 
+        .insert([{
+          full_name: newPatientName,
           phone: newPatientPhone,
           email: newPatientEmail,
-          user_id: user.id 
+          user_id: user.id
         }]);
 
       if (error) throw error;
@@ -212,59 +132,55 @@ export default function Dashboard() {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioStreamRef.current = stream;
-      const mediaRecorder = new MediaRecorder(stream)
+      const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
-      const audioChunks: Blob[] = []
-      mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data)
+      const audioChunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
-        setAudioBlob(audioBlob)
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        setAudioBlob(audioBlob);
         audioStreamRef.current?.getTracks().forEach(track => track.stop());
-      }
-      mediaRecorder.start()
-      setIsRecording(true)
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
       setAudioBlob(null);
-    } catch { alert('Error al acceder al micrófono') }
-  }
+    } catch { alert('Error al acceder al micrófono'); }
+  };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
     }
-    setIsRecording(false)
-  }
+    setIsRecording(false);
+  };
 
   const processAudio = async () => {
     if (!audioBlob || !selectedPatient || !user) {
-      alert('Por favor, selecciona un paciente y graba un audio.')
-      return
+      alert('Por favor, selecciona un paciente y graba un audio.');
+      return;
     }
-    setIsProcessingAudio(true)
+    setIsProcessingAudio(true);
     try {
-      // 1. Crear un nombre de archivo único para el audio
       const fileName = `${user.id}/${selectedPatient}_${Date.now()}.wav`;
 
-      // 2. Subir el archivo de audio a Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('consultation-audios')
         .upload(fileName, audioBlob);
-      
+
       if (uploadError) {
         throw new Error(`Error al subir el audio: ${uploadError.message}`);
       }
 
-      // 3. Insertar una nueva consulta con el estado 'pending'
-      // El trigger de la base de datos se encargará del resto.
       const { error: insertError } = await supabase
         .from('consultations')
         .insert({
           patient_id: selectedPatient,
           doctor_id: user.id,
-          status: 'pending', // El trigger se activará con este estado
-          audio_storage_path: uploadData.path, // Guardamos la ruta del archivo
-          consultation_type: consultationType, // Pasamos el tipo de consulta
+          status: 'pending',
+          audio_storage_path: uploadData.path,
+          consultation_type: consultationType,
         });
 
       if (insertError) {
@@ -274,25 +190,22 @@ export default function Dashboard() {
       alert('Consulta enviada a procesar. Se actualizará en unos momentos.');
       setAudioBlob(null);
       setSelectedPatient('');
-      // Opcional: podrías recargar las consultas para ver el estado 'pending'
       await loadConsultations();
 
-   
-    } catch (err: unknown) { // CORRECCIÓN: Se cambia 'any' por 'unknown'
+    } catch (err: unknown) {
       console.error("Error en processAudio:", err);
-      // Se verifica que 'err' sea una instancia de Error antes de acceder a 'message'
       if (err instanceof Error) {
         alert(`Error: ${err.message}`);
       } else {
         alert('Ocurrió un error inesperado.');
       }
-    } finally { 
-      setIsProcessingAudio(false) 
+    } finally {
+      setIsProcessingAudio(false);
     }
-  }
+  };
 
   if (loading) {
-    return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>
+    return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>;
   }
 
   return (
@@ -328,10 +241,10 @@ export default function Dashboard() {
 
       <div className="h-screen flex bg-base-200 overflow-hidden">
         <Sidebar profile={profile} />
-        
+
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header profile={profile} onLogout={handleLogout} />
-          
+
           <main className="flex-1 p-8 overflow-y-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-400" />
@@ -404,6 +317,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
