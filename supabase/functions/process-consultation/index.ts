@@ -1,11 +1,72 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import OpenAI from 'https://deno.land/x/openai@v4.24.1/mod.ts';
-// Se importa el archivo que acabas de crear
 import { corsHeaders } from '../_shared/cors.ts'
 
 console.log("Función 'process-consultation' inicializada.");
 
-// --- ¡IMPORTANTE! DEFINE TUS PLANTILLAS AQUÍ ---
+// --- INICIO DE LA MODIFICACIÓN ---
+// Se ha actualizado el prompt para nuevos pacientes con el formato detallado.
+
+const NEW_PATIENT_PROMPT = `
+Eres un asistente médico experto. Tu tarea es analizar la transcripción de una consulta y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español.
+
+Usa los siguientes títulos en negrita, seguidos de dos puntos:
+
+**Ficha de Identificación:**
+* **Nombre:**
+* **Edad:**
+* **Fecha de Nacimiento:**
+* **Fecha de consulta:**
+* **Ocupación:**
+* **Aseguradora:**
+
+**Antecedentes Heredo Familiares:**
+* **Madre:**
+* **Padre:**
+* **Hermanos:**
+* **Cáncer:**
+* **Tuberculosis:**
+* **Diabetes:**
+* **Hipertensión:**
+* **Tiroides:**
+* **Artritis:**
+* **Otros:**
+
+**Antecedentes personales no patológicos:**
+* **Ejercicio:**
+* **Alergias:**
+* **Tabaquismo:**
+* **Alcoholismo:**
+* **Toxicomanía:**
+* **Ginecológicos:**
+* **Homeopatía:**
+* **Naturista:**
+* **Otras:**
+
+**Antecedentes personales patológicos:**
+* **Diabetes:**
+* **Hipertensión:**
+* **Cirugías:**
+* **Fracturas:**
+* **Internamiento:**
+* **Otras:**
+* **Medicamentos o tratamientos:**
+
+**Padecimiento actual:**
+
+**Tratamiento previo:**
+
+**Exploración física:**
+
+**Diagnóstico:**
+
+**Solicitud de laboratorio y gabinete:**
+
+**Tratamiento:**
+
+Si no encuentras información para un campo, escribe "No se menciona".
+`;
+
 const FOLLOW_UP_PROMPT = `
 Eres un asistente médico experto en notas de seguimiento. Analiza la transcripción de una consulta y estructura la información estrictamente en el formato SOAP.
 Usa los siguientes títulos en negrita, seguidos de dos puntos:
@@ -17,18 +78,7 @@ Usa los siguientes títulos en negrita, seguidos de dos puntos:
 **Tratamiento:**
 Si no encuentras información para un campo, escribe "No se menciona".
 `;
-
-const NEW_PATIENT_PROMPT = `
-Eres un asistente médico experto. Tu tarea es analizar la transcripción de una consulta y estructurarla en una nota clínica profesional en formato de texto plano. La nota debe ser clara, concisa y estar en español.
-Usa los siguientes títulos en negrita, seguidos de dos puntos:
-**Padecimiento actual:**
-**Tratamiento previo:**
-**Exploración física:**
-**Diagnóstico:**
-**Solicitud de laboratorio y gabinete:**
-**Tratamiento:**
-Si no encuentras información para un campo, escribe "No se menciona".
-`;
+// --- FIN DE LA MODIFICACIÓN ---
 
 
 Deno.serve(async (req) => {
@@ -39,10 +89,8 @@ Deno.serve(async (req) => {
   try {
     console.log("Nueva solicitud recibida.");
     
-    // Se usa la SERVICE_ROLE_KEY para tener permisos de administrador
     const supabaseAdminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      // CORRECCIÓN: Usamos el nombre del secreto corregido
       Deno.env.get('SB_SERVICE_ROLE_KEY') ?? ''
     );
 

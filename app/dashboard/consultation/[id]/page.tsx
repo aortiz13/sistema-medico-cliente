@@ -25,12 +25,27 @@ interface ConsultationDetail {
     id: string;
     created_at: string;
     transcription: string;
-    formatted_notes: FormattedNote | null; // Usar el tipo específico
+    formatted_notes: FormattedNote | null;
     patients: {
       full_name: string;
       id: string;
     } | null;
 }
+
+// --- NUEVO COMPONENTE PARA RENDERIZAR MARKDOWN ---
+function MarkdownRenderer({ text }: { text: string | undefined | null }) {
+  if (!text) {
+    return <p>Nota no disponible.</p>;
+  }
+
+  // Convierte **texto** a <strong>texto</strong> y saltos de línea a <br />
+  const processedText = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br />');
+
+  return <div dangerouslySetInnerHTML={{ __html: processedText }} />;
+}
+
 
 // --- Componentes de UI Reutilizados ---
 function Sidebar({ profile }: { profile: Profile | null }) {
@@ -259,9 +274,9 @@ export default function ConsultationDetailPage() {
                     <FileText className="w-5 h-5 mr-2 text-blue-600" />
                     Notas Clínicas (Generadas por IA)
                   </h2>
-                  <div className="bg-gray-50 p-4 rounded-md text-gray-800 whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                    {/* CORRECCIÓN: Se accede a la propiedad .note_content */}
-                    {consultation.formatted_notes?.note_content || 'Nota no disponible.'}
+                  {/* CORRECCIÓN: Se usa el nuevo componente MarkdownRenderer */}
+                  <div className="bg-gray-50 p-4 rounded-md text-gray-800 font-sans text-sm leading-relaxed">
+                    <MarkdownRenderer text={consultation.formatted_notes?.note_content} />
                   </div>
                 </div>
 
