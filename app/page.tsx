@@ -49,23 +49,12 @@ export default function AuthenticationPage() {
     // Contenedor principal con grid para dividir la pantalla en dos columnas en pantallas grandes
     <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       {/* Panel izquierdo (visible solo en pantallas grandes) */}
-      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+      <div className="relative hidden h-full flex-col bg-white p-10 text-foreground dark:border-r lg:flex">
         {/* Fondo oscuro del panel izquierdo */}
         {/* Contenido del panel izquierdo */}
         <div className="relative z-20 flex items-center text-lg font-medium">
           {/* Aquí podrías poner tu logo o el nombre de tu sistema */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-2 h-6 w-6"
-          >
-            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-          </svg>
+          <Image src="/logo.png" alt="Logo del Sistema Médico">
           Sistema Médico MVP
         </div>
         <div className="relative z-20 mt-auto">
