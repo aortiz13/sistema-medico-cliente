@@ -51,7 +51,7 @@ export default function AuthenticationPage() {
     <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       {/* Panel izquierdo (visible solo en pantallas grandes) */}
       {/* Fondo con el color 'auth-background' y texto con 'text-primary' */}
-      <div className="relative hidden h-full flex-col bg-auth-background p-10 text-primary dark:border-r lg:flex">
+      <div className="relative hidden h-full flex-col bg-auth-panel-bg p-10 text-primary dark:border-r lg:flex">
         {/* Contenido del panel izquierdo */}
         <div className="relative z-20 flex items-center text-lg font-medium">
           {/* Logo de la aplicación */}
