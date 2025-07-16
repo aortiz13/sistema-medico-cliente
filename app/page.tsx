@@ -46,12 +46,13 @@ export default function AuthenticationPage() {
   };
 
   return (
-    // Contenedor principal para centrar y aplicar el fondo
-    <div className="relative h-screen flex items-center justify-center bg-background">
-      {/* El fondo con la imagen y el gradiente del ejemplo de Shadcn UI */}
-      {/* Para replicar el fondo del ejemplo de Shadcn UI, puedes usar un div con estilos específicos */}
-      <div className="absolute inset-0 hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+    // Contenedor principal con grid para dividir la pantalla en dos columnas en pantallas grandes
+    <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      {/* Panel izquierdo (visible solo en pantallas grandes) */}
+      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+        {/* Fondo oscuro del panel izquierdo */}
         <div className="absolute inset-0 bg-zinc-900" />
+        {/* Contenido del panel izquierdo */}
         <div className="relative z-20 flex items-center text-lg font-medium">
           {/* Aquí podrías poner tu logo o el nombre de tu sistema */}
           <svg
@@ -78,8 +79,8 @@ export default function AuthenticationPage() {
         </div>
       </div>
 
-      {/* Contenedor del formulario de login */}
-      <div className="lg:p-8">
+      {/* Panel derecho (formulario de login) */}
+      <div className="lg:p-8 flex items-center justify-center"> {/* Centrar el contenido verticalmente */}
         <Card className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <CardHeader className="flex flex-col space-y-2 text-center">
             <CardTitle className="text-2xl font-semibold tracking-tight">
