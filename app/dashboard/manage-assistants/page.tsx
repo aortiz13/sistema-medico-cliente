@@ -4,32 +4,28 @@ import { useEffect, useState, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import {
-  Users, Trash2, ShieldAlert, User as UserIcon, LogOut,
-  LayoutDashboard, Settings, Bell, LifeBuoy, Bot, Search, Send, UserPlus, X, // <-- UserPlus añadido aquí
-  CheckCircle, AlertCircle
-} from 'lucide-react';
+  Users, Trash2, User as UserIcon, Send, UserPlus
+} from 'lucide-react'; // UserPlus ya está importado
 
-// Importa los componentes de UI reutilizados
+// Importa componentes de UI y hooks
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { NotificationPopup } from '@/components/common/NotificationPopup';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
+import { useAuth } from '@/hooks/useAuth'; // Importa el hook de autenticación
 
-// --- Interfaces ---
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
-interface Assistant {
+// Importa las interfaces desde types/index.ts
+import { Profile } from '@/types'; // Se mantiene si Profile es solo para este archivo o se mueve al tipo
+
+interface Assistant { // Esta interfaz puede moverse a types/index.ts también
   id: string;
   full_name: string;
 }
 
 export default function ManageAssistantsPage() {
+  const { user, profile, loading: loadingAuth, handleLogout } = useAuth(); // Usa el hook de autenticación
   const [assistants, setAssistants] = useState<Assistant[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingAssistants, setLoadingAssistants] = useState(true); // Nuevo estado de carga para asistentes
   const [error, setError] = useState<string | null>(null);
   const [assistantToDelete, setAssistantToDelete] = useState<Assistant | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,29 +36,27 @@ export default function ManageAssistantsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkAdminAndFetchAssistants = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/'); return; }
-
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (profileData?.role !== 'doctor') { router.push('/dashboard'); return; }
-
-      setProfile(profileData);
-      fetchAssistants();
-    };
-
-    checkAdminAndFetchAssistants();
-  }, [router]);
+    // Redireccionar si no es doctor o no está autenticado
+    if (!loadingAuth) {
+      if (!user) {
+        router.push('/');
+      } else if (profile?.role !== 'doctor') {
+        router.push('/dashboard');
+      } else {
+        fetchAssistants();
+      }
+    }
+  }, [loadingAuth, user, profile, router]);
 
   const fetchAssistants = async () => {
-    setLoading(true);
+    setLoadingAssistants(true);
     const { data, error } = await supabase.from('profiles').select(`id, full_name`).eq('role', 'asistente');
     if (error) {
       console.error("Error fetching assistants:", error);
       setError("No se pudieron cargar los asistentes.");
     }
     else { setAssistants(data as Assistant[]); }
-    setLoading(false);
+    setLoadingAssistants(false);
   };
 
   const handleInviteAssistant = async (e: FormEvent) => {
@@ -115,9 +109,7 @@ export default function ManageAssistantsPage() {
     }
   };
 
-  const handleLogout = async () => { await supabase.auth.signOut(); router.push('/'); };
-
-  if (loading) {
+  if (loadingAuth || loadingAssistants) { // Considera ambos estados de carga
     return <div className="h-screen bg-base-200 flex items-center justify-center">Cargando...</div>;
   }
 
@@ -173,7 +165,7 @@ export default function ManageAssistantsPage() {
                 <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center"><Users className="w-6 h-6 mr-3 text-primary" />Lista de Asistentes</h2>
                 <div className="space-y-3">
                   {error && <p className="text-accent bg-red-100 p-3 rounded-md">{error}</p>}
-                  {assistants.length === 0 && !loading && (<p className="text-text-secondary text-center py-8">No hay asistentes registrados.</p>)}
+                  {assistants.length === 0 && !loadingAssistants && (<p className="text-text-secondary text-center py-8">No hay asistentes registrados.</p>)}
                   {assistants.map(assistant => (
                     <div key={assistant.id} className="flex items-center justify-between p-4 border border-base-300 rounded-lg hover:bg-base-200">
                       <div className="flex items-center">

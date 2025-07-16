@@ -1,43 +1,23 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Search, Calendar, FileText, User as UserIcon } from 'lucide-react';
 
-// Importa los componentes de UI reutilizados
+// Importa componentes de UI y hooks
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { useAuth } from '@/hooks/useAuth';
+import { useConsultations } from '@/hooks/useConsultations';
 
-// --- Interfaces ---
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
-interface Patient {
-  id: string;
-  full_name: string;
-  document_id: string | null;
-}
-interface FormattedNote {
-  note_content: string;
-}
-interface Consultation {
-  id: string;
-  created_at: string;
-  status: string;
-  formatted_notes: FormattedNote | null;
-  patient_id: string | null;
-}
+// Importa las interfaces desde types/index.ts
+import { Consultation } from '@/types';
 
 export default function AllConsultationsPage() {
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const [patientsMap, setPatientsMap] = useState<Map<string, Patient>>(new Map());
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { profile, loading: loadingAuth, handleLogout } = useAuth();
+  const { consultations, patientsMap, loadingConsultations, loadConsultations } = useConsultations();
+
   const router = useRouter();
 
   // --- Estados para los filtros ---
@@ -46,49 +26,10 @@ export default function AllConsultationsPage() {
   const [dateFilter, setDateFilter] = useState('');
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/');
-          return;
-        }
-
-        const [profileRes, consultationsRes, patientsRes] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', user.id).single(),
-          supabase.from('consultations').select('*').order('created_at', { ascending: false }),
-          supabase.from('patients').select('*')
-        ]);
-
-        if (profileRes.error) throw profileRes.error;
-        if (consultationsRes.error) throw consultationsRes.error;
-        if (patientsRes.error) throw patientsRes.error;
-
-        const patientMap = new Map(patientsRes.data.map(p => [p.id, p]));
-
-        setProfile(profileRes.data);
-        setConsultations(consultationsRes.data || []);
-        setPatientsMap(patientMap);
-
-      } catch (err) {
-        if (err instanceof Error) {
-          console.error("Error al cargar datos:", err.message);
-        }
-        setError("No se pudieron cargar los datos.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchInitialData();
-  }, [router]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
+    if (!loadingAuth && profile) {
+      loadConsultations();
+    }
+  }, [loadingAuth, profile, loadConsultations]);
 
   const filteredConsultations = useMemo(() => {
     return consultations
@@ -100,7 +41,7 @@ export default function AllConsultationsPage() {
       .filter(c => {
         if (!nameFilter) return true;
         const patient = c.patient_id ? patientsMap.get(c.patient_id) : null;
-        return patient?.full_name.toLowerCase().includes(nameFilter.toLowerCase()) || false;
+        return patient?.full_name?.toLowerCase().includes(nameFilter.toLowerCase()) || false;
       })
       .filter(c => {
         if (!dniFilter) return true;
@@ -115,8 +56,8 @@ export default function AllConsultationsPage() {
     setDateFilter('');
   };
 
-  if (loading) {
-    return <div className="h-screen bg-gray-50 flex items-center justify-center">Cargando...</div>;
+  if (loadingAuth || loadingConsultations) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Cargando...</div>;
   }
 
   return (
@@ -171,11 +112,7 @@ export default function AllConsultationsPage() {
                     </tr>
                   </thead>
                   <tbody className="text-gray-700">
-                    {loading ? (
-                      <tr><td colSpan={4} className="text-center py-10">Cargando...</td></tr>
-                    ) : error ? (
-                      <tr><td colSpan={4} className="text-center py-10 text-red-500">{error}</td></tr>
-                    ) : filteredConsultations.length === 0 ? (
+                    {consultations.length === 0 ? (
                       <tr><td colSpan={4} className="text-center py-10">No se encontraron resultados.</td></tr>
                     ) : (
                       filteredConsultations.map(c => {
@@ -204,8 +141,8 @@ export default function AllConsultationsPage() {
                 </table>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </div>
   );

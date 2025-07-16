@@ -1,49 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
   ArrowLeft, User as UserIcon, Calendar, BookOpen, AlertTriangle,
-  HeartPulse, Stethoscope, Users,
+  HeartPulse, Stethoscope,
 } from 'lucide-react';
 
-// Importa los componentes de UI reutilizados
+// Importa componentes de UI y hooks
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { useAuth } from '@/hooks/useAuth'; // Importa el hook de autenticación
+import { useConsultations } from '@/hooks/useConsultations'; // Importa el hook de consultas
+import { supabase } from '@/lib/supabase'; // Importa supabase si sigue siendo necesario directamente aquí
 
-// --- Interfaces ---
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
-
-interface Patient {
-  id: string;
-  full_name: string | null;
-  document_id: string | null;
-  date_of_birth: string | null;
-  allergies: string | null;
-  chronic_conditions: string | null;
-  phone: string | null;
-  email: string | null;
-}
-
-interface Consultation {
-  id: string;
-  created_at: string;
-  formatted_notes: string;
-}
+// Importa las interfaces desde types/index.ts
+import { Patient, Consultation } from '@/types';
 
 export default function PatientProfilePage() {
+  const { user, profile, loading: loadingAuth, handleLogout } = useAuth(); // Usa el hook de autenticación
+  const { consultations, loadConsultations } = useConsultations(); // Usamos loadConsultations para cargar las consultas del paciente
+
   const [patient, setPatient] = useState<Patient | null>(null);
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingPatientData, setLoadingPatientData] = useState(true); // Nuevo estado de carga para los datos específicos del paciente
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingHistory, setIsGeneratingHistory] = useState(false);
   const params = useParams();
@@ -51,47 +33,47 @@ export default function PatientProfilePage() {
   const id = params.id as string;
 
   useEffect(() => {
-    if (!id) return;
-    const fetchPatientData = async () => {
-      setLoading(true);
+    if (!id || !user) return; // Espera a que el usuario esté cargado
+    const fetchPatientSpecificData = async () => {
+      setLoadingPatientData(true);
       setError(null);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/');
-          return;
-        }
+        const { data: patientRes, error: patientError } = await supabase.from('patients').select('*').eq('id', id).single();
+        if (patientError) throw patientError;
+        setPatient(patientRes);
 
-        const [profileRes, patientRes, consultationsRes] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', user.id).single(),
-          supabase.from('patients').select('*').eq('id', id).single(),
-          supabase.from('consultations').select('id, created_at, formatted_notes').eq('patient_id', id).order('created_at', { ascending: false })
-        ]);
+        // Cargar consultas específicas del paciente usando la función del hook de consultas
+        const { data: consultationsRes, error: consultationsError } = await supabase.from('consultations')
+          .select('id, created_at, formatted_notes')
+          .eq('patient_id', id)
+          .order('created_at', { ascending: false });
 
-        if (profileRes.error) throw profileRes.error;
-        if (patientRes.error) throw patientRes.error;
-        if (consultationsRes.error) throw consultationsRes.error;
-
-        setProfile(profileRes.data);
-        setPatient(patientRes.data);
-        setConsultations(consultationsRes.data || []);
+        if (consultationsError) throw consultationsError;
+        // El hook useConsultations ya mantiene su propio estado 'consultations',
+        // pero aquí necesitamos las consultas filtradas por paciente para este componente.
+        // Podríamos extender useConsultations para filtrar, o simplemente fetchear aquí como está.
+        // Para simplificar, asumimos que 'consultations' en este componente ahora se refiere a las del paciente.
+        // (Nota: Si useConsultations se extiende para filtrar, esta parte se haría con ese hook)
+        // Por ahora, para no reintroducir un estado duplicado en el hook de consultas,
+        // simplemente mantenemos el estado local de 'consultations' aquí para las consultas del paciente.
+        // Idealmente, useConsultations debería tener una función `loadConsultationsByPatient(patientId)`
+        // y este componente la usaría para obtener las consultas y las asignaría a su propio estado local.
+        setConsultations(consultationsRes || []);
 
       } catch (err) {
-  if (err instanceof Error) {
-    console.error("Error al cargar los datos:", err.message);
-  }
-  setError("No se pudieron cargar los datos de la consulta.");
-} finally {
-        setLoading(false);
+        if (err instanceof Error) {
+          console.error("Error al cargar los datos del paciente:", err.message);
+        }
+        setError("No se pudieron cargar los datos del paciente o sus consultas.");
+      } finally {
+        setLoadingPatientData(false);
       }
     };
-    fetchPatientData();
-  }, [id, router]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
+    if (user) {
+      fetchPatientSpecificData();
+    }
+  }, [id, user, router]); // Dependencia de 'user' para esperar autenticación
 
   const calculateAge = (dob: string | null | undefined) => {
     if (!dob) return 'N/A';
@@ -173,7 +155,7 @@ export default function PatientProfilePage() {
   };
 
 
-  if (loading) {
+  if (loadingAuth || loadingPatientData) {
     return <div className="h-screen bg-base-200 flex items-center justify-center">Cargando...</div>;
   }
 

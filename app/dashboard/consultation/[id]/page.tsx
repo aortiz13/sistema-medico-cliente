@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import jsPDF from 'jspdf';
@@ -10,35 +9,21 @@ import {
   ArrowLeft, FileText, Mic, Download,
 } from 'lucide-react';
 
-// Importa los componentes de UI reutilizados
+// Importa componentes de UI y hooks
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
+import { useAuth } from '@/hooks/useAuth'; // Importa el hook de autenticación
+import { useConsultations } from '@/hooks/useConsultations'; // Importa el hook de consultas
 
-// --- Interfaces ---
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
-interface FormattedNote {
-  note_content: string;
-}
-interface ConsultationDetail {
-    id: string;
-    created_at: string;
-    transcription: string;
-    formatted_notes: FormattedNote | null;
-    patients: {
-      full_name: string;
-      id: string;
-    } | null;
-}
+// Importa las interfaces desde types/index.ts
+import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
-  const [consultation, setConsultation] = useState<ConsultationDetail | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { profile, loading: loadingAuth, handleLogout } = useAuth(); // Usa el hook de autenticación
+  const { loadConsultationById, loadingConsultations } = useConsultations(); // Usa el hook de consultas para cargar por ID
+
+  const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const params = useParams();
@@ -46,108 +31,25 @@ export default function ConsultationDetailPage() {
   const id = params.id as string;
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !profile) return; // Espera a que el perfil esté cargado
 
-    const fetchInitialData = async () => {
-      setLoading(true);
+    const fetchConsultation = async () => {
       setError(null);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/');
-          return;
-        }
-
-        const [profileRes, consultationRes] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', user.id).single(),
-          supabase.from('consultations').select(`*, patients!inner(id, full_name)`).eq('id', id).single()
-        ]);
-
-        if (profileRes.error) throw profileRes.error;
-        if (consultationRes.error) throw consultationRes.error;
-
-        setProfile(profileRes.data);
-        setConsultation(consultationRes.data as ConsultationDetail);
-
-      } catch (err) {
-        if (err instanceof Error) {
-          console.error("Error al cargar los datos:", err.message);
-        }
-        setError("No se pudieron cargar los datos de la consulta.");
-      } finally {
-        setLoading(false);
+      const data = await loadConsultationById(id);
+      if (data) {
+        setConsultation(data);
+      } else {
+        setError("No se pudo cargar los datos de la consulta.");
       }
     };
 
-    fetchInitialData();
-  }, [id, router]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
-
-  const handleDownloadPDF = () => {
-    const input = document.getElementById('pdf-content');
-    if (!input) {
-        alert("Error: No se encontró el elemento para generar el PDF.");
-        return;
+    if (profile) { // Solo si el perfil ya está cargado
+      fetchConsultation();
     }
 
-    setIsGeneratingPDF(true);
+  }, [id, profile, loadConsultationById]); // Dependencia de 'profile' para esperar su carga
 
-    html2canvas(input, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      onclone: (clonedDoc) => {
-        const content = clonedDoc.getElementById('pdf-content');
-        if (content) {
-          content.style.backgroundColor = 'white';
-          const allElements = content.querySelectorAll('*');
-          allElements.forEach((el) => {
-            (el as HTMLElement).style.color = '#000000';
-          });
-        }
-      }
-    })
-      .then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-        const imgHeight = pdfWidth / ratio;
-        let height = imgHeight;
-        let position = 0;
-
-        if (imgHeight > pdfHeight) {
-          height = pdfHeight;
-        }
-
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
-        let heightLeft = imgHeight - height;
-
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-          heightLeft -= pdfHeight;
-        }
-        pdf.save(`consulta-${consultation?.patients?.full_name}-${new Date(consultation!.created_at).toLocaleDateString()}.pdf`);
-      })
-      .catch(err => {
-        console.error("Error detallado al generar el PDF:", err);
-        alert("Hubo un error al generar el PDF. Por favor, revisa la consola del navegador para más detalles.");
-      })
-      .finally(() => {
-        setIsGeneratingPDF(false);
-      });
-  };
-
-  if (loading) {
+  if (loadingAuth || loadingConsultations) {
     return <div className="h-screen bg-gray-50 flex items-center justify-center">Cargando...</div>;
   }
 

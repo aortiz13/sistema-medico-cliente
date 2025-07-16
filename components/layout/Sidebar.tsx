@@ -46,7 +46,6 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
             <>
               <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
               {/* Se asume que 'ai-settings' también es solo para doctores */}
-              <NavLink href="/dashboard/ai-settings" icon={Bot}>Plantilla IA</NavLink>
             </>
           )}
         </ul>
