@@ -1,88 +1,121 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+// Importa los componentes de Shadcn UI
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+// Importa tu cliente de Supabase
+// Asegúrate de que la ruta sea correcta si tu archivo supabase.ts no está en lib/supabase.ts
+import { supabase } from '@/lib/supabase';
+
+export default function AuthenticationPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(''); // Estado para mensajes de error/éxito
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
+    setMessage(''); // Limpia mensajes anteriores
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
-        password
-      })
+        password,
+      });
 
       if (error) {
-        alert('Error: ' + error.message)
+        setMessage(error.message); // Muestra el error en la UI
       } else {
-        alert('¡Login exitoso!')
-        router.push('/dashboard')
+        setMessage('¡Inicio de sesión exitoso! Redireccionando...');
+        router.push('/dashboard'); // Redirecciona al dashboard
       }
-    } catch { // <<<< CAMBIO FINAL AQUÍ
-      alert('Error inesperado')
+    } catch (error) {
+      console.error('Error inesperado durante el login:', error);
+      setMessage('Error inesperado. Por favor, inténtalo de nuevo.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">
-          Sistema Médico
-        </h1>
-        
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="miemail@test.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="123456789"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? 'Iniciando...' : 'Iniciar Sesión'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-600 mt-4">
-          Usuario de prueba<br />
-          Contraseña
-        </p>
+    <div className="relative h-screen flex items-center justify-center bg-background">
+      <div className="lg:p-8">
+        <Card className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+          <CardHeader className="flex flex-col space-y-2 text-center">
+            <CardTitle className="text-2xl font-semibold tracking-tight">
+              Inicia sesión
+            </CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Ingresa tus credenciales para acceder a tu cuenta.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <form onSubmit={handleLogin} className="grid gap-4"> {/* Envuelve los campos en un formulario */}
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect="off"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {message && (
+                <p className={`text-sm text-center ${message.includes('éxito') ? 'text-green-500' : 'text-red-500'}`}>
+                  {message}
+                </p>
+              )}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Cargando...' : 'Iniciar sesión'}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <div className="relative flex justify-center text-xs uppercase w-full">
+              <span className="bg-background px-2 text-muted-foreground">
+                O continúa con
+              </span>
+            </div>
+            <Button variant="outline" className="w-full">
+              Google
+            </Button>
+            <p className="px-8 text-center text-sm text-muted-foreground">
+              ¿No tienes una cuenta?{' '}
+              <Link
+                href="/register" // Asegúrate de que esta ruta sea la correcta para tu página de registro
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Regístrate
+              </Link>
+              .
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </div>
-  )
+  );
 }
