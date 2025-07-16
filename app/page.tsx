@@ -58,11 +58,11 @@ export default function AuthenticationPage() {
           <Image
             src="/logo.png" // Ruta de tu logo
             alt="Logo Sistema Médico MVP"
-            width={32} // Ajusta el ancho según sea necesario
-            height={32} // Ajusta la altura según sea necesario
+            width={64} // Ajusta el ancho según sea necesario
+            height={64} // Ajusta la altura según sea necesario
             className="mr-2 rounded-full" // Clases de Tailwind para el estilo del logo
           />
-          Sistema Médico MVP
+          Dr. Alejandro Lessieur 
         </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
