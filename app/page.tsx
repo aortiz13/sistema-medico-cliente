@@ -122,14 +122,6 @@ export default function AuthenticationPage() {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <div className="relative flex justify-center text-xs uppercase w-full">
-              <span className="bg-background px-2 text-muted-foreground">
-                O continúa con
-              </span>
-            </div>
-            <Button variant="outline" className="w-full">
-              Google
-            </Button>
             <p className="px-8 text-center text-sm text-muted-foreground">
               ¿No tienes una cuenta?{' '}
               <Link
