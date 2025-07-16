@@ -51,7 +51,6 @@ export default function AuthenticationPage() {
       {/* Panel izquierdo (visible solo en pantallas grandes) */}
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
         {/* Fondo oscuro del panel izquierdo */}
-        <div className="absolute inset-0 bg-zinc-900" />
         {/* Contenido del panel izquierdo */}
         <div className="relative z-20 flex items-center text-lg font-medium">
           {/* Aquí podrías poner tu logo o el nombre de tu sistema */}
