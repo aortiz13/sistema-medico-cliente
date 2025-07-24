@@ -1,7 +1,7 @@
-// app/dashboard/all-consultations/page.tsx
+// app/(dashboard)/dashboard/all-consultations/page.tsx
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -10,30 +10,31 @@ import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Search, X } from 'lucide-react';
-import { Consultation } from '@/types';
+import { X } from 'lucide-react';
+import { Consultation } from '@/types'; // Asegúrate que la importación esté bien
+
+// Extendemos la interfaz para incluir el perfil del profesional
+interface ConsultationWithProfile extends Consultation {
+  profiles: {
+    full_name: string;
+  } | null;
+}
 
 export default function AllConsultationsPage() {
   const { user, profile, loading: loadingAuth } = useAuth();
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [consultations, setConsultations] = useState<ConsultationWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Estados para los filtros
   const [filters, setFilters] = useState({
     patientName: '',
     doctorName: '',
     consultationDate: '',
   });
 
-  useEffect(() => {
-    if (!loadingAuth && user) {
-      fetchConsultations();
-    }
-  }, [loadingAuth, user]);
-
-  const fetchConsultations = async () => {
+  const fetchConsultations = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     setError(null);
     try {
@@ -50,24 +51,29 @@ export default function AllConsultationsPage() {
         `)
         .order('created_at', { ascending: false });
 
-      // Si el usuario es un asistente, solo mostramos sus consultas.
       if (profile?.role === 'asistente') {
         query = query.eq('doctor_id', user.id);
       }
 
       const { data, error: supabaseError } = await query;
 
-      if (supabaseError) {
-        throw supabaseError;
-      }
-      setConsultations(data as any);
-    } catch (err: any) {
+      if (supabaseError) throw supabaseError;
+      
+      setConsultations(data as ConsultationWithProfile[]);
+    } catch (err) {
       console.error('Error al cargar las consultas:', err);
       setError('Error desconocido al cargar las consultas.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, profile]);
+
+  useEffect(() => {
+    if (!loadingAuth) {
+      fetchConsultations();
+    }
+  }, [loadingAuth, fetchConsultations]);
+
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,7 +96,7 @@ export default function AllConsultationsPage() {
 
       const doctorNameMatch =
         !filters.doctorName ||
-        (consultation as any).profiles?.full_name?.toLowerCase().includes(filters.doctorName.toLowerCase());
+        consultation.profiles?.full_name?.toLowerCase().includes(filters.doctorName.toLowerCase());
 
         const dateMatch = !filters.consultationDate || 
         format(new Date(consultation.created_at), 'yyyy-MM-dd') === filters.consultationDate;
@@ -204,7 +210,7 @@ export default function AllConsultationsPage() {
                   </td>
                   {profile?.role !== 'asistente' && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                      {(consultation as any).profiles?.full_name || 'N/A'}
+                      {consultation.profiles?.full_name || 'N/A'}
                     </td>
                   )}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
