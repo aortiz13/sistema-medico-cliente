@@ -138,7 +138,7 @@ export default function ManageAssistantsPage() {
 
       <div className="h-screen flex bg-base-200 overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header profile={profile} onLogout={handleLogout} title="Gestión de Equipo" showSearch={false} />
+          <Header title="Gestión de Equipo" showSearch={false} />
           <main className="flex-1 p-8 overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
               <div className="lg:col-span-1 bg-base-100 rounded-xl shadow-soft border border-base-300 p-6">

@@ -120,8 +120,7 @@ export default function Dashboard() {
       <div className="h-screen flex bg-base-200 overflow-hidden">
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header profile={profile} onLogout={handleLogout} />
-
+        <Header />
           <main className="flex-1 p-8 overflow-y-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-400" />

@@ -1,20 +1,17 @@
+'use client';
+
 import * as React from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Bell, LogOut, Search } from 'lucide-react';
 
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
-
 interface HeaderProps {
-  profile: Profile | null;
-  onLogout: () => void;
-  title?: string; // Título opcional para personalizar el encabezado
-  showSearch?: boolean; // Opción para mostrar/ocultar la barra de búsqueda
+  title?: string;
+  showSearch?: boolean;
 }
 
-export function Header({ profile, onLogout, title = "Panel Principal", showSearch = true }: HeaderProps) {
+export function Header({ title = "Panel Principal", showSearch = true }: HeaderProps) {
+  const { profile, handleLogout } = useAuth();
+
   return (
     <header className="bg-base-100/80 backdrop-blur-sm sticky top-0 z-10 py-5 px-8">
       <div className="flex items-center justify-between">
@@ -36,7 +33,7 @@ export function Header({ profile, onLogout, title = "Panel Principal", showSearc
               <p className="font-bold text-text-primary">{profile?.full_name}</p>
               <p className="text-xs text-text-secondary capitalize">{profile?.role}</p>
             </div>
-            <button onClick={onLogout} title="Cerrar Sesión" className="p-2 text-text-secondary hover:text-accent transition-colors"><LogOut size={22} /></button>
+            <button onClick={handleLogout} title="Cerrar Sesión" className="p-2 text-text-secondary hover:text-accent transition-colors"><LogOut size={22} /></button>
           </div>
         </div>
       </div>
