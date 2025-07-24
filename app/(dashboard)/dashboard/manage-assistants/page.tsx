@@ -8,7 +8,6 @@ import {
 } from 'lucide-react'; // UserPlus ya está importado
 
 // Importa componentes de UI y hooks
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { NotificationPopup } from '@/components/common/NotificationPopup';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
@@ -138,7 +137,6 @@ export default function ManageAssistantsPage() {
       />
 
       <div className="h-screen flex bg-base-200 overflow-hidden">
-        <Sidebar profile={profile} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header profile={profile} onLogout={handleLogout} title="Gestión de Equipo" showSearch={false} />
           <main className="flex-1 p-8 overflow-y-auto">

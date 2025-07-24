@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
@@ -105,7 +104,6 @@ export default function PatientProfilePage() {
 
   return (
     <div className="h-screen flex bg-base-200 overflow-hidden">
-      <Sidebar profile={profile} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header profile={profile} onLogout={handleLogout} title="Ficha del Paciente" showSearch={false} />
         <main className="flex-1 p-8 overflow-y-auto">

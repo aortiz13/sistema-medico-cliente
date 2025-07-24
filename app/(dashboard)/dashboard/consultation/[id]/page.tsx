@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { useAuth } from '@/hooks/useAuth';
@@ -78,7 +77,6 @@ export default function ConsultationDetailPage() {
 
   return (
     <div className="h-screen flex bg-gray-50 overflow-hidden">
-      <Sidebar profile={profile} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header profile={profile} onLogout={handleLogout} title="Detalle de la Consulta" showSearch={false} />
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">

@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { StatCard } from '@/components/common/StatCard';
 
@@ -119,7 +118,6 @@ export default function Dashboard() {
       )}
 
       <div className="h-screen flex bg-base-200 overflow-hidden">
-        <Sidebar profile={profile} />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header profile={profile} onLogout={handleLogout} />
