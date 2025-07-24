@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
-import { Consultation } from '@/types'; // Asegúrate que la importación esté bien
+import { Consultation } from '@/types';
 
 // Extendemos la interfaz para incluir el perfil del profesional
 interface ConsultationWithProfile extends Consultation {
@@ -46,6 +46,8 @@ export default function AllConsultationsPage() {
           patient_id,
           doctor_id,
           consultation_type,
+          status, 
+          formatted_notes,
           patients ( full_name ),
           profiles ( full_name )
         `)
