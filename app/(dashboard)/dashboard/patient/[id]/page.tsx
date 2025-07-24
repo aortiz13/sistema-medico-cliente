@@ -105,7 +105,6 @@ export default function PatientProfilePage() {
   return (
     <div className="h-screen flex bg-base-200 overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Ficha del Paciente" showSearch={false} />
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
