@@ -46,7 +46,7 @@ export default function AllConsultationsPage() {
           patient_id,
           doctor_id,
           consultation_type,
-          status, 
+          status,
           formatted_notes,
           patients ( full_name ),
           profiles ( full_name )
@@ -58,10 +58,16 @@ export default function AllConsultationsPage() {
       }
 
       const { data, error: supabaseError } = await query;
-
       if (supabaseError) throw supabaseError;
+
+      // Transformación de los datos para asegurar que las relaciones sean objetos y no arrays
+      const formattedData = data.map(c => ({
+        ...c,
+        patients: Array.isArray(c.patients) ? c.patients[0] : c.patients,
+        profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles,
+      }));
       
-      setConsultations(data as ConsultationWithProfile[]);
+      setConsultations(formattedData as ConsultationWithProfile[]);
     } catch (err) {
       console.error('Error al cargar las consultas:', err);
       setError('Error desconocido al cargar las consultas.');
