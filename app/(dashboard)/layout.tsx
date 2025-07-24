@@ -1,4 +1,3 @@
-import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -38,18 +37,11 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex min-h-screen">
       <Sidebar profile={userProfile} />
-      
-      {/* Contenedor para la cabecera y el contenido principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header profile={null} onLogout={function (): void {
-          throw new Error('Function not implemented.');
-        } } /> {/* La cabecera va aquí, fuera del área de scroll */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {children}
-        </main>
-      </div>
+      <main className="flex-1 overflow-auto">
+        {children}
+      </main>
     </div>
   );
 }
