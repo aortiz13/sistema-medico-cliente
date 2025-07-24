@@ -78,7 +78,7 @@ export default function ConsultationDetailPage() {
   return (
     <div className="h-screen flex bg-gray-50 overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header profile={profile} onLogout={handleLogout} title="Detalle de la Consulta" showSearch={false} />
+        <Header title="Detalle de la Consulta" showSearch={false} />
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-8">
