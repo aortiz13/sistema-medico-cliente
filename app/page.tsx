@@ -1,5 +1,7 @@
 "use client"; 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,9 +10,36 @@ import { Badge } from "@/components/ui/badge";
 import { Stethoscope, Users, Calendar, FileText, Shield, Zap, Heart, Activity } from "lucide-react";
 
 const Index = () => {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (isLogin) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push('/dashboard');
+      }
+    } else {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push('/dashboard');
+      }
+    }
+
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -27,9 +56,6 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">Sistema Médico Moderno</p>
               </div>
             </div>
-            <Button variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-              Contacto
-            </Button>
           </div>
         </div>
       </header>
@@ -108,7 +134,8 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="space-y-6">
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-foreground font-medium">
@@ -139,12 +166,14 @@ const Index = () => {
                   </div>
                 </div>
 
-                <Button 
+                <Button
+                  type="submit"
+                  disabled={loading}
                   className="w-full bg-gradient-primary hover:shadow-medium transition-all duration-300 text-white font-medium py-6"
                   size="lg"
                 >
                   <Activity className="w-5 h-5 mr-2" />
-                  {isLogin ? "Acceder al Sistema" : "Crear mi Cuenta"}
+                  {loading ? 'Procesando...' : isLogin ? 'Acceder al Sistema' : 'Crear mi Cuenta'}
                 </Button>
 
                 <div className="text-center space-y-4">
@@ -159,12 +188,16 @@ const Index = () => {
                     {isLogin ? "Crear cuenta nueva" : "Iniciar sesión"}
                   </Button>
                 </div>
+                {error && (
+                  <p className="text-center text-red-600 text-sm">{error}</p>
+                )}
 
                 {/* Security Badge */}
                 <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
                   <Shield className="w-4 h-4 text-accent" />
                   <span>Protegido con encriptación de grado militar</span>
                 </div>
+                </form>
               </CardContent>
             </Card>
           </div>

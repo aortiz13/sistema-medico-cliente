@@ -10,4 +10,4 @@ console.log("Supabase Anon Key (desde el cliente):", process.env.NEXT_PUBLIC_SUP
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+);
