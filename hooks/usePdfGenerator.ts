@@ -11,6 +11,8 @@ interface PdfOptions {
   backgroundColor?: string;
   onClone?: (clonedDoc: Document) => void;
   scale?: number;
+   /** Margin in millimeters for each side of the PDF pages */
+  marginMm?: number;
 }
 
 export function usePdfGenerator(): UsePdfGeneratorReturn {
@@ -43,8 +45,10 @@ export function usePdfGenerator(): UsePdfGeneratorReturn {
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
 
-      const pxPerMm = canvasWidth / pdfWidth;
-      const pageHeightPx = pdfHeight * pxPerMm;
+      const marginMm = options?.marginMm ?? 10;
+      const contentWidthMm = pdfWidth - marginMm * 2;
+      const pxPerMm = canvasWidth / contentWidthMm;
+      const pageHeightPx = (pdfHeight - marginMm * 2) * pxPerMm;
       let printedHeight = 0;
 
       while (printedHeight < canvasHeight) {
