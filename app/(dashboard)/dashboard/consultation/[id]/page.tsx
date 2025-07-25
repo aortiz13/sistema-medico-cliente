@@ -80,8 +80,7 @@ export default function ConsultationDetailPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
-            // Solución propuesta
-<div className="sticky top-0 bg-background/80 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 flex justify-between items-center mb-8 py-4 z-10 border-b">
+            <div className="sticky top-0 bg-background/80 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 flex justify-between items-center mb-8 py-4 z-10 border-b">
               <div>
                 <Link href="/dashboard/all-consultations" className="flex items-center space-x-2 text-blue-600 hover:underline mb-2">
                   <ArrowLeft className="w-5 h-5" />
