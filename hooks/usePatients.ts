@@ -41,6 +41,7 @@ export function usePatients(): UsePatientsReturn {
         .from('patients')
         .insert([{
           full_name: newPatient.full_name,
+            document_id: newPatient.document_id,
           phone: newPatient.phone,
           email: newPatient.email,
           user_id: userId

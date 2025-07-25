@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [selectedPatient, setSelectedPatient] = useState('');
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
+  const [newPatientDni, setNewPatientDni] = useState('');
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [newPatientEmail, setNewPatientEmail] = useState('');
   const [isSavingPatient, setIsSavingPatient] = useState(false);
@@ -46,13 +47,14 @@ export default function Dashboard() {
 
   const handleCreatePatientSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newPatientName || !user) {
-      alert('El nombre del paciente es obligatorio.');
+    if (!newPatientName || !newPatientDni || !user) {
+      alert('El nombre y el DNI del paciente son obligatorios.');
       return;
     }
     setIsSavingPatient(true);
     const success = await createPatient({
       full_name: newPatientName,
+      document_id: newPatientDni,
       phone: newPatientPhone,
       email: newPatientEmail,
     }, user.id);
@@ -60,6 +62,7 @@ export default function Dashboard() {
     if (success) {
       alert("¡Paciente creado exitosamente!");
       setNewPatientName('');
+      setNewPatientDni('');
       setNewPatientPhone('');
       setNewPatientEmail('');
       setIsPatientModalOpen(false);
@@ -100,6 +103,10 @@ export default function Dashboard() {
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">Nombre Completo</label>
                   <input type="text" value={newPatientName} onChange={(e) => setNewPatientName(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ej: Carlos Sánchez" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text-secondary mb-1">DNI</label>
+                  <input type="text" value={newPatientDni} onChange={(e) => setNewPatientDni(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ej: 12345678" required />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary mb-1">Teléfono (Opcional)</label>
