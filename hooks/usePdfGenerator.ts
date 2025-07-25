@@ -37,24 +37,43 @@ export function usePdfGenerator(): UsePdfGeneratorReturn {
         onclone: options?.onClone,
       });
 
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
-      const imgHeight = (canvasHeight * pdfWidth) / canvasWidth;
-      let heightLeft = imgHeight;
-      let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
+      const pxPerMm = canvasWidth / pdfWidth;
+      const pageHeightPx = pdfHeight * pxPerMm;
+      let printedHeight = 0;
 
-      while (heightLeft > 0) {
-        position -= pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
+      while (printedHeight < canvasHeight) {
+        const pageCanvasHeight = Math.min(pageHeightPx, canvasHeight - printedHeight);
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = pageCanvasHeight;
+        const pageCtx = pageCanvas.getContext('2d');
+        if (!pageCtx) {
+          break;
+        }
+        pageCtx.drawImage(
+          canvas,
+          0,
+          printedHeight,
+          canvasWidth,
+          pageCanvasHeight,
+          0,
+          0,
+          canvasWidth,
+          pageCanvasHeight
+        );
+        const pageData = pageCanvas.toDataURL('image/png');
+        const pageHeightMm = pageCanvasHeight / pxPerMm;
+        if (printedHeight > 0) {
+          pdf.addPage();
+        }
+        pdf.addImage(pageData, 'PNG', 0, 0, pdfWidth, pageHeightMm);
+        printedHeight += pageCanvasHeight;
       }
       pdf.save(fileName);
     } catch (err) {
