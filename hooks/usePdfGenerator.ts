@@ -43,20 +43,15 @@ export function usePdfGenerator(): UsePdfGeneratorReturn {
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
-      const ratio = canvasWidth / canvasHeight;
-      const imgHeight = pdfWidth / ratio;
-      let height = imgHeight;
+      const imgHeight = (canvasHeight * pdfWidth) / canvasWidth;
+      let heightLeft = imgHeight;
       let position = 0;
 
-      if (imgHeight > pdfHeight) {
-        height = pdfHeight;
-      }
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
-      let heightLeft = imgHeight - height;
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
 
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
+        position -= pdfHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
         heightLeft -= pdfHeight;
