@@ -74,7 +74,7 @@ export function usePdfGenerator(): UsePdfGeneratorReturn {
         const pageData = pageCanvas.toDataURL('image/png');
         const pageHeightMm = pageCanvasHeight / pxPerMm;
         if (printedHeight > 0) {
-          pdf.addPage();
+          pdf.addPage('a4', 'p');
         }
         pdf.addImage(pageData, 'PNG', 0, 0, pdfWidth, pageHeightMm);
         printedHeight += pageCanvasHeight;
