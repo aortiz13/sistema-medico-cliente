@@ -13,6 +13,7 @@ import { StatCard } from '@/components/common/StatCard';
 import { useAuth } from '@/hooks/useAuth'; // Importa el hook de autenticación
 import { usePatients } from '@/hooks/usePatients'; // Importa el hook de pacientes
 import { useConsultations } from '@/hooks/useConsultations'; // Importa el hook de consultas
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder'; // Importa el hook de grabación de audio
 
 // Importa las interfaces desde types/index.ts
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const { user, profile, loading: loadingAuth, handleLogout } = useAuth(); // Usa el hook de autenticación
   const { patients, loadingPatients, createPatient, loadPatients } = usePatients(); // Usa el hook de pacientes
   const { consultations, loadingConsultations, loadConsultations } = useConsultations(); // Usa el hook de consultas
+  const { totalPatients, consultationsToday, newPatientsThisMonth, loading: loadingStats } = useDashboardStats();
   const {
     isRecording, audioBlob, isProcessingAudio,
     startRecording, stopRecording, processAudio, resetAudio
@@ -82,7 +84,7 @@ export default function Dashboard() {
     }
   };
 
-  if (loadingAuth || loadingPatients || loadingConsultations) {
+  if (loadingAuth || loadingPatients || loadingConsultations || loadingStats) {
     return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>;
   }
 
@@ -123,9 +125,9 @@ export default function Dashboard() {
         <Header />
           <main className="flex-1 p-8 overflow-y-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              <StatCard title="Pacientes Totales" value={patients.length} icon={Users} color="bg-orange-400" />
-              <StatCard title="Consultas Hoy" value="12" icon={Activity} color="bg-green-500" />
-              <StatCard title="Nuevos Pacientes (Mes)" value="8" icon={UserPlus} color="bg-secondary" />
+              <StatCard title="Pacientes Totales" value={totalPatients} icon={Users} color="bg-orange-400" />
+              <StatCard title="Consultas Hoy" value={consultationsToday} icon={Activity} color="bg-green-500" />
+              <StatCard title="Nuevos Pacientes (Mes)" value={newPatientsThisMonth} icon={UserPlus} color="bg-secondary" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
