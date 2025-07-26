@@ -55,12 +55,21 @@ export function useConsultations(): UseConsultationsReturn {
     try {
       const { data, error } = await supabase
         .from('consultations')
-        .select(`*, patients!inner(id, full_name)`)
+        .select(`*, patients!inner(id, full_name), profiles(full_name, id)`)
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      return data as Consultation;
+      const formattedData = {
+        ...data,
+        patients: Array.isArray((data as any).patients)
+          ? (data as any).patients[0]
+          : (data as any).patients,
+        profiles: Array.isArray((data as any).profiles)
+          ? (data as any).profiles[0]
+          : (data as any).profiles,
+      } as Consultation;
+      return formattedData;
     } catch (err: any) {
       console.error("Error al cargar la consulta por ID:", err.message);
       setErrorConsultations("No se pudo cargar la consulta.");

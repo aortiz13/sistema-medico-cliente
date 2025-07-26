@@ -12,15 +12,20 @@ import { Header } from '@/components/layout/Header';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
-import { usePdfGenerator } from '@/hooks/usePdfGenerator'; // <-- Importa el nuevo hook
+import jsPDF from 'jspdf';
 
 // Importa las interfaces desde types/index.ts
 import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
+<<<<<<< ours
   const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
   const { isGeneratingPDF, generatePdf } = usePdfGenerator(); // <-- Usa el nuevo hook
+=======
+  const { loadConsultationById, loadingConsultations } = useConsultations();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+>>>>>>> theirs
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,24 +56,42 @@ export default function ConsultationDetailPage() {
 
   }, [id, profile, loadConsultationById]);
 
-  const handleDownloadPDF = () => { // <-- Ahora esta función llama al hook
+  const handleDownloadPDF = () => {
     if (!consultation) return;
+    setIsGeneratingPDF(true);
     const patientName = consultation.patients?.full_name || 'desconocido';
     const consultationDate = new Date(consultation.created_at).toLocaleDateString();
     const fileName = `consulta-${patientName}-${consultationDate}.pdf`;
 
-    generatePdf('pdf-content', fileName, {
-      onClone: (clonedDoc) => {
-        const content = clonedDoc.getElementById('pdf-content');
-        if (content) {
-          content.style.backgroundColor = 'white';
-          const allElements = content.querySelectorAll('*');
-          allElements.forEach((el) => {
-            (el as HTMLElement).style.color = '#000000';
-          });
-        }
+    const doc = new jsPDF();
+    const margin = 15;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let y = margin;
+
+    doc.setFontSize(16);
+    doc.text(`Consulta de ${patientName}`, margin, y);
+    y += 8;
+    doc.setFontSize(12);
+    doc.text(`Fecha: ${new Date(consultation.created_at).toLocaleString('es-AR')}`, margin, y);
+    y += 6;
+    doc.text(`Médico: ${consultation.profiles?.full_name || 'N/A'}`, margin, y);
+    y += 10;
+
+    const notesText = (consultation.formatted_notes?.note_content || '').replace(/\*\*/g, '');
+    const lines = doc.splitTextToSize(notesText, pageWidth - margin * 2);
+    const lineHeight = 7;
+    lines.forEach(line => {
+      if (y + lineHeight > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
       }
+      doc.text(line, margin, y);
+      y += lineHeight;
     });
+
+    doc.save(fileName);
+    setIsGeneratingPDF(false);
   };
 
   const handleSaveNotes = async () => {
@@ -115,21 +138,22 @@ export default function ConsultationDetailPage() {
               </button>
             </div>
 
-            <div id="pdf-content" className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-              <div className="border-b pb-4 mb-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-500">Paciente</p>
-                    <Link href={`/dashboard/patient/${consultation.patients?.id}`} className="text-2xl font-bold text-gray-800 hover:underline">
-                      {consultation.patients?.full_name || 'Paciente desconocido'}
-                    </Link>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 text-right">Fecha de Consulta</p>
-                    <p className="text-lg font-semibold text-gray-800">{new Date(consultation.created_at).toLocaleString('es-AR')}</p>
+              <div id="pdf-content" className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                <div className="border-b pb-4 mb-6">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-gray-500">Paciente</p>
+                      <Link href={`/dashboard/patient/${consultation.patients?.id}`} className="text-2xl font-bold text-gray-800 hover:underline">
+                        {consultation.patients?.full_name || 'Paciente desconocido'}
+                      </Link>
+                      <p className="text-sm text-gray-500 mt-1">Médico: {consultation.profiles?.full_name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 text-right">Fecha de Consulta</p>
+                      <p className="text-lg font-semibold text-gray-800">{new Date(consultation.created_at).toLocaleString('es-AR')}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>

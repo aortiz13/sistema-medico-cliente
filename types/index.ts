@@ -34,4 +34,5 @@ export interface Consultation {
   audio_storage_path?: string;
   consultation_type?: string;
   patients?: { full_name: string; id: string; } | null;
+  profiles?: { full_name: string; id: string; } | null;
 }
