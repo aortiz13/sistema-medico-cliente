@@ -13,7 +13,7 @@ const Index = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
+  const isLogin = true;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -176,18 +176,7 @@ const Index = () => {
                   {loading ? 'Procesando...' : isLogin ? 'Acceder al Sistema' : 'Crear mi Cuenta'}
                 </Button>
 
-                <div className="text-center space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    {isLogin ? "¿Nuevo en MediCare Pro?" : "¿Ya tienes una cuenta?"}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="text-primary hover:text-primary-hover font-medium"
-                  >
-                    {isLogin ? "Crear cuenta nueva" : "Iniciar sesión"}
-                  </Button>
-                </div>
+                {/* Removed sign up prompt and toggle button */}
                 {error && (
                   <p className="text-center text-red-600 text-sm">{error}</p>
                 )}
