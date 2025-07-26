@@ -33,11 +33,20 @@ export default async function DashboardLayout({
   // Todavía necesitas obtener el perfil aquí para el Sidebar
   let userProfile = null;
   if (session.user) {
-    const { data: profileData } = await supabase
+    let { data: profileData, error } = await supabase
       .from('profiles')
       .select('id, full_name, role, avatar_url')
       .eq('id', session.user.id)
       .single();
+
+    if (error) {
+      ({ data: profileData } = await supabase
+        .from('profiles')
+        .select('id, full_name, role')
+        .eq('id', session.user.id)
+        .single());
+    }
+
     userProfile = profileData;
   }
 

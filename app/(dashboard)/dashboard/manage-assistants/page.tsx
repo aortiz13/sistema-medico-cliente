@@ -52,15 +52,22 @@ export default function ManageAssistantsPage() {
 
   const fetchAssistants = async () => {
     setLoadingAssistants(true);
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('profiles')
       .select(`id, full_name, role, avatar_url`)
       .in('role', ['asistente', 'doctor']);
+
     if (error) {
-      console.error("Error fetching assistants:", error);
-      setError("No se pudieron cargar los asistentes.");
+      ({ data } = await supabase
+        .from('profiles')
+        .select(`id, full_name, role`)
+        .in('role', ['asistente', 'doctor']));
     }
-    else {
+
+    if (!data) {
+      console.error('Error fetching assistants:', error);
+      setError('No se pudieron cargar los asistentes.');
+    } else {
       const filtered = (data as Assistant[]).filter(a => a.id !== user?.id);
       setAssistants(filtered);
     }
