@@ -53,7 +53,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">Alejandro Leisseur</h1>
-                <p className="text-sm text-muted-foreground">Transcription IA System</p>
+                <p className="text-sm text-muted-foreground">Sistema de Transcripción IA</p>
               </div>
             </div>
           </div>
