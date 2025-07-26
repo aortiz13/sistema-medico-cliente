@@ -52,7 +52,7 @@ const Index = () => {
                 <Stethoscope className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">Alejandro Leisseur.</h1>
+                <h1 className="text-xl font-bold text-foreground">Alejandro Leisseur</h1>
                 <p className="text-sm text-muted-foreground">Sistema de Transcripción IA</p>
               </div>
             </div>
