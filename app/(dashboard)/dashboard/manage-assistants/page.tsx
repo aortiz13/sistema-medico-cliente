@@ -19,6 +19,7 @@ import { Profile } from '@/types'; // Se mantiene si Profile es solo para este a
 interface Assistant { // Esta interfaz puede moverse a types/index.ts también
   id: string;
   full_name: string;
+  role: string;
 }
 
 export default function ManageAssistantsPage() {
@@ -31,6 +32,7 @@ export default function ManageAssistantsPage() {
   const [isInviting, setIsInviting] = useState(false);
   const [newAssistantName, setNewAssistantName] = useState('');
   const [newAssistantEmail, setNewAssistantEmail] = useState('');
+  const [newAssistantRole, setNewAssistantRole] = useState<'asistente' | 'doctor'>('asistente');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const router = useRouter();
 
@@ -49,12 +51,18 @@ export default function ManageAssistantsPage() {
 
   const fetchAssistants = async () => {
     setLoadingAssistants(true);
-    const { data, error } = await supabase.from('profiles').select(`id, full_name`).eq('role', 'asistente');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`id, full_name, role`)
+      .in('role', ['asistente', 'doctor']);
     if (error) {
       console.error("Error fetching assistants:", error);
       setError("No se pudieron cargar los asistentes.");
     }
-    else { setAssistants(data as Assistant[]); }
+    else {
+      const filtered = (data as Assistant[]).filter(a => a.id !== user?.id);
+      setAssistants(filtered);
+    }
     setLoadingAssistants(false);
   };
 
@@ -66,7 +74,7 @@ export default function ManageAssistantsPage() {
       const response = await fetch('/api/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newAssistantEmail, fullName: newAssistantName }),
+        body: JSON.stringify({ email: newAssistantEmail, fullName: newAssistantName, role: newAssistantRole }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Falló al enviar la invitación.');
@@ -74,6 +82,7 @@ export default function ManageAssistantsPage() {
       setNotification({ message: '¡Invitación enviada exitosamente!', type: 'success' });
       setNewAssistantName('');
       setNewAssistantEmail('');
+      setNewAssistantRole('asistente');
       fetchAssistants();
     } catch (error) {
       if (error instanceof Error) { setNotification({ message: error.message, type: 'error' }); }
@@ -152,6 +161,17 @@ export default function ManageAssistantsPage() {
                     <label className="block text-sm font-semibold text-text-secondary mb-1">Email de Invitación</label>
                     <input type="email" value={newAssistantEmail} onChange={(e) => setNewAssistantEmail(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary" required />
                   </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-text-secondary mb-1">Rol</label>
+                    <select
+                      value={newAssistantRole}
+                      onChange={(e) => setNewAssistantRole(e.target.value as 'asistente' | 'doctor')}
+                      className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="asistente">Asistente</option>
+                      <option value="doctor">Doctor</option>
+                    </select>
+                  </div>
                   <button type="submit" disabled={isInviting} className="w-full flex items-center justify-center space-x-2 bg-secondary text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-400 font-semibold transition-colors shadow-soft">
                     <Send size={18} />
                     <span>{isInviting ? 'Enviando Invitación...' : 'Enviar Invitación'}</span>
@@ -170,7 +190,9 @@ export default function ManageAssistantsPage() {
                         <div className="p-3 bg-blue-100 rounded-full mr-4"><UserIcon className="w-6 h-6 text-secondary" /></div>
                         <div>
                           <p className="font-bold text-lg text-text-primary">{assistant.full_name}</p>
-                          <p className="text-sm text-text-secondary">Asistente</p>
+                          <p className="text-sm text-text-secondary">
+                            {assistant.role === 'doctor' ? 'Doctor' : 'Asistente'}
+                          </p>
                         </div>
                       </div>
                       <button onClick={() => setAssistantToDelete(assistant)} className="flex items-center space-x-2 text-sm text-accent hover:text-accent-hover p-2 rounded-md hover:bg-red-100">

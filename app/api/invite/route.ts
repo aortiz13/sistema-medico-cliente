@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
-  const { email, fullName } = await request.json();
+  const { email, fullName, role = 'asistente' } = await request.json();
 
   // Paso 1: Resolver la Promise de las cookies PRIMERO
   const cookieStore = await cookies();
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     data: {
       full_name: fullName,
-      role: 'asistente',
+      role,
     },
   })
 
