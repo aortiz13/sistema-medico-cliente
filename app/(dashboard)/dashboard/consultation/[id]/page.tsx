@@ -19,13 +19,8 @@ import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
-<<<<<<< ours
-  const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
-  const { isGeneratingPDF, generatePdf } = usePdfGenerator(); // <-- Usa el nuevo hook
-=======
   const { loadConsultationById, loadingConsultations } = useConsultations();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
->>>>>>> theirs
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);
