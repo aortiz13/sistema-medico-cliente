@@ -58,10 +58,11 @@ export default function ManageAssistantsPage() {
       .in('role', ['asistente', 'doctor']);
 
     if (error) {
-      ({ data } = await supabase
+     const { data: fallbackData } = await supabase
         .from('profiles')
         .select(`id, full_name, role`)
-        .in('role', ['asistente', 'doctor']));
+        .in('role', ['asistente', 'doctor'])
+      data = fallbackData?.map(row => ({ ...row, avatar_url: null })) || null;
     }
 
     if (!data) {

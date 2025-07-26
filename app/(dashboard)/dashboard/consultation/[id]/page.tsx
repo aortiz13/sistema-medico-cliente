@@ -12,16 +12,10 @@ import jsPDF from 'jspdf';
 import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
-<<<<<<< ours
   const { profile, loading: loadingAuth } = useAuth();
   // ¡CORRECCIÓN CLAVE! -> Se añade updateConsultationNotes aquí
   const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-=======
-  const { profile, loading: loadingAuth, handleLogout } = useAuth();
-  const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
-  const { isGeneratingPDF, generatePdf } = usePdfGenerator();
->>>>>>> theirs
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);
