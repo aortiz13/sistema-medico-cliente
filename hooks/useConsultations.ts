@@ -1,10 +1,11 @@
+// hooks/useConsultations.ts
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Consultation, Patient } from '@/types'; // Importa las interfaces
 
 interface UseConsultationsReturn {
   consultations: Consultation[];
-  patientsMap: Map<string, Patient>; // Mapa para acceso rápido a datos de paciente
+  patientsMap: Map<string, Patient>;
   loadingConsultations: boolean;
   errorConsultations: string | null;
   loadConsultations: (limit?: number) => Promise<void>;
@@ -22,25 +23,13 @@ export function useConsultations(): UseConsultationsReturn {
     setLoadingConsultations(true);
     setErrorConsultations(null);
     try {
-      // Optimizamos la carga para obtener consultas y pacientes en paralelo
-      const [consultationsRes, patientsRes] = await Promise.all([
-        supabase.from('consultations').select(`*, patients!inner(full_name, id, document_id, date_of_birth, allergies, chronic_conditions, phone, email)`).order('created_at', { ascending: false }).limit(limit || 100), // Límite por defecto
-        supabase.from('patients').select('*') // Carga todos los pacientes para el mapa
-      ]);
-
-      if (consultationsRes.error) throw consultationsRes.error;
-      if (patientsRes.error) throw patientsRes.error;
-
-      const pMap = new Map(patientsRes.data.map(p => [p.id, p]));
-      setPatientsMap(pMap);
-
-      // Mapear los nombres de pacientes a las consultas si es necesario para el estado
-      const formattedConsultations = consultationsRes.data.map(c => ({
-        ...c,
-        patients: pMap.get(c.patient_id || '') || null // Asegurarse de que `patients` se completa
-      }));
-
-      setConsultations(formattedConsultations as Consultation[]);
+      const { data, error } = await supabase
+        .from('consultations')
+        .select(`*, patients!inner(full_name, id)`)
+        .order('created_at', { ascending: false })
+        .limit(limit || 100);
+      if (error) throw error;
+      setConsultations(data as Consultation[]);
     } catch (err: any) {
       console.error("Error al cargar consultas:", err.message);
       setErrorConsultations("No se pudieron cargar las consultas.");
@@ -55,20 +44,19 @@ export function useConsultations(): UseConsultationsReturn {
     try {
       const { data, error } = await supabase
         .from('consultations')
-        .select(`*, patients!inner(id, full_name), profiles(full_name, id)`)
+        .select(`*, patients!inner(id, full_name), profiles(id, full_name)`)
         .eq('id', id)
         .single();
 
       if (error) throw error;
+      
+      // Estandariza el formato de los datos relacionados
       const formattedData = {
         ...data,
-        patients: Array.isArray((data as any).patients)
-          ? (data as any).patients[0]
-          : (data as any).patients,
-        profiles: Array.isArray((data as any).profiles)
-          ? (data as any).profiles[0]
-          : (data as any).profiles,
+        patients: Array.isArray(data.patients) ? data.patients[0] : data.patients,
+        profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
       } as Consultation;
+
       return formattedData;
     } catch (err: any) {
       console.error("Error al cargar la consulta por ID:", err.message);
@@ -79,33 +67,19 @@ export function useConsultations(): UseConsultationsReturn {
     }
   }, []);
 
-  const updateConsultationNotes = useCallback(
-    async (id: string, note: string) => {
-      setErrorConsultations(null);
-      try {
-        const { error } = await supabase
-          .from('consultations')
-          .update({ formatted_notes: { note_content: note } })
-          .eq('id', id);
-
-        if (error) throw error;
-
-        // Actualizar el estado local para reflejar el cambio
-        setConsultations((prev) =>
-          prev.map((c) =>
-            c.id === id ? { ...c, formatted_notes: { note_content: note } } : c
-          )
-        );
-
-        return true;
-      } catch (err: any) {
-        console.error('Error al actualizar la nota de la consulta:', err);
-        setErrorConsultations('No se pudo actualizar la nota.');
-        return false;
-      }
-    },
-    []
-  );
+  const updateConsultationNotes = useCallback(async (id: string, note: string) => {
+    try {
+      const { error } = await supabase
+        .from('consultations')
+        .update({ formatted_notes: { note_content: note } })
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      console.error('Error al actualizar la nota:', err);
+      return false;
+    }
+  }, []);
 
 
   return {
@@ -115,6 +89,6 @@ export function useConsultations(): UseConsultationsReturn {
     errorConsultations,
     loadConsultations,
     loadConsultationById,
-    updateConsultationNotes
+    updateConsultationNotes,
   };
 }
