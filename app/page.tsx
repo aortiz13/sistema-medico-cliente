@@ -52,8 +52,8 @@ const Index = () => {
                 <Stethoscope className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">MediCare Pro</h1>
-                <p className="text-sm text-muted-foreground">Sistema Médico Moderno</p>
+                <h1 className="text-xl font-bold text-foreground">Alejandro Leisseur</h1>
+                <p className="text-sm text-muted-foreground">Transcription IA System</p>
               </div>
             </div>
           </div>
