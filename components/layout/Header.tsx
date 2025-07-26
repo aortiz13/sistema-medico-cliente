@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Bell, LogOut, Search } from 'lucide-react';
+import Link from 'next/link';
 
 interface HeaderProps {
   title?: string;
@@ -28,11 +29,13 @@ export function Header({ title = "Panel Principal", showSearch = true }: HeaderP
             <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-accent"></span>
           </button>
           <div className="flex items-center space-x-3 border-l border-base-300 pl-5">
-            <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">{profile?.full_name?.charAt(0) || 'U'}</div>
-            <div>
-              <p className="font-bold text-text-primary">{profile?.full_name}</p>
-              <p className="text-xs text-text-secondary capitalize">{profile?.role}</p>
-            </div>
+            <Link href="/settings" className="flex items-center space-x-3 hover:underline">
+              <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">{profile?.full_name?.charAt(0) || 'U'}</div>
+              <div className="text-left">
+                <p className="font-bold text-text-primary">{profile?.full_name}</p>
+                <p className="text-xs text-text-secondary capitalize">{profile?.role}</p>
+              </div>
+            </Link>
             <button onClick={handleLogout} title="Cerrar Sesión" className="p-2 text-text-secondary hover:text-accent transition-colors"><LogOut size={22} /></button>
           </div>
         </div>
