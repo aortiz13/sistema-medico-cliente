@@ -77,7 +77,7 @@ export default function ConsultationDetailPage() {
     const notesText = (consultation.formatted_notes?.note_content || '').replace(/\*\*/g, '');
     const lines = doc.splitTextToSize(notesText, pageWidth - margin * 2);
     const lineHeight = 7;
-    lines.forEach(line => {
+    lines.forEach((line: string) => {
       if (y + lineHeight > pageHeight - margin) {
         doc.addPage();
         y = margin;
