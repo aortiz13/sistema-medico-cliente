@@ -35,7 +35,7 @@ export default async function DashboardLayout({
   if (session.user) {
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('id, full_name, role')
+      .select('id, full_name, role, avatar_url')
       .eq('id', session.user.id)
       .single();
     userProfile = profileData;

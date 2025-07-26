@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Bell, LogOut, Search } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import Link from 'next/link';
+import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 interface HeaderProps {
   title?: string;
@@ -56,7 +58,17 @@ export function Header({ title = "Panel Principal", showSearch = true }: HeaderP
           </div>
           <div className="flex items-center space-x-3 border-l border-base-300 pl-5">
             <Link href="/settings" className="flex items-center space-x-3 hover:underline">
-              <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">{profile?.full_name?.charAt(0) || 'U'}</div>
+              {profile?.avatar_url ? (
+                <Image
+                  src={supabase.storage.from('avatars').getPublicUrl(profile.avatar_url).data.publicUrl}
+                  alt="Avatar"
+                  width={44}
+                  height={44}
+                  className="w-11 h-11 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-lg">{profile?.full_name?.charAt(0) || 'U'}</div>
+              )}
               <div className="text-left">
                 <p className="font-bold text-text-primary">{profile?.full_name}</p>
                 <p className="text-xs text-text-secondary capitalize">{profile?.role}</p>

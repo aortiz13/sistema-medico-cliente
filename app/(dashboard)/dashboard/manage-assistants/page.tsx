@@ -20,6 +20,7 @@ interface Assistant { // Esta interfaz puede moverse a types/index.ts también
   id: string;
   full_name: string;
   role: string;
+  avatar_url?: string | null;
 }
 
 export default function ManageAssistantsPage() {
@@ -53,7 +54,7 @@ export default function ManageAssistantsPage() {
     setLoadingAssistants(true);
     const { data, error } = await supabase
       .from('profiles')
-      .select(`id, full_name, role`)
+      .select(`id, full_name, role, avatar_url`)
       .in('role', ['asistente', 'doctor']);
     if (error) {
       console.error("Error fetching assistants:", error);
@@ -187,7 +188,15 @@ export default function ManageAssistantsPage() {
                   {assistants.map(assistant => (
                     <div key={assistant.id} className="flex items-center justify-between p-4 border border-base-300 rounded-lg hover:bg-base-200">
                       <div className="flex items-center">
-                        <div className="p-3 bg-blue-100 rounded-full mr-4"><UserIcon className="w-6 h-6 text-secondary" /></div>
+                        {assistant.avatar_url ? (
+                          <img
+                            src={supabase.storage.from('avatars').getPublicUrl(assistant.avatar_url).data.publicUrl}
+                            alt="Avatar"
+                            className="w-12 h-12 rounded-full mr-4 object-cover"
+                          />
+                        ) : (
+                          <div className="p-3 bg-blue-100 rounded-full mr-4"><UserIcon className="w-6 h-6 text-secondary" /></div>
+                        )}
                         <div>
                           <p className="font-bold text-lg text-text-primary">{assistant.full_name}</p>
                           <p className="text-sm text-text-secondary">

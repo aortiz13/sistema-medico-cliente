@@ -17,17 +17,31 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (profile) {
       const parts = profile.full_name.split(' ')
       setFirstName(parts[0] || '')
       setLastName(parts.slice(1).join(' ') || '')
+      if (profile.avatar_url) {
+        const { data } = supabase.storage.from('avatars').getPublicUrl(profile.avatar_url)
+        setAvatarPreview(data.publicUrl)
+      }
     }
     if (user) {
       setEmail(user.email || '')
     }
   }, [user, profile])
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    setAvatarFile(file)
+    if (file) {
+      setAvatarPreview(URL.createObjectURL(file))
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,8 +69,26 @@ export default function SettingsPage() {
         if (profileError) throw profileError
       }
 
+      if (avatarFile) {
+        const filePath = `${user?.id}/${Date.now()}_${avatarFile.name}`
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, avatarFile, { upsert: true })
+        if (uploadError) throw uploadError
+
+        const { error: avatarUpdateError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: filePath })
+          .eq('id', user?.id)
+        if (avatarUpdateError) throw avatarUpdateError
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+        setAvatarPreview(data.publicUrl)
+      }
+
       setMessage('Datos actualizados correctamente')
       setPassword('')
+      setAvatarFile(null)
     } catch (err) {
       if (err instanceof Error) setError(err.message)
       else setError('Ocurrió un error inesperado')
@@ -90,6 +122,13 @@ export default function SettingsPage() {
             <div>
               <Label htmlFor="password">Nueva contraseña</Label>
               <Input id="password" type="password" value={password} placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="avatar">Foto de Perfil</Label>
+              <Input id="avatar" type="file" accept="image/*" onChange={handleAvatarChange} />
+              {avatarPreview && (
+                <img src={avatarPreview} alt="Vista previa" className="mt-2 w-24 h-24 rounded-full object-cover" />
+              )}
             </div>
             {error && <p className="text-red-600 text-sm">{error}</p>}
             {message && <p className="text-green-600 text-sm">{message}</p>}

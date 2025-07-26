@@ -12,6 +12,7 @@ import { Header } from '@/components/layout/Header';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
+import { usePdfGenerator } from '@/hooks/usePdfGenerator';
 import jsPDF from 'jspdf';
 
 // Importa las interfaces desde types/index.ts
@@ -19,8 +20,13 @@ import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
+<<<<<<< ours
   const { loadConsultationById, loadingConsultations } = useConsultations();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+=======
+  const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
+  const { isGeneratingPDF, generatePdf } = usePdfGenerator();
+>>>>>>> theirs
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);

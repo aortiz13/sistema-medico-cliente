@@ -16,6 +16,7 @@ import { Consultation } from '@/types';
 // Extendemos la interfaz para incluir el perfil del profesional
 interface ConsultationWithProfile extends Consultation {
   profiles: {
+    id: string;
     full_name: string;
   } | null;
 }
