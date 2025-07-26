@@ -19,11 +19,14 @@ import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
-  const { loadConsultationById, loadingConsultations } = useConsultations();
+  const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
   const { isGeneratingPDF, generatePdf } = usePdfGenerator(); // <-- Usa el nuevo hook
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedNotes, setEditedNotes] = useState('');
+  const [saving, setSaving] = useState(false);
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -36,6 +39,7 @@ export default function ConsultationDetailPage() {
       const data = await loadConsultationById(id);
       if (data) {
         setConsultation(data);
+        setEditedNotes(data.formatted_notes?.note_content || '');
       } else {
         setError("No se pudo cargar los datos de la consulta.");
       }
@@ -65,6 +69,19 @@ export default function ConsultationDetailPage() {
         }
       }
     });
+  };
+
+  const handleSaveNotes = async () => {
+    if (!consultation) return;
+    setSaving(true);
+    const success = await updateConsultationNotes(consultation.id, editedNotes);
+    if (success) {
+      setConsultation({ ...consultation, formatted_notes: { note_content: editedNotes } });
+      setIsEditing(false);
+    } else {
+      alert('No se pudo guardar la nota.');
+    }
+    setSaving(false);
   };
 
   if (loadingAuth || loadingConsultations) {
@@ -121,7 +138,42 @@ export default function ConsultationDetailPage() {
                     Notas Clínicas (Generadas por IA)
                   </h2>
                   <div className="bg-gray-50 p-4 rounded-md text-gray-800 font-sans text-sm leading-relaxed">
-                    <MarkdownRenderer text={consultation.formatted_notes?.note_content} />
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <textarea
+                          className="w-full h-60 p-2 border border-gray-300 rounded-md"
+                          value={editedNotes}
+                          onChange={(e) => setEditedNotes(e.target.value)}
+                        />
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={handleSaveNotes}
+                            disabled={saving}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                          >
+                            {saving ? 'Guardando...' : 'Guardar'}
+                          </button>
+                          <button
+                            onClick={() => { setIsEditing(false); setEditedNotes(consultation.formatted_notes?.note_content || ''); }}
+                            className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        {profile?.id === consultation.doctor_id && (
+                          <button
+                            onClick={() => setIsEditing(true)}
+                            className="absolute right-0 top-0 text-sm text-blue-600 underline"
+                          >
+                            Editar
+                          </button>
+                        )}
+                        <MarkdownRenderer text={consultation.formatted_notes?.note_content} />
+                      </div>
+                    )}
                   </div>
                 </div>
 

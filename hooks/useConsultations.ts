@@ -9,6 +9,7 @@ interface UseConsultationsReturn {
   errorConsultations: string | null;
   loadConsultations: (limit?: number) => Promise<void>;
   loadConsultationById: (id: string) => Promise<Consultation | null>;
+  updateConsultationNotes: (id: string, note: string) => Promise<boolean>;
 }
 
 export function useConsultations(): UseConsultationsReturn {
@@ -69,6 +70,34 @@ export function useConsultations(): UseConsultationsReturn {
     }
   }, []);
 
+  const updateConsultationNotes = useCallback(
+    async (id: string, note: string) => {
+      setErrorConsultations(null);
+      try {
+        const { error } = await supabase
+          .from('consultations')
+          .update({ formatted_notes: { note_content: note } })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        // Actualizar el estado local para reflejar el cambio
+        setConsultations((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, formatted_notes: { note_content: note } } : c
+          )
+        );
+
+        return true;
+      } catch (err: any) {
+        console.error('Error al actualizar la nota de la consulta:', err);
+        setErrorConsultations('No se pudo actualizar la nota.');
+        return false;
+      }
+    },
+    []
+  );
+
 
   return {
     consultations,
@@ -76,6 +105,7 @@ export function useConsultations(): UseConsultationsReturn {
     loadingConsultations,
     errorConsultations,
     loadConsultations,
-    loadConsultationById
+    loadConsultationById,
+    updateConsultationNotes
   };
 }
