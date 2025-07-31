@@ -42,7 +42,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-100">
+    <div className="min-h-screen bg-gradient-hero">
       {/* Header */}
       <header className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-white/20">
         <div className="container mx-auto px-6 py-4">
@@ -86,9 +86,9 @@ const Index = () => {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { icon: Users, label: "Gestión de Pacientes", color: "text-primary" },
-                { icon: Calendar, label: "Citas Inteligentes", color: "text-accent" },
+                { icon: Calendar, label: "Citas Inteligentes", color: "text-blue-600" },
                 { icon: FileText, label: "Historiales Digitales", color: "text-primary" },
-                { icon: Shield, label: "Seguridad HIPAA", color: "text-accent" }
+                { icon: Shield, label: "Seguridad HIPAA", color: "text-blue-600" }
               ].map((feature, index) => (
                 <div 
                   key={feature.label}
@@ -182,8 +182,8 @@ const Index = () => {
                 )}
 
                 {/* Security Badge */}
-                <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                  <Shield className="w-4 h-4 text-accent" />
+                <div className="flex items-center justify-center space-x-2 text-xs text-foreground bg-muted/50 p-3 rounded-lg">
+                  <Shield className="w-4 h-4 text-blue-600" />
                   <span>Protegido con encriptación de grado militar</span>
                 </div>
                 </form>

@@ -87,3 +87,9 @@ body {
 }
 
 
+
+@layer utilities {
+  .bg-gradient-hero {
+    @apply bg-gradient-to-b from-blue-50 via-blue-100 to-blue-200;
+  }
+}
