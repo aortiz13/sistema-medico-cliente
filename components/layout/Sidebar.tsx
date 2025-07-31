@@ -41,7 +41,7 @@ function NavLink({ href, icon: Icon, children }: NavLinkProps) {
 
 export function Sidebar({ profile }: { profile: Profile | null }) {
   return (
-    <aside className="w-64 bg-secondary text-foreground border-r border-border h-screen p-4 flex flex-col shadow-sm flex-shrink-0 hidden md:flex">
+    <aside className="hidden md:flex w-64 flex-shrink-0 flex-col h-screen p-4 bg-card text-foreground border border-border rounded-lg shadow-md">
       <div className="h-24 flex items-center px-2 mb-6">
         <div className="relative flex items-center">
           <Image
