@@ -94,7 +94,7 @@ export default function Dashboard() {
   return (
     <div className="h-screen flex bg-base-200 overflow-hidden">
       {isPatientModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
           <div className="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-md relative">
             <button onClick={() => setIsPatientModalOpen(false)} className="absolute top-4 right-4 text-text-secondary hover:text-accent transition-colors"><X size={24} /></button>
             <h2 className="text-2xl font-bold mb-6 text-text-primary">Nuevo Paciente</h2>
@@ -134,14 +134,14 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <StatCard title="Pacientes Totales" value={totalPatients} icon={Users} color="bg-orange-400" />
               <StatCard title="Consultas Hoy" value={consultationsToday} icon={Activity} color="bg-green-500" />
-              <StatCard title="Nuevos Pacientes (Mes)" value={newPatientsThisMonth} icon={UserPlus} color="bg-secondary" />
+              <StatCard title="Nuevos Pacientes (Mes)" value={newPatientsThisMonth} icon={UserPlus} color="bg-primary" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
               <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-soft border border-base-300 p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-text-primary flex items-center"><Mic className="w-6 h-6 mr-3 text-primary" />Nueva Consulta</h2>
-                  <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-secondary text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors shadow-soft">
+                  <button onClick={() => setIsPatientModalOpen(true)} className="flex items-center space-x-2 text-sm bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors shadow-soft">
                     <UserPlus size={16} />
                     <span className="font-semibold">Nuevo Paciente</span>
                   </button>
