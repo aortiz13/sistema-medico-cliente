@@ -1,19 +1,25 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react'; // Asegúrate de tener React importado
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Mic, Download } from 'lucide-react';
+import {
+  ArrowLeft, FileText, Mic, Download,
+} from 'lucide-react';
+
+// Importa componentes de UI y hooks
+import { Header } from '@/components/layout/Header';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
 import { usePdfGenerator } from '@/hooks/usePdfGenerator';
 import jsPDF from 'jspdf';
+
+// Importa las interfaces desde types/index.ts
 import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
-  const { profile, loading: loadingAuth } = useAuth();
-  // ¡CORRECCIÓN CLAVE! -> Se añade updateConsultationNotes aquí
+  const { profile, loading: loadingAuth, handleLogout } = useAuth();
   const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
@@ -23,10 +29,12 @@ export default function ConsultationDetailPage() {
   const [editedNotes, setEditedNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
   useEffect(() => {
     if (!id || !profile) return;
+
     const fetchConsultation = async () => {
       setError(null);
       const data = await loadConsultationById(id);
@@ -37,9 +45,11 @@ export default function ConsultationDetailPage() {
         setError("No se pudo cargar los datos de la consulta.");
       }
     };
+
     if (profile) {
       fetchConsultation();
     }
+
   }, [id, profile, loadConsultationById]);
 
   const handleDownloadPDF = () => {
@@ -67,7 +77,6 @@ export default function ConsultationDetailPage() {
     const notesText = (consultation.formatted_notes?.note_content || '').replace(/\*\*/g, '');
     const lines = doc.splitTextToSize(notesText, pageWidth - margin * 2);
     const lineHeight = 7;
-    // Se añade el tipo 'string' a 'line' para solucionar el error de TypeScript
     lines.forEach((line: string) => {
       if (y + lineHeight > pageHeight - margin) {
         doc.addPage();
@@ -86,7 +95,7 @@ export default function ConsultationDetailPage() {
     setSaving(true);
     const success = await updateConsultationNotes(consultation.id, editedNotes);
     if (success) {
-      setConsultation(prev => prev ? { ...prev, formatted_notes: { note_content: editedNotes } } : null);
+      setConsultation({ ...consultation, formatted_notes: { note_content: editedNotes } });
       setIsEditing(false);
     } else {
       alert('No se pudo guardar la nota.');
@@ -104,7 +113,104 @@ export default function ConsultationDetailPage() {
 
   return (
     <div className="h-screen flex bg-gray-50 overflow-hidden">
-      {/* ... Tu código JSX (sin cambios) ... */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+          <div className="max-w-4xl mx-auto">
+            <div className="sticky top-0 bg-background/80 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 flex justify-between items-center mb-8 py-4 z-10 border-b">
+              <div>
+                <Link href="/dashboard/all-consultations" className="flex items-center space-x-2 text-blue-600 hover:underline mb-2">
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Volver a Todas las Consultas</span>
+                </Link>
+                <h1 className="text-3xl font-bold text-gray-800">Detalle de la Consulta</h1>
+              </div>
+              <button
+                onClick={handleDownloadPDF} // <-- Usa la función ahora definida
+                disabled={isGeneratingPDF}
+                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors shadow-sm"
+              >
+                <Download className="w-5 h-5" />
+                <span>{isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}</span>
+              </button>
+            </div>
+
+              <div id="pdf-content" className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                <div className="border-b pb-4 mb-6">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-gray-500">Paciente</p>
+                      <Link href={`/dashboard/patient/${consultation.patients?.id}`} className="text-2xl font-bold text-gray-800 hover:underline">
+                        {consultation.patients?.full_name || 'Paciente desconocido'}
+                      </Link>
+                      <p className="text-sm text-gray-500 mt-1">Médico: {consultation.profiles?.full_name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 text-right">Fecha de Consulta</p>
+                      <p className="text-lg font-semibold text-gray-800">{new Date(consultation.created_at).toLocaleString('es-AR')}</p>
+                    </div>
+                  </div>
+                </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
+                    <FileText className="w-5 h-5 mr-2 text-blue-600" />
+                    Notas Clínicas (Generadas por IA)
+                  </h2>
+                  <div className="bg-gray-50 p-4 rounded-md text-gray-800 font-sans text-sm leading-relaxed">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <textarea
+                          className="w-full h-60 p-2 border border-gray-300 rounded-md"
+                          value={editedNotes}
+                          onChange={(e) => setEditedNotes(e.target.value)}
+                        />
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={handleSaveNotes}
+                            disabled={saving}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                          >
+                            {saving ? 'Guardando...' : 'Guardar'}
+                          </button>
+                          <button
+                            onClick={() => { setIsEditing(false); setEditedNotes(consultation.formatted_notes?.note_content || ''); }}
+                            className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        {profile?.id === consultation.doctor_id && (
+                          <button
+                            onClick={() => setIsEditing(true)}
+                            className="absolute right-0 top-0 text-sm text-blue-600 underline"
+                          >
+                            Editar
+                          </button>
+                        )}
+                        <MarkdownRenderer text={consultation.formatted_notes?.note_content} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
+                    <Mic className="w-5 h-5 mr-2 text-blue-600" />
+                    Transcripción del Audio
+                  </h2>
+                  <div className="bg-gray-100 p-4 rounded-md text-gray-600 border italic text-sm max-h-80 overflow-y-auto">
+                    {consultation.transcription}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
