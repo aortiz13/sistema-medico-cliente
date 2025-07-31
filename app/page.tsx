@@ -42,13 +42,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-100">
       {/* Header */}
       <header className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-white/20">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center">
                 <Stethoscope className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -118,9 +118,9 @@ const Index = () => {
 
           {/* Right Panel - Modern Auth Form */}
           <div className="animate-slide-in-right">
-            <Card className="bg-gradient-card border-0 shadow-strong backdrop-blur-sm">
+            <Card className="bg-white/70 border-0 shadow-strong backdrop-blur-sm">
               <CardHeader className="text-center space-y-2">
-                <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto animate-float">
+                <div className="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-2xl flex items-center justify-center mx-auto animate-float">
                   <Heart className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -169,7 +169,7 @@ const Index = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-primary hover:shadow-medium transition-all duration-300 text-white font-medium py-6"
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:shadow-medium transition-all duration-300 text-white font-medium py-6"
                   size="lg"
                 >
                   <Activity className="w-5 h-5 mr-2" />
@@ -216,7 +216,7 @@ const Index = () => {
           ].map((feature, index) => (
             <Card 
               key={feature.title}
-              className="bg-gradient-card border-0 shadow-soft hover:shadow-medium transition-all duration-300 group cursor-pointer animate-fade-up"
+              className="bg-white/70 border-0 shadow-soft hover:shadow-medium transition-all duration-300 group cursor-pointer animate-fade-up"
               style={{ animationDelay: `${0.8 + index * 0.1}s` }}
             >
               <CardContent className="p-6 text-center space-y-4">
