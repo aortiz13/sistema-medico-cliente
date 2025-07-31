@@ -181,7 +181,7 @@ export default function ManageAssistantsPage() {
                       <option value="doctor">Doctor</option>
                     </select>
                   </div>
-                  <button type="submit" disabled={isInviting} className="w-full flex items-center justify-center space-x-2 bg-secondary text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-400 font-semibold transition-colors shadow-soft">
+                  <button type="submit" disabled={isInviting} className="w-full flex items-center justify-center space-x-2 bg-primary text-primary-foreground px-5 py-3 rounded-lg hover:bg-primary/90 disabled:bg-gray-400 font-semibold transition-colors shadow-soft">
                     <Send size={18} />
                     <span>{isInviting ? 'Enviando Invitación...' : 'Enviar Invitación'}</span>
                   </button>
