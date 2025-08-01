@@ -101,20 +101,6 @@ const Index = () => {
                 </div>
               ))}
             </div>
-
-            {/* Stats */}
-            <div className="flex items-center space-x-8 pt-6">
-              {[
-                { value: "1,000+", label: "Médicos activos" },
-                { value: "50k+", label: "Pacientes registrados" },
-                { value: "99.9%", label: "Uptime garantizado" }
-              ].map((stat, index) => (
-                <div key={stat.label} className="text-center animate-fade-up" style={{ animationDelay: `${0.5 + index * 0.1}s` }}>
-                  <div className="text-2xl font-bold text-primary">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Right Panel - Modern Auth Form */}
