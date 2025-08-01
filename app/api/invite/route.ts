@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { type PageParams } from '@supabase/auth-js'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const { email, fullName, role = 'asistente' } = await request.json();
@@ -35,7 +36,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   );
 
   // 1. Buscar si ya existe un usuario con ese email
-const { data: existingUserData, error: existingUserError } = await supabaseAdmin.auth.admin.listUsers({ email } as any);
+  type ListUsersParams = PageParams & { email?: string }
+  const listParams: ListUsersParams = { email }
+  const { data: existingUserData, error: existingUserError } =
+    await supabaseAdmin.auth.admin.listUsers(listParams)
 
   if (existingUserError) {
     console.error('Error al buscar usuarios:', existingUserError);
