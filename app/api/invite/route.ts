@@ -48,6 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const redirectUrl = `${request.nextUrl.origin}/set-password`
 
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: redirectUrl,
     data: {
       full_name: fullName,
       role,
