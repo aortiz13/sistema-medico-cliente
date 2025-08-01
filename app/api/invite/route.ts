@@ -45,7 +45,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const redirectUrl = `${request.nextUrl.origin}/set-password`
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NEXT_PUBLIC_VERCEL_URL
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+      : request.nextUrl.origin)
+  const redirectUrl = `${baseUrl}/set-password`
+
 
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     data: {
