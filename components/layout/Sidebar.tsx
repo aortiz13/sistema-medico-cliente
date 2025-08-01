@@ -1,5 +1,4 @@
-// components/layout/Sidebar.tsx
-'use client'; // <--- ¡Añade esta línea aquí!
+'use client'
 
 import * as React from 'react';
 import Link from 'next/link';
