@@ -54,7 +54,7 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
             className="mr-3 rounded-full"
             onError={(e) => e.currentTarget.src = 'https://placehold.co/40x40/39B6E3/FFFFFF?text=Logo'}
           />
-          <span className="font-semibold text-xl">MedSys MVP</span>
+          <span className="font-semibold text-xl">Dr. Lessieur</span>
         </div>
       </div>
       <nav className="flex-grow px-2">
