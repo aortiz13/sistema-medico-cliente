@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
   const redirectUrl = `${request.nextUrl.origin}/set-password`
 
-  const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+  let { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     redirectTo: redirectUrl,
     data: {
       full_name: fullName,
@@ -56,8 +56,30 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    console.error('Error al invitar usuario:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    // Si el usuario ya existe pero no completó el registro, elimínalo y reenvía la invitación
+    if (error.message && error.message.toLowerCase().includes('registered')) {
+      const { data: existingUser } = await supabaseAdmin
+        .from('auth.users')
+        .select('id, email_confirmed_at')
+        .eq('email', email)
+        .maybeSingle()
+
+      if (existingUser && !existingUser.email_confirmed_at) {
+        await supabaseAdmin.auth.admin.deleteUser(existingUser.id)
+        ;({ data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+          redirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+            role,
+          },
+        }))
+      }
+    }
+
+    if (error) {
+      console.error('Error al invitar usuario:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ message: 'Invitación enviada exitosamente', data })
