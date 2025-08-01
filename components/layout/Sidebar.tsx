@@ -6,7 +6,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
-  Users, Bot, LayoutDashboard, Settings, LifeBuoy, Search, Stethoscope
+  Users,
+  LayoutDashboard,
+  Stethoscope
 } from 'lucide-react';
 
 interface Profile {
@@ -66,14 +68,7 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
           )}
         </ul>
       </nav>
-      <div className="p-2 border-t border-border pt-4">
-        <Link href="/help" className="flex items-center p-2 rounded-lg text-foreground hover:bg-accent hover:text-accent-foreground">
-          <LifeBuoy size={22} /><span className="ml-4 font-semibold">Ayuda</span>
-        </Link>
-        <Link href="/settings" className="flex items-center p-2 rounded-lg text-foreground hover:bg-accent hover:text-accent-foreground">
-          <Settings size={22} /><span className="ml-4 font-semibold">Configuración</span>
-        </Link>
-      </div>
+      <div className="p-2 border-t border-border pt-4" />
     </aside>
   );
 }
