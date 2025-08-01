@@ -14,29 +14,30 @@ export default function SetPasswordPage() {
   const [isSessionReady, setIsSessionReady] = useState(false)
   const router = useRouter()
 
-  // --- HOOK useEffect MEJORADO ---
+  // --- HOOK useEffect CORREGIDO Y MÁS ROBUSTO ---
   useEffect(() => {
-    // Función asíncrona para poder usar await dentro del useEffect
+    // Esta función revisa la sesión actual y se suscribe a cambios.
     const checkSessionAndSubscribe = async () => {
-      // 1. Preguntamos activamente si ya hay una sesión.
-      // Supabase lee los tokens de la URL y crea la sesión automáticamente.
+      // 1. Inmediatamente preguntamos a Supabase si ya hay una sesión.
+      //    Esto captura el caso donde la sesión se establece por los tokens en la URL
+      //    antes de que el listener se active.
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log("Sesión detectada, mostrando formulario.");
         setIsSessionReady(true);
+        return; // Si ya tenemos la sesión, no necesitamos el listener para el estado inicial.
       }
 
-      // 2. Nos suscribimos a cualquier cambio futuro en la autenticación.
+      // 2. Si no hay sesión, nos suscribimos a los cambios. El evento 'SIGNED_IN'
+      //    se activará en cuanto Supabase termine de procesar los tokens de la URL.
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
-          console.log("Evento SIGNED_IN recibido.");
           setIsSessionReady(true);
         } else if (event === 'SIGNED_OUT') {
           setError("El enlace de invitación ha expirado o no es válido. Por favor, solicita una nueva invitación.");
           setIsSessionReady(false);
         }
       });
-
+      
       // Función de limpieza para desuscribirse cuando el componente se desmonte
       return () => {
         subscription?.unsubscribe();
@@ -45,45 +46,45 @@ export default function SetPasswordPage() {
 
     checkSessionAndSubscribe();
   }, []);
-  // ---------------------------------
+  // ---------------------------------------------
 
   const handleSetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.')
-      return
+      setError('Las contraseñas no coinciden.');
+      return;
     }
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.')
-      return
+      setError('La contraseña debe tener al menos 6 caracteres.');
+      return;
     }
-    setError(null)
-    setLoading(true)
+    setError(null);
+    setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: password,
-      })
+      });
 
-      if (error) {
-        throw error
+      if (updateError) {
+        throw updateError;
       }
       
-      setMessage('¡Contraseña establecida con éxito! Serás redirigido al panel de control.')
+      setMessage('¡Contraseña establecida con éxito! Serás redirigido al panel de control.');
       setTimeout(() => {
-        router.push('/dashboard')
-      }, 3000)
+        router.push('/dashboard');
+      }, 3000);
 
     } catch (err) {
       if (err instanceof Error) {
-        setError('Error al establecer la contraseña: ' + err.message)
+        setError('Error al establecer la contraseña: ' + err.message);
       } else {
-        setError('Ocurrió un error inesperado.')
+        setError('Ocurrió un error inesperado.');
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
@@ -152,5 +153,5 @@ export default function SetPasswordPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
