@@ -117,12 +117,28 @@ export default function RecordingsPage() {
   }, [records, filters])
 
   const handleViewRecording = async (record: RecordingWithProfile) => {
-    if (!record.audio_storage_path) return
-    const { data } = supabase.storage
-      .from('consultation-audios')
-      .getPublicUrl(record.audio_storage_path)
-    window.open(data.publicUrl, '_blank')
+  if (!record.audio_storage_path) {
+    alert('No hay una ruta de audio para esta grabación.');
+    return;
   }
+  try {
+    // Genera una URL firmada y temporal (válida por 60 segundos)
+    const { data, error } = await supabase.storage
+      .from('consultation-audios')
+      .createSignedUrl(record.audio_storage_path, 60); // 60 segundos de validez
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, '_blank');
+    }
+  } catch (error) {
+    console.error('Error al generar la URL firmada:', error);
+    alert('No se pudo obtener el enlace de la grabación. Asegúrate de tener permisos.');
+  }
+};
 
   if (loading || loadingAuth) {
     return (
