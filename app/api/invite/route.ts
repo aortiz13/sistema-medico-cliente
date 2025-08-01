@@ -35,7 +35,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   );
 
   // 1. Buscar si ya existe un usuario con ese email
-  const { data: existingUserData, error: existingUserError } = await supabaseAdmin.auth.admin.listUsers({ email });
+const { data: existingUserData, error: existingUserError } = await supabaseAdmin.auth.admin.listUsers({ email } as any);
 
   if (existingUserError) {
     console.error('Error al buscar usuarios:', existingUserError);
