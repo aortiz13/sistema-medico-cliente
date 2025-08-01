@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const { email, fullName, role = 'asistente' } = await request.json();
 
   // Paso 1: Resolver la Promise de las cookies PRIMERO
@@ -47,8 +47,7 @@ export async function POST(request: NextRequest) {
 
   const redirectUrl = `${request.nextUrl.origin}/set-password`
 
-  let { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: redirectUrl,
+  const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     data: {
       full_name: fullName,
       role,
@@ -56,44 +55,8 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    // Si el usuario ya existe pero no completó el registro, elimínalo y reenvía la invitación
-<<<<<<< ours
-    if (error.message && error.message.toLowerCase().includes('registered')) {
-      const { data: existingUser } = await supabaseAdmin
-        .from('auth.users')
-=======
-    if (
-      error.code === 'user_already_exists' ||
-      error.message?.toLowerCase().includes('registered')
-    ) {
-      const { data: existingUser, error: fetchError } = await supabaseAdmin
-        .schema('auth')
-        .from('users')
->>>>>>> theirs
-        .select('id, email_confirmed_at')
-        .eq('email', email)
-        .maybeSingle()
-
-<<<<<<< ours
-      if (existingUser && !existingUser.email_confirmed_at) {
-=======
-      if (!fetchError && existingUser && !existingUser.email_confirmed_at) {
->>>>>>> theirs
-        await supabaseAdmin.auth.admin.deleteUser(existingUser.id)
-        ;({ data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-          redirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-            role,
-          },
-        }))
-      }
-    }
-
-    if (error) {
-      console.error('Error al invitar usuario:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+    console.error('Error al invitar usuario:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({ message: 'Invitación enviada exitosamente', data })
