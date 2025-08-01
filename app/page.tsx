@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope, Users, Calendar, FileText, Shield, Zap, Heart, Activity, Eye, EyeOff } from "lucide-react";
+import { AnimatedIntelligence } from '@/components/common/AnimatedIntelligence';
 
 const Index = () => {
   const router = useRouter();
@@ -69,13 +70,11 @@ const Index = () => {
             <div className="space-y-4">
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Sistema IA
+                  Sistema <AnimatedIntelligence />
                 </span>
-                <br />
-                Dr. Alejandro Lessieur
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Sistema potenciado con Inteligencia Artificial para trasncribir sesiones médicas 
+                Sistema potenciado con Inteligencia Artificial para transcribir sesiones médicas 
                 Seguro, eficiente y diseñado para profesionales de la salud.
               </p>
             </div>
@@ -85,7 +84,7 @@ const Index = () => {
           <div className="animate-slide-in-right">
             <Card className="bg-white/70 border-0 shadow-strong backdrop-blur-sm">
               <CardHeader className="text-center space-y-2">
-                <div className="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-2xl flex items-center justify-center mx-auto animate-float">
+                <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto animate-float">
                   <Heart className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -148,7 +147,7 @@ const Index = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-primary to-accent hover:shadow-medium transition-all duration-300 text-white font-medium py-6"
+                  className="w-full bg-gradient-primary hover:shadow-medium transition-all duration-300 text-white font-medium py-6"
                   size="lg"
                 >
                   <Activity className="w-5 h-5 mr-2" />
