@@ -200,10 +200,10 @@ export default function AllConsultationsPage() {
                     Profesional
                   </th>
                 )}
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Tipo de Consulta
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -222,10 +222,10 @@ export default function AllConsultationsPage() {
                       {consultation.profiles?.full_name || 'N/A'}
                     </td>
                   )}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-foreground">
                     {consultation.consultation_type === 'new_patient' ? 'Primera Vez' : 'Seguimiento'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <button
                       onClick={() => handleViewConsultation(consultation.id)}
                       className="text-primary hover:text-primary/80"

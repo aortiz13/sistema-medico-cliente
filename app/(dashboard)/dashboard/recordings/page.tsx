@@ -214,13 +214,13 @@ export default function RecordingsPage() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Paciente</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">DNI</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Profesional</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Profesional</th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
                 {filtered.map(record => (
-                  <tr key={record.id} className="hover:bg-accent/50 transition-colors">
+                  <tr key={record.id} className="hover:bg-accent/10 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                       {format(new Date(record.created_at), 'dd MMMM yyyy', { locale: es })}
                     </td>
@@ -230,10 +230,10 @@ export default function RecordingsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                       {record.patients?.document_id || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-foreground">
                       {record.profiles?.full_name || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <button
                         onClick={() => handleViewRecording(record)}
                         className="text-primary hover:text-primary/80"

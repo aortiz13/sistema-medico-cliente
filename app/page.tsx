@@ -74,7 +74,7 @@ const Index = () => {
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Sistema potenciado con Inteligencia Artificial para transcribir sesiones médicas 
+                Sistema potenciado con Inteligencia Artificial para transcribir sesiones médicas. 
                 Seguro, eficiente y diseñado para profesionales de la salud.
               </p>
             </div>
