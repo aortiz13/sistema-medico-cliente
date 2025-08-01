@@ -82,25 +82,6 @@ const Index = () => {
                 Seguro, eficiente y diseñado para profesionales de la salud.
               </p>
             </div>
-
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { icon: Users, label: "Gestión de Pacientes", color: "text-primary" },
-                { icon: Calendar, label: "Citas Inteligentes", color: "text-blue-600" },
-                { icon: FileText, label: "Historiales Digitales", color: "text-primary" },
-                { icon: Shield, label: "Seguridad HIPAA", color: "text-blue-600" }
-              ].map((feature, index) => (
-                <div 
-                  key={feature.label}
-                  className="flex items-center space-x-3 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/30 hover:bg-white/80 transition-all duration-300 animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <feature.icon className={`w-6 h-6 ${feature.color}`} />
-                  <span className="text-sm font-medium text-foreground">{feature.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Right Panel - Modern Auth Form */}
