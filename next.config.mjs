@@ -12,6 +12,17 @@ const nextConfig = {
     // incluso si el proyecto tiene errores de tipos.
     ignoreBuildErrors: false,
   },
+  // --- AGREGA ESTE BLOQUE ---
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'ixvfbjftrfaypozhnmrp.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/avatars/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
