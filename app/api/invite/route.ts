@@ -72,6 +72,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       full_name: fullName,
       role,
     },
+    // El usuario será redirigido a la página para establecer su contraseña
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password`,
   });
 
   if (inviteError) {
