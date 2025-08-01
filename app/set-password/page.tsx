@@ -14,6 +14,25 @@ export default function SetPasswordPage() {
   const [isSessionReady, setIsSessionReady] = useState(false)
   const router = useRouter()
 
+  // Maneja parámetros devueltos por Supabase tras verificar el enlace
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const errorDesc = params.get('error_description')
+    const code = params.get('code')
+
+    if (errorDesc) {
+      setError(errorDesc)
+      return
+    }
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).catch((err) => {
+        setError(err.message)
+      })
+    }
+  }, [])
+
+
   // --- HOOK useEffect CORREGIDO Y MÁS ROBUSTO ---
   useEffect(() => {
     // Esta función revisa la sesión actual y se suscribe a cambios.
