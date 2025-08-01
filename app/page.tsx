@@ -53,7 +53,7 @@ const Index = () => {
                 <Stethoscope className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">Alejandro Leisseur</h1>
+                <h1 className="text-xl font-bold text-foreground">Alejandro Lessieur</h1>
                 <p className="text-sm text-muted-foreground">Sistema de Transcripción IA</p>
               </div>
             </div>
@@ -67,18 +67,15 @@ const Index = () => {
           {/* Left Panel - Hero Content */}
           <div className="space-y-8 animate-fade-up">
             <div className="space-y-4">
-              <Badge className="bg-accent/10 text-accent border-accent/20 animate-pulse-soft">
-                ✨ Nuevo Sistema Médico 2024
-              </Badge>
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Moderniza
+                  Sistema IA
                 </span>
                 <br />
-                tu práctica médica
+                Dr. Alejandro Lessieur
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Gestiona pacientes, consultas y registros médicos con la tecnología más avanzada. 
+                Sistema potenciado con Inteligencia Artificial para trasncribir sesiones médicas 
                 Seguro, eficiente y diseñado para profesionales de la salud.
               </p>
             </div>
@@ -192,7 +189,7 @@ const Index = () => {
             {
               icon: Activity,
               title: "Siempre Disponible",
-              description: "99.9% uptime garantizado, soporte 24/7 para emergencias",
+              description: "Sistema funcional 24/7",
               gradient: "from-purple-500 to-primary"
             }
           ].map((feature, index) => (
