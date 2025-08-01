@@ -1,13 +1,18 @@
+// app/api/invite/route.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { type PageParams } from '@supabase/auth-js'
+
+interface InvitePayload {
+  email: string;
+  fullName: string;
+  role?: 'asistente' | 'doctor';
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const { email, fullName, role = 'asistente' } = await request.json();
+  const { email, fullName, role = 'asistente' } = await request.json() as InvitePayload;
 
-  // --- Validación inicial y autenticación del administrador ---
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,51 +34,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'El nombre y el email son requeridos.' }, { status: 400 });
   }
 
-  // --- Lógica Mejorada para Reenviar Invitaciones ---
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 1. Buscar si ya existe un usuario con ese email
-  type ListUsersParams = PageParams & { email?: string }
-  const listParams: ListUsersParams = { email }
-  const { data: existingUserData, error: existingUserError } =
-    await supabaseAdmin.auth.admin.listUsers(listParams)
+  const { data: { users }, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers();
 
-  if (existingUserError) {
-    console.error('Error al buscar usuarios:', existingUserError);
+  if (listUsersError) {
+    console.error('Error al buscar usuarios:', listUsersError);
     return NextResponse.json({ error: 'Error al verificar el usuario.' }, { status: 500 });
   }
 
-  const existingUser = existingUserData.users.find(u => u.email === email);
+  const existingUser = users.find(u => u.email === email);
 
   if (existingUser) {
-    // 2. Si el usuario existe, verificar si ya ha confirmado su cuenta
-    // Un usuario invitado que no ha aceptado no tendrá 'email_confirmed_at'
-    if (existingUser.email_confirmed_at) {
-      // El usuario ya es un miembro activo, no se puede volver a invitar.
-      return NextResponse.json({ error: 'Este usuario ya es un miembro activo del equipo.' }, { status: 409 }); // 409 Conflict
+    if (existingUser.last_sign_in_at) {
+      return NextResponse.json({ error: 'Este usuario ya es un miembro activo del equipo.' }, { status: 409 });
     } else {
-      // El usuario existe pero solo como invitado. Lo eliminamos para crear una nueva invitación.
-      console.log(`Eliminando invitación pendiente para: ${email}`);
-      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
-      if (deleteError) {
-        console.error('Error al eliminar invitación pendiente:', deleteError);
-        return NextResponse.json({ error: 'No se pudo reenviar la invitación.' }, { status: 500 });
-      }
+      await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
     }
   }
   
-  // 3. (Re)enviar la invitación
-  console.log(`Enviando nueva invitación a: ${email}`);
+  // Esta es la parte clave:
+  const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/set-password`;
+  
   const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     data: {
       full_name: fullName,
       role,
     },
-    // El usuario será redirigido a la página para establecer su contraseña
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password`,
+    redirectTo: redirectUrl, 
   });
 
   if (inviteError) {
