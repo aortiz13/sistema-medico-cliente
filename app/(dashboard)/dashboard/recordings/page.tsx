@@ -15,6 +15,10 @@ import { Consultation } from '@/types'
 interface RecordingWithProfile extends Consultation {
   patients: { id: string; full_name: string; document_id: string | null } | null
   profiles: { id: string; full_name: string } | null
+<<<<<<< ours
+=======
+  publicUrl?: string | null
+>>>>>>> theirs
 }
 
 export default function RecordingsPage() {
@@ -63,6 +67,14 @@ export default function RecordingsPage() {
         ...c,
         patients: Array.isArray(c.patients) ? c.patients[0] : c.patients,
         profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles,
+<<<<<<< ours
+=======
+        publicUrl: c.audio_storage_path
+          ? supabase.storage
+              .from('consultation-audios')
+              .getPublicUrl(c.audio_storage_path).data.publicUrl
+          : null,
+>>>>>>> theirs
       }))
 
       setRecords(formattedData as RecordingWithProfile[])
@@ -115,6 +127,7 @@ export default function RecordingsPage() {
     })
   }, [records, filters])
 
+<<<<<<< ours
   const handleViewRecording = async (record: RecordingWithProfile) => {
     if (!record.audio_storage_path) return
     const { data } = supabase.storage
@@ -122,6 +135,8 @@ export default function RecordingsPage() {
       .getPublicUrl(record.audio_storage_path)
     window.open(data.publicUrl, '_blank')
   }
+=======
+>>>>>>> theirs
 
   if (loading || loadingAuth) {
     return (
@@ -199,7 +214,22 @@ export default function RecordingsPage() {
                     {record.profiles?.full_name || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<<<<<<< ours
                     <button onClick={() => handleViewRecording(record)} className="text-primary hover:text-primary/80">Ver Grabación</button>
+=======
+                    {record.publicUrl ? (
+                      <a
+                        href={record.publicUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:text-primary/80"
+                      >
+                        Ver Grabación
+                      </a>
+                    ) : (
+                      'N/A'
+                    )}
+>>>>>>> theirs
                   </td>
                 </tr>
               ))}
