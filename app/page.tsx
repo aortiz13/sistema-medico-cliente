@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope, Users, Calendar, FileText, Shield, Zap, Heart, Activity, Eye, EyeOff } from "lucide-react";
 import { AnimatedIntelligence } from '@/components/common/AnimatedIntelligence';
+import Image from 'next/image'; 
 
 const Index = () => {
   const router = useRouter();
@@ -84,9 +85,14 @@ const Index = () => {
           <div className="animate-slide-in-right">
             <Card className="bg-white/70 border-0 shadow-strong backdrop-blur-sm">
               <CardHeader className="text-center space-y-2">
-                <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto animate-float">
-                  <Heart className="w-8 h-8 text-white" />
-                </div>
+                <div className="w-16 h-16  rounded-2xl flex items-center justify-center mx-auto">
+               <Image
+              src="/logo.png"
+              alt="Logo de la Clínica"
+              width={60} // Ajusta el tamaño para que encaje bien dentro del círculo
+              height={60}
+                 />
+                  </div>
                 <CardTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   {isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
                 </CardTitle>

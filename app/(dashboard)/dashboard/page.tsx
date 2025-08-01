@@ -86,6 +86,8 @@ export default function Dashboard() {
       alert('Usuario no autenticado.');
     }
   };
+   // --- LÓGICA PARA HABILITAR EL BOTÓN ---
+  const isFormValid = newPatientName.trim() !== '' && newPatientDni.trim() !== '';
 
   if (loadingAuth || loadingPatients || loadingConsultations || loadingStats) {
     return <div className="h-screen bg-base-200 flex items-center justify-center text-text-secondary">Cargando...</div>;
@@ -95,7 +97,7 @@ export default function Dashboard() {
     <div className="h-screen flex bg-base-200 overflow-hidden">
       {isPatientModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-          <div className="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-md relative">
+          <div className="bg-card p-8 rounded-xl shadow-2xl w-full max-w-md relative">
             <button onClick={() => setIsPatientModalOpen(false)} className="absolute top-4 right-4 text-text-secondary hover:text-accent transition-colors"><X size={24} /></button>
             <h2 className="text-2xl font-bold mb-6 text-text-primary">Nuevo Paciente</h2>
             <form onSubmit={handleCreatePatientSubmit}>
@@ -119,7 +121,13 @@ export default function Dashboard() {
               </div>
               <div className="mt-8 flex justify-end space-x-4">
                 <button type="button" onClick={() => setIsPatientModalOpen(false)} className="px-5 py-2.5 rounded-lg text-text-primary bg-base-200 hover:bg-base-300 font-semibold transition-colors">Cancelar</button>
-                <button type="submit" disabled={isSavingPatient} className="px-5 py-2.5 rounded-lg text-white bg-secondary hover:opacity-90 disabled:bg-gray-400 font-semibold transition-colors shadow-soft">{isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}</button>
+                <button
+  type="submit"
+  disabled={!isFormValid || isSavingPatient}
+  className="w-1/2 bg-primary rounded-xl text-primary-foreground ... disabled:bg-muted disabled:text-muted-foreground ..."
+>
+  {isSavingPatient ? 'Guardando...' : 'Guardar Paciente'}
+</button>
               </div>
             </form>
           </div>
@@ -167,12 +175,20 @@ export default function Dashboard() {
                     <div>
                       <label className="block text-sm font-semibold text-text-secondary mb-2">3. Grabar Audio</label>
                       <div className="flex space-x-3">
-                        {!isRecording ? (<button onClick={startRecording} disabled={!selectedPatient} className="flex items-center space-x-2 bg-accent text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-300 transition-all shadow-soft"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>) : (<button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>)}
+                        {!isRecording ? (<button onClick={startRecording} disabled={!selectedPatient || !!audioBlob} className="flex items-center space-x-2 bg-accent text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-300 transition-all shadow-soft"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>) : (<button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>)}
                         {audioBlob && (<button onClick={handleProcessAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-dark disabled:bg-gray-300 transition-colors shadow-soft"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>)}
                       </div>
                     </div>
                   </div>
-                  {isRecording && <div className="text-center text-accent font-medium pt-4">🔴 Grabando...</div>}
+                  {isRecording && (
+                  <div className="flex items-center justify-center text-destructive font-medium pt-4">
+                    <span className="relative flex h-3 w-3 mr-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                    </span>
+                    Grabando...
+                  </div>
+                )}
                   {audioBlob && !isRecording && <div className="text-center text-success font-medium pt-4">✅ Audio listo para procesar</div>}
                 </div>
               </div>

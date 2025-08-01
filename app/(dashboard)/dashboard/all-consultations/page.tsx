@@ -210,7 +210,7 @@ export default function AllConsultationsPage() {
             </thead>
             <tbody className="bg-card divide-y divide-border">
               {filteredConsultations.map((consultation) => (
-                <tr key={consultation.id} className="hover:bg-accent/50 transition-colors">
+                <tr key={consultation.id} className="hover:bg-accent/10 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                     {format(new Date(consultation.created_at), 'dd MMMM yyyy', { locale: es })}
                   </td>
