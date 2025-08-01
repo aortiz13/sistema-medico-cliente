@@ -14,24 +14,38 @@ export default function SetPasswordPage() {
   const [isSessionReady, setIsSessionReady] = useState(false)
   const router = useRouter()
 
+  // --- HOOK useEffect MEJORADO ---
   useEffect(() => {
-    // Supabase maneja el token de la URL automáticamente.
-    // Escuchamos el evento de cambio de autenticación.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // El usuario ha sido autenticado a través del enlace de invitación.
-        setIsSessionReady(true)
-      } else if (event === 'SIGNED_OUT') {
-        // Si el usuario cierra sesión o el token expira
-        setError("El enlace de invitación ha expirado o no es válido. Por favor, solicita una nueva invitación.");
-        setIsSessionReady(false);
+    // Función asíncrona para poder usar await dentro del useEffect
+    const checkSessionAndSubscribe = async () => {
+      // 1. Preguntamos activamente si ya hay una sesión.
+      // Supabase lee los tokens de la URL y crea la sesión automáticamente.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log("Sesión detectada, mostrando formulario.");
+        setIsSessionReady(true);
       }
-    })
 
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
+      // 2. Nos suscribimos a cualquier cambio futuro en la autenticación.
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          console.log("Evento SIGNED_IN recibido.");
+          setIsSessionReady(true);
+        } else if (event === 'SIGNED_OUT') {
+          setError("El enlace de invitación ha expirado o no es válido. Por favor, solicita una nueva invitación.");
+          setIsSessionReady(false);
+        }
+      });
+
+      // Función de limpieza para desuscribirse cuando el componente se desmonte
+      return () => {
+        subscription?.unsubscribe();
+      };
+    };
+
+    checkSessionAndSubscribe();
+  }, []);
+  // ---------------------------------
 
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +61,6 @@ export default function SetPasswordPage() {
     setLoading(true)
 
     try {
-      // Usamos la función de Supabase para actualizar los datos del usuario logueado
       const { error } = await supabase.auth.updateUser({
         password: password,
       })
