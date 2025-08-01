@@ -16,9 +16,15 @@ export default function SetPasswordPage() {
 
   // Maneja parámetros devueltos por Supabase tras verificar el enlace
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const errorDesc = params.get('error_description')
-    const code = params.get('code')
+  const searchParams = new URLSearchParams(window.location.search)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+
+    const errorDesc = searchParams.get('error_description') || hashParams.get('error_description')
+    const code = searchParams.get('code')
+
+    const accessToken = hashParams.get('access_token')
+    const refreshToken = hashParams.get('refresh_token')
+    const type = hashParams.get('type')
 
     if (errorDesc) {
       setError(errorDesc)
@@ -29,6 +35,16 @@ export default function SetPasswordPage() {
       supabase.auth.exchangeCodeForSession(code).catch((err) => {
         setError(err.message)
       })
+      return
+    }
+
+    if (type === 'invite' && accessToken && refreshToken) {
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) setError(error.message)
+        })
+        .catch((err) => setError(err.message))
     }
   }, [])
 
