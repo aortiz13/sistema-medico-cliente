@@ -57,14 +57,28 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     // Si el usuario ya existe pero no completó el registro, elimínalo y reenvía la invitación
+<<<<<<< ours
     if (error.message && error.message.toLowerCase().includes('registered')) {
       const { data: existingUser } = await supabaseAdmin
         .from('auth.users')
+=======
+    if (
+      error.code === 'user_already_exists' ||
+      error.message?.toLowerCase().includes('registered')
+    ) {
+      const { data: existingUser, error: fetchError } = await supabaseAdmin
+        .schema('auth')
+        .from('users')
+>>>>>>> theirs
         .select('id, email_confirmed_at')
         .eq('email', email)
         .maybeSingle()
 
+<<<<<<< ours
       if (existingUser && !existingUser.email_confirmed_at) {
+=======
+      if (!fetchError && existingUser && !existingUser.email_confirmed_at) {
+>>>>>>> theirs
         await supabaseAdmin.auth.admin.deleteUser(existingUser.id)
         ;({ data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
           redirectTo: redirectUrl,
