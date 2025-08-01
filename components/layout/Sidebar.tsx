@@ -8,7 +8,8 @@ import {
   Users,
   LayoutDashboard,
   Stethoscope,
-  FileAudio
+  FileAudio,
+  User2
 } from 'lucide-react';
 
 interface Profile {
@@ -61,6 +62,7 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
         <ul className="space-y-2">
           <NavLink href="/dashboard" icon={LayoutDashboard}>Panel Principal</NavLink>
           <NavLink href="/dashboard/all-consultations" icon={Stethoscope}>Consultas</NavLink>
+          <NavLink href="/dashboard/all-patients" icon={User2}>Pacientes</NavLink>
           {profile?.role === 'doctor' && (
             <>
               <NavLink href="/dashboard/recordings" icon={FileAudio}>Grabaciones</NavLink>

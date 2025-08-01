@@ -16,6 +16,7 @@ export interface Patient {
   chronic_conditions?: string | null; // <-- Ahora opcional
   phone?: string | null; // <-- Ya era opcional, pero aseguremos
   email?: string | null; // <-- Ya era opcional, pero aseguremos
+  manual_note?: string | null; // Nota escrita manualmente por el médico
   created_at: string;
   user_id?: string;
 }

@@ -8,6 +8,7 @@ interface UsePatientsReturn {
   errorPatients: string | null;
   loadPatients: () => Promise<void>;
   createPatient: (newPatient: Omit<Patient, 'id' | 'created_at'>, userId: string) => Promise<boolean>;
+  updatePatientManualNote: (id: string, note: string) => Promise<boolean>;
 }
 
 export function usePatients(): UsePatientsReturn {
@@ -57,5 +58,19 @@ export function usePatients(): UsePatientsReturn {
     }
   }, [loadPatients]);
 
-  return { patients, loadingPatients, errorPatients, loadPatients, createPatient };
+  const updatePatientManualNote = useCallback(async (id: string, note: string) => {
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .update({ manual_note: note })
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      console.error('Error al actualizar nota manual:', err.message);
+      return false;
+    }
+  }, []);
+
+  return { patients, loadingPatients, errorPatients, loadPatients, createPatient, updatePatientManualNote };
 }
