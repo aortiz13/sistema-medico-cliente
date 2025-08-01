@@ -6,64 +6,74 @@ import { createClient } from '@supabase/supabase-js'
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const { email, fullName, role = 'asistente' } = await request.json();
 
-  // Paso 1: Resolver la Promise de las cookies PRIMERO
+  // --- Validación inicial y autenticación del administrador ---
   const cookieStore = await cookies();
-
-  // Paso 2: Usar el valor resuelto para configurar Supabase
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(_name: string, _value: string, _options: CookieOptions) {
-          // Dejar vacío
-        },
-        remove(_name: string, _options: CookieOptions) {
-          // Dejar vacío
-        },
+        get(name: string) { return cookieStore.get(name)?.value; },
+        set(_name: string, _value: string, _options: CookieOptions) {},
+        remove(_name:string, _options: CookieOptions) {},
       },
     }
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) {
     return NextResponse.json({ error: 'No estás autenticado.' }, { status: 401 });
   }
-
-
   if (!email || !fullName) {
     return NextResponse.json({ error: 'El nombre y el email son requeridos.' }, { status: 400 });
   }
-  
-  // Se crea un cliente con rol de administrador para la invitación
+
+  // --- Lógica Mejorada para Reenviar Invitaciones ---
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-      : request.nextUrl.origin)
-  const redirectUrl = `${baseUrl}/set-password`
+  // 1. Buscar si ya existe un usuario con ese email
+  const { data: existingUserData, error: existingUserError } = await supabaseAdmin.auth.admin.listUsers({ email });
 
+  if (existingUserError) {
+    console.error('Error al buscar usuarios:', existingUserError);
+    return NextResponse.json({ error: 'Error al verificar el usuario.' }, { status: 500 });
+  }
 
-  const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+  const existingUser = existingUserData.users.find(u => u.email === email);
+
+  if (existingUser) {
+    // 2. Si el usuario existe, verificar si ya ha confirmado su cuenta
+    // Un usuario invitado que no ha aceptado no tendrá 'email_confirmed_at'
+    if (existingUser.email_confirmed_at) {
+      // El usuario ya es un miembro activo, no se puede volver a invitar.
+      return NextResponse.json({ error: 'Este usuario ya es un miembro activo del equipo.' }, { status: 409 }); // 409 Conflict
+    } else {
+      // El usuario existe pero solo como invitado. Lo eliminamos para crear una nueva invitación.
+      console.log(`Eliminando invitación pendiente para: ${email}`);
+      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
+      if (deleteError) {
+        console.error('Error al eliminar invitación pendiente:', deleteError);
+        return NextResponse.json({ error: 'No se pudo reenviar la invitación.' }, { status: 500 });
+      }
+    }
+  }
+  
+  // 3. (Re)enviar la invitación
+  console.log(`Enviando nueva invitación a: ${email}`);
+  const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     data: {
       full_name: fullName,
       role,
     },
-  })
+  });
 
-  if (error) {
-    console.error('Error al invitar usuario:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (inviteError) {
+    console.error('Error al invitar al usuario:', inviteError);
+    return NextResponse.json({ error: inviteError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ message: 'Invitación enviada exitosamente', data })
+  return NextResponse.json({ message: 'Invitación enviada exitosamente', data });
 }
