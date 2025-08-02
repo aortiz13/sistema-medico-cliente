@@ -223,7 +223,11 @@ export default function AllConsultationsPage() {
                     </td>
                   )}
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-foreground">
-                    {consultation.consultation_type === 'new_patient' ? 'Primera Vez' : 'Seguimiento'}
+                    {consultation.consultation_type === 'manual_note'
+                      ? 'Nota Manual'
+                      : consultation.consultation_type === 'new_patient'
+                        ? 'Primera Vez'
+                        : 'Seguimiento'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <button

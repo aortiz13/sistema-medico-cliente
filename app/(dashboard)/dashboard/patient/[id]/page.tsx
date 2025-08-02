@@ -15,7 +15,6 @@ import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
 import { usePdfGenerator } from '@/hooks/usePdfGenerator';
-import { usePatients } from '@/hooks/usePatients';
 import { supabase } from '@/lib/supabase';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 
@@ -25,14 +24,14 @@ import { Patient, Consultation } from '@/types';
 export default function PatientProfilePage() {
   const { user, profile, loading: loadingAuth, handleLogout } = useAuth();
   const { isGeneratingPDF, generatePdf } = usePdfGenerator();
-  const { updatePatientManualNote } = usePatients();
+  const { createManualConsultation } = useConsultations();
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loadingPatientData, setLoadingPatientData] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditingNote, setIsEditingNote] = useState(false);
-  const [editedNote, setEditedNote] = useState('');
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [newNote, setNewNote] = useState('');
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -47,7 +46,6 @@ export default function PatientProfilePage() {
         const { data: patientRes, error: patientError } = await supabase.from('patients').select('*').eq('id', id).single();
         if (patientError) throw patientError;
         setPatient(patientRes);
-        setEditedNote(patientRes.manual_note || '');
 
         const { data: consultationsRes, error: consultationsError } = await supabase.from('consultations')
           .select('id, created_at, formatted_notes, status, patient_id')
@@ -103,12 +101,13 @@ export default function PatientProfilePage() {
     });
   };
 
-  const handleSaveNote = async () => {
-    if (!patient) return;
-    const success = await updatePatientManualNote(patient.id, editedNote);
-    if (success) {
-      setPatient({ ...patient, manual_note: editedNote });
-      setIsEditingNote(false);
+  const handleSaveManualNote = async () => {
+    if (!patient || !profile) return;
+    const created = await createManualConsultation(patient.id, profile.id, newNote);
+    if (created) {
+      setConsultations([created, ...consultations]);
+      setIsAddingNote(false);
+      setNewNote('');
     } else {
       alert('No se pudo guardar la nota.');
     }
@@ -163,14 +162,6 @@ export default function PatientProfilePage() {
                 <h2 style={{ fontSize: '22px', fontWeight: 'bold' }}>{patient?.full_name}</h2>
                 <p><strong>DNI:</strong> {patient?.document_id || 'No registrado'}</p>
                 <p><strong>Fecha de Nacimiento:</strong> {patient?.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : 'No registrada'}</p>
-                {patient?.manual_note && (
-                  <div style={{ marginTop: '10px', marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>Nota del Médico</h3>
-                    <div style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>
-                      <MarkdownRenderer text={patient.manual_note} />
-                    </div>
-                  </div>
-                )}
                 <hr style={{ margin: '20px 0' }} />
                 {consultations.map(consult => (
                   <div key={consult.id} style={{ marginBottom: '30px', pageBreakInside: 'avoid' }}>
@@ -205,23 +196,23 @@ export default function PatientProfilePage() {
                   </div>
                 </div>
                 <div className="bg-base-100 rounded-xl shadow-soft border border-base-300 p-6">
-                  <h2 className="text-xl font-bold text-text-primary mb-4">Nota del Médico</h2>
-                  {isEditingNote ? (
+                  <h2 className="text-xl font-bold text-text-primary mb-4">Agregar Nota Manual</h2>
+                  {isAddingNote ? (
                     <div className="space-y-2">
                       <textarea
                         className="w-full h-40 p-2 border border-base-300 rounded-md"
-                        value={editedNote}
-                        onChange={(e) => setEditedNote(e.target.value)}
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
                       />
                       <div className="flex space-x-2">
                         <button
-                          onClick={handleSaveNote}
+                          onClick={handleSaveManualNote}
                           className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark"
                         >
                           Guardar
                         </button>
                         <button
-                          onClick={() => { setIsEditingNote(false); setEditedNote(patient?.manual_note || ''); }}
+                          onClick={() => { setIsAddingNote(false); setNewNote(''); }}
                           className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
                         >
                           Cancelar
@@ -229,17 +220,12 @@ export default function PatientProfilePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="relative">
-                      {profile?.id === patient?.user_id && (
-                        <button
-                          onClick={() => setIsEditingNote(true)}
-                          className="absolute right-0 top-0 text-sm text-primary underline"
-                        >
-                          Editar
-                        </button>
-                      )}
-                      <MarkdownRenderer text={patient?.manual_note || ''} />
-                    </div>
+                    <button
+                      onClick={() => setIsAddingNote(true)}
+                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark"
+                    >
+                      Nueva Nota
+                    </button>
                   )}
                 </div>
               </div>

@@ -11,6 +11,8 @@ interface UseConsultationsReturn {
   loadConsultations: (limit?: number) => Promise<void>;
   loadConsultationById: (id: string) => Promise<Consultation | null>;
   updateConsultationNotes: (id: string, note: string) => Promise<boolean>;
+  createManualConsultation: (patientId: string, doctorId: string, note: string) => Promise<Consultation | null>;
+  
 }
 
 export function useConsultations(): UseConsultationsReturn {
@@ -80,6 +82,30 @@ export function useConsultations(): UseConsultationsReturn {
       return false;
     }
   }, []);
+  
+
+  const createManualConsultation = useCallback(async (patientId: string, doctorId: string, note: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('consultations')
+        .insert({
+          patient_id: patientId,
+          doctor_id: doctorId,
+          status: 'completed',
+          formatted_notes: { note_content: note },
+          consultation_type: 'manual_note',
+        })
+        .select('id, created_at, formatted_notes, status, patient_id')
+        .single();
+      if (error) throw error;
+      const newConsult = data as Consultation;
+      setConsultations(prev => [newConsult, ...prev]);
+      return newConsult;
+    } catch (err: any) {
+      console.error('Error al crear nota manual:', err.message);
+      return null;
+    }
+  }, []);
 
 
   return {
@@ -90,5 +116,6 @@ export function useConsultations(): UseConsultationsReturn {
     loadConsultations,
     loadConsultationById,
     updateConsultationNotes,
+    createManualConsultation,
   };
 }
