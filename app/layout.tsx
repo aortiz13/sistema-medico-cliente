@@ -5,8 +5,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Sistema Médico MVP',
-  description: 'Sistema de gestión médica',
+  title: 'Dr. Lessieur',
+  description: 'Sistema de Transcripción con IA',
 };
 
 export default function RootLayout({
