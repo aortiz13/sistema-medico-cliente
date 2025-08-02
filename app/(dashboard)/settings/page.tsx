@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { createClient } from '@supabase/supabase-js'
 
 export default function SettingsPage() {
   const { user, profile, loading } = useAuth()
@@ -46,10 +47,16 @@ const handlePasswordReset = async () => {
     setSaving(true)
     setError(null)
     setMessage(null)
-    const { error: passError } = await supabase.auth.resetPasswordForEmail(
-      user.email,
-      { redirectTo: `${window.location.origin}/set-password` }
-    )
+        // Se crea un cliente temporal SÓLO para esta operación pública,
+   // asegurando que se envíe la API key anónima.
+   const supabasePublicClient = createClient(
+     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+   )
+   const { error: passError } = await supabasePublicClient.auth.resetPasswordForEmail(
+    user.email,
+     { redirectTo: `${window.location.origin}/set-password` }
+   )
     if (passError) setError(passError.message)
     else setMessage('Revisa tu correo para cambiar la contraseña')
     setSaving(false)
