@@ -13,7 +13,6 @@ export default function SettingsPage() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -42,6 +41,43 @@ export default function SettingsPage() {
       setAvatarPreview(URL.createObjectURL(file))
     }
   }
+const handlePasswordReset = async () => {
+    if (!user?.email) return
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+    const { error: passError } = await supabase.auth.resetPasswordForEmail(
+      user.email,
+      { redirectTo: `${window.location.origin}/set-password` }
+    )
+    if (passError) setError(passError.message)
+    else setMessage('Revisa tu correo para cambiar la contraseña')
+    setSaving(false)
+  }
+
+  const handleDeleteAvatar = async () => {
+    if (!profile?.avatar_url) return
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+    const { error: removeError } = await supabase.storage
+      .from('avatars')
+      .remove([profile.avatar_url])
+    if (removeError) {
+      setError(removeError.message)
+    } else {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user?.id)
+      if (profileError) setError(profileError.message)
+      else {
+        setAvatarPreview(null)
+        setMessage('Foto de perfil eliminada')
+      }
+    }
+    setSaving(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,15 +86,6 @@ export default function SettingsPage() {
     setMessage(null)
 
     try {
-      if (email && email !== user?.email) {
-        const { error: emailError } = await supabase.auth.updateUser({ email })
-        if (emailError) throw emailError
-      }
-
-      if (password) {
-        const { error: passError } = await supabase.auth.updateUser({ password })
-        if (passError) throw passError
-      }
 
       const fullName = `${firstName} ${lastName}`.trim()
       if (fullName && fullName !== profile?.full_name) {
@@ -87,7 +114,6 @@ export default function SettingsPage() {
       }
 
       setMessage('Datos actualizados correctamente')
-      setPassword('')
       setAvatarFile(null)
     } catch (err) {
       if (err instanceof Error) setError(err.message)
@@ -117,11 +143,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <Label htmlFor="email">Correo electrónico</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="password">Nueva contraseña</Label>
-              <Input id="password" type="password" value={password} placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} />
+           <Input id="email" type="email" value={email} disabled />
             </div>
             <div>
               <Label htmlFor="avatar">Foto de Perfil</Label>
@@ -129,6 +151,16 @@ export default function SettingsPage() {
               {avatarPreview && (
                 <img src={avatarPreview} alt="Vista previa" className="mt-2 w-24 h-24 rounded-full object-cover" />
               )}
+              {profile?.avatar_url && (
+                <Button type="button" variant="secondary" onClick={handleDeleteAvatar} className="mt-2">
+                  Eliminar Foto de Perfil
+                </Button>
+              )}
+            </div>
+            <div>
+              <Button type="button" onClick={handlePasswordReset} className="w-full" variant="outline">
+                Cambiar Contraseña
+              </Button>
             </div>
             {error && <p className="text-red-600 text-sm">{error}</p>}
             {message && <p className="text-green-600 text-sm">{message}</p>}
