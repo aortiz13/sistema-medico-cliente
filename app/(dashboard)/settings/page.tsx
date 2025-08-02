@@ -47,20 +47,31 @@ const handlePasswordReset = async () => {
     setSaving(true)
     setError(null)
     setMessage(null)
-        // Se crea un cliente temporal SÓLO para esta operación pública,
-   // asegurando que se envíe la API key anónima.
-   const supabasePublicClient = createClient(
-     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-   )
-   const { error: passError } = await supabasePublicClient.auth.resetPasswordForEmail(
-    user.email,
-     { redirectTo: `${window.location.origin}/set-password` }
-   )
-    if (passError) setError(passError.message)
-    else setMessage('Revisa tu correo para cambiar la contraseña')
+
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Creamos un cliente de Supabase temporal que USA la API key anónima
+    // de forma garantizada, ignorando la sesión de usuario activa.
+    const supabasePublicClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    // Usamos el cliente temporal para llamar a la función de reseteo.
+    const { error: passError } = await supabasePublicClient.auth.resetPasswordForEmail(
+      user.email,
+      { redirectTo: `${window.location.origin}/set-password` }
+    )
+    // --- FIN DE LA CORRECCIÓN ---
+
+    if (passError) {
+        // Si hay un error, lo mostramos.
+        setError(passError.message)
+    } else {
+        // Si todo sale bien, mostramos el mensaje de éxito.
+        setMessage('Revisa tu correo para cambiar la contraseña')
+    }
     setSaving(false)
-  }
+}
 
   const handleDeleteAvatar = async () => {
     if (!profile?.avatar_url) return
