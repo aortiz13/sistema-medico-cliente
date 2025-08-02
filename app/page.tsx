@@ -160,6 +160,15 @@ const Index = () => {
                   {loading ? 'Procesando...' : isLogin ? 'Acceder al Sistema' : 'Crear mi Cuenta'}
                 </Button>
 
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-center"
+                  onClick={() => router.push('/forgot-password')}
+                >
+                  ¿Olvidaste tu contraseña?
+                </Button>
+
                 {/* Removed sign up prompt and toggle button */}
                 {error && (
                   <p className="text-center text-red-600 text-sm">{error}</p>
