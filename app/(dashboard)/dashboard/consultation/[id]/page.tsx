@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'; // Asegúrate de tener React importado
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
       ArrowLeft, FileText, Mic, Download, Image as ImageIcon,
 } from 'lucide-react';
@@ -10,10 +11,10 @@ import {
 // Importa componentes de UI y hooks
 import { Header } from '@/components/layout/Header';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
+import { ImageZoomModal } from '@/components/common/ImageZoomModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
 import { usePdfGenerator } from '@/hooks/usePdfGenerator';
-import { ImageZoomModal } from '@/components/common/ImageZoomModal';
 
 // Importa las interfaces desde types/index.ts
 import { Consultation } from '@/types';
@@ -208,10 +209,12 @@ export default function ConsultationDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {consultation.images && consultation.images.length > 0 ? (
                     consultation.images.map((url) => (
-                      <img
+                      <Image
                         key={url}
                         src={url}
                         alt="Fotografía de la consulta"
+                        width={300}
+                        height={160}
                         className="w-full h-40 object-cover rounded-md border cursor-pointer"
                         onClick={() => setSelectedImage(url)}
                       />

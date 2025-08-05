@@ -22,6 +22,16 @@ export function useConsultations(): UseConsultationsReturn {
   const [loadingConsultations, setLoadingConsultations] = useState(true);
   const [errorConsultations, setErrorConsultations] = useState<string | null>(null);
 
+  const getPublicImageUrls = (images?: string[]): string[] => {
+    if (!images) return [];
+    return images.map((path) => {
+      const { data } = supabase.storage
+        .from('consultation-images')
+        .getPublicUrl(path);
+      return data.publicUrl;
+    });
+  };
+
   const loadConsultations = useCallback(async (limit?: number) => {
     setLoadingConsultations(true);
     setErrorConsultations(null);
@@ -32,7 +42,11 @@ export function useConsultations(): UseConsultationsReturn {
         .order('created_at', { ascending: false })
         .limit(limit || 100);
       if (error) throw error;
-      setConsultations(data as Consultation[]);
+      const consultationsWithUrls = (data as Consultation[]).map((c) => ({
+        ...c,
+        images: getPublicImageUrls(c.images),
+      }));
+      setConsultations(consultationsWithUrls);
     } catch (err: any) {
       console.error("Error al cargar consultas:", err.message);
       setErrorConsultations("No se pudieron cargar las consultas.");
@@ -59,6 +73,7 @@ export function useConsultations(): UseConsultationsReturn {
         patients: Array.isArray(data.patients) ? data.patients[0] : data.patients,
         profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
       } as Consultation;
+      formattedData.images = getPublicImageUrls(formattedData.images);
 
       return formattedData;
     } catch (err: any) {
