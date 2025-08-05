@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import {
-  Mic, Square, FileText, UserPlus, X, Users, Activity,
+  Mic, Square, FileText, UserPlus, X, Users, Activity, Pause, Play,
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
@@ -25,8 +25,8 @@ export default function Dashboard() {
   const { consultations, loadingConsultations, loadConsultations } = useConsultations(); // Usa el hook de consultas
   const { totalPatients, consultationsToday, newPatientsThisMonth, loading: loadingStats } = useDashboardStats();
   const {
-    isRecording, audioBlob, isProcessingAudio,
-    startRecording, stopRecording, processAudio, resetAudio
+    isRecording, isPaused, audioBlob, isProcessingAudio,
+    startRecording, pauseRecording, resumeRecording, stopRecording, processAudio, resetAudio
   } = useAudioRecorder(); // Usa el hook de grabación de audio
 
   const [selectedPatient, setSelectedPatient] = useState('');
@@ -175,21 +175,71 @@ export default function Dashboard() {
                     <div>
                       <label className="block text-sm font-semibold text-text-secondary mb-2">3. Grabar Audio</label>
                       <div className="flex space-x-3">
-                        {!isRecording ? (<button onClick={startRecording} disabled={!selectedPatient || !!audioBlob} className="flex items-center space-x-2 bg-accent text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-300 transition-all shadow-soft"><Mic className="w-5 h-5" /><span className="font-semibold">Grabar</span></button>) : (<button onClick={stopRecording} className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"><Square className="w-5 h-5" /><span className="font-semibold">Parar</span></button>)}
-                        {audioBlob && (<button onClick={handleProcessAudio} disabled={isProcessingAudio} className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-dark disabled:bg-gray-300 transition-colors shadow-soft"><FileText className="w-5 h-5" /><span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span></button>)}
+                        {!isRecording ? (
+                          <button
+                            onClick={startRecording}
+                            disabled={!selectedPatient || !!audioBlob}
+                            className="flex items-center space-x-2 bg-accent text-white px-5 py-3 rounded-lg hover:opacity-90 disabled:bg-gray-300 transition-all shadow-soft"
+                          >
+                            <Mic className="w-5 h-5" />
+                            <span className="font-semibold">Grabar</span>
+                          </button>
+                        ) : (
+                          <>
+                            {!isPaused ? (
+                              <button
+                                onClick={pauseRecording}
+                                className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"
+                              >
+                                <Pause className="w-5 h-5" />
+                                <span className="font-semibold">Pausar</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={resumeRecording}
+                                className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"
+                              >
+                                <Play className="w-5 h-5" />
+                                <span className="font-semibold">Reanudar</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={stopRecording}
+                              className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"
+                            >
+                              <Square className="w-5 h-5" />
+                              <span className="font-semibold">Parar</span>
+                            </button>
+                          </>
+                        )}
+                        {audioBlob && (
+                          <button
+                            onClick={handleProcessAudio}
+                            disabled={isProcessingAudio}
+                            className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary-dark disabled:bg-gray-300 transition-colors shadow-soft"
+                          >
+                            <FileText className="w-5 h-5" />
+                            <span className="font-semibold">{isProcessingAudio ? 'Procesando...' : 'Procesar'}</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
-                  {isRecording && (
-                  <div className="flex items-center justify-center text-destructive font-medium pt-4">
-                    <span className="relative flex h-3 w-3 mr-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-                    </span>
-                    Grabando...
-                  </div>
-                )}
-                  {audioBlob && !isRecording && <div className="text-center text-success font-medium pt-4">✅ Audio listo para procesar</div>}
+                  {isRecording && !isPaused && (
+                    <div className="flex items-center justify-center text-destructive font-medium pt-4">
+                      <span className="relative flex h-3 w-3 mr-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                      </span>
+                      Grabando...
+                    </div>
+                  )}
+                  {isRecording && isPaused && (
+                    <div className="text-center text-text-secondary font-medium pt-4">Grabación pausada</div>
+                  )}
+                  {audioBlob && !isRecording && (
+                    <div className="text-center text-success font-medium pt-4">✅ Audio listo para procesar</div>
+                  )}
                 </div>
               </div>
 

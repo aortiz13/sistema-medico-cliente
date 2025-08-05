@@ -12,6 +12,7 @@ interface UseConsultationsReturn {
   loadConsultationById: (id: string) => Promise<Consultation | null>;
   updateConsultationNotes: (id: string, note: string) => Promise<boolean>;
   createManualConsultation: (patientId: string, doctorId: string, note: string) => Promise<Consultation | null>;
+  addConsultationImage: (id: string, file: File) => Promise<string | null>;
   
 }
 
@@ -106,6 +107,43 @@ export function useConsultations(): UseConsultationsReturn {
       return null;
     }
   }, []);
+  const addConsultationImage = useCallback(async (id: string, file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('consultation-images')
+        .upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage
+        .from('consultation-images')
+        .getPublicUrl(filePath);
+      const publicUrl = publicData.publicUrl;
+
+      const { data: existing, error: fetchError } = await supabase
+        .from('consultations')
+        .select('images')
+        .eq('id', id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const images = (existing?.images as string[] | null) || [];
+      images.push(publicUrl);
+
+      const { error: updateError } = await supabase
+        .from('consultations')
+        .update({ images })
+        .eq('id', id);
+      if (updateError) throw updateError;
+
+      setConsultations(prev => prev.map(c => c.id === id ? { ...c, images } : c));
+      return publicUrl;
+    } catch (err) {
+      console.error('Error al subir la imagen:', err);
+      return null;
+    }
+  }, []);
 
 
   return {
@@ -117,5 +155,6 @@ export function useConsultations(): UseConsultationsReturn {
     loadConsultationById,
     updateConsultationNotes,
     createManualConsultation,
+    addConsultationImage,
   };
 }

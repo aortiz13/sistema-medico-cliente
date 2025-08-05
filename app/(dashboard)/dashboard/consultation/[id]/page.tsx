@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react'; // Asegúrate de tener React importado
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, FileText, Mic, Download,
+      ArrowLeft, FileText, Mic, Download, Image as ImageIcon,
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
@@ -13,23 +13,22 @@ import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
 import { usePdfGenerator } from '@/hooks/usePdfGenerator';
-import jsPDF from 'jspdf';
 
 // Importa las interfaces desde types/index.ts
 import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
-  const { loadConsultationById, loadingConsultations, updateConsultationNotes } = useConsultations();
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const { loadConsultationById, loadingConsultations, updateConsultationNotes, addConsultationImage } = useConsultations();
+  const { isGeneratingPDF, generatePdf } = usePdfGenerator();
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
 
   useEffect(() => {
@@ -52,42 +51,23 @@ export default function ConsultationDetailPage() {
 
   }, [id, profile, loadConsultationById]);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!consultation) return;
-    setIsGeneratingPDF(true);
     const patientName = consultation.patients?.full_name || 'desconocido';
     const consultationDate = new Date(consultation.created_at).toLocaleDateString();
     const fileName = `consulta-${patientName}-${consultationDate}.pdf`;
+    await generatePdf('pdf-content', fileName);
+  };
 
-    const doc = new jsPDF();
-    const margin = 15;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let y = margin;
-
-    doc.setFontSize(16);
-    doc.text(`Consulta de ${patientName}`, margin, y);
-    y += 8;
-    doc.setFontSize(12);
-    doc.text(`Fecha: ${new Date(consultation.created_at).toLocaleString('es-AR')}`, margin, y);
-    y += 6;
-    doc.text(`Médico: ${consultation.profiles?.full_name || 'N/A'}`, margin, y);
-    y += 10;
-
-    const notesText = (consultation.formatted_notes?.note_content || '').replace(/\*\*/g, '');
-    const lines = doc.splitTextToSize(notesText, pageWidth - margin * 2);
-    const lineHeight = 7;
-    lines.forEach((line: string) => {
-      if (y + lineHeight > pageHeight - margin) {
-        doc.addPage();
-        y = margin;
-      }
-      doc.text(line, margin, y);
-      y += lineHeight;
-    });
-
-    doc.save(fileName);
-    setIsGeneratingPDF(false);
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !consultation) return;
+    setUploadingImage(true);
+    const file = e.target.files[0];
+    const url = await addConsultationImage(consultation.id, file);
+    if (url) {
+      setConsultation({ ...consultation, images: [...(consultation.images || []), url] });
+    }
+    setUploadingImage(false);
   };
 
   const handleSaveNotes = async () => {
@@ -205,6 +185,37 @@ export default function ConsultationDetailPage() {
                   <div className="bg-gray-100 p-4 rounded-md text-gray-600 border italic text-sm max-h-80 overflow-y-auto">
                     {consultation.transcription}
                   </div>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h2 className="text-xl font-semibold mb-3 flex items-center text-gray-700">
+                  <ImageIcon className="w-5 h-5 mr-2 text-blue-600" />
+                  Fotografías Adjuntas
+                </h2>
+                {profile?.id === consultation.doctor_id && (
+                  <div className="mb-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                    />
+                  </div>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {consultation.images && consultation.images.length > 0 ? (
+                    consultation.images.map((url) => (
+                      <img
+                        key={url}
+                        src={url}
+                        alt="Fotografía de la consulta"
+                        className="w-full h-40 object-cover rounded-md border"
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No hay fotografías adjuntas.</p>
+                  )}
                 </div>
               </div>
             </div>

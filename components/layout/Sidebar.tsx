@@ -66,7 +66,7 @@ export function Sidebar({ profile }: { profile: Profile | null }) {
           {profile?.role === 'doctor' && (
             <>
               <NavLink href="/dashboard/recordings" icon={FileAudio}>Grabaciones</NavLink>
-              <NavLink href="/dashboard/manage-assistants" icon={Users}>Asistentes</NavLink>
+              <NavLink href="/dashboard/manage-assistants" icon={Users}>Usuarios</NavLink>
             </>
           )}
         </ul>

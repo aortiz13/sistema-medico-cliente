@@ -4,9 +4,12 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface UseAudioRecorderReturn {
   isRecording: boolean;
+  isPaused: boolean;
   audioBlob: Blob | null;
   isProcessingAudio: boolean;
   startRecording: () => Promise<void>;
+  pauseRecording: () => void;
+  resumeRecording: () => void;
   stopRecording: () => void;
   processAudio: (selectedPatientId: string, consultationType: string, user: SupabaseUser) => Promise<boolean>;
   resetAudio: () => void;
@@ -14,6 +17,7 @@ interface UseAudioRecorderReturn {
 
 export function useAudioRecorder(): UseAudioRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -34,6 +38,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       };
       mediaRecorder.start();
       setIsRecording(true);
+      setIsPaused(false);
       setAudioBlob(null); // Reiniciar el blob de audio al iniciar una nueva grabación
     } catch (err) {
       console.error("Error al acceder al micrófono:", err);
@@ -41,11 +46,26 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     }
   }, []);
 
-  const stopRecording = useCallback(() => {
+  const pauseRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+    }
+  }, []);
+
+  const resumeRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && (mediaRecorderRef.current.state === "recording" || mediaRecorderRef.current.state === "paused")) {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
+    setIsPaused(false);
   }, []);
 
   const processAudio = useCallback(async (selectedPatientId: string, consultationType: string, user: SupabaseUser) => {
@@ -101,14 +121,18 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const resetAudio = useCallback(() => {
     setAudioBlob(null);
     setIsRecording(false);
+    setIsPaused(false);
     setIsProcessingAudio(false);
   }, []);
 
   return {
     isRecording,
+     isPaused,
     audioBlob,
     isProcessingAudio,
     startRecording,
+    pauseRecording,
+    resumeRecording,
     stopRecording,
     processAudio,
     resetAudio,
