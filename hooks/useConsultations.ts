@@ -13,7 +13,6 @@ interface UseConsultationsReturn {
   updateConsultationNotes: (id: string, note: string) => Promise<boolean>;
   createManualConsultation: (patientId: string, doctorId: string, note: string) => Promise<Consultation | null>;
   addConsultationImage: (id: string, file: File) => Promise<string | null>;
-  
 }
 
 export function useConsultations(): UseConsultationsReturn {
@@ -22,6 +21,8 @@ export function useConsultations(): UseConsultationsReturn {
   const [loadingConsultations, setLoadingConsultations] = useState(true);
   const [errorConsultations, setErrorConsultations] = useState<string | null>(null);
 
+  // Esta función ya no es necesaria para cargar consultas,
+  // pero la mantenemos por si se usa en otro lugar.
   const getPublicImageUrls = (images?: string[]): string[] => {
     if (!images) return [];
     return images.map((path) => {
@@ -42,11 +43,9 @@ export function useConsultations(): UseConsultationsReturn {
         .order('created_at', { ascending: false })
         .limit(limit || 100);
       if (error) throw error;
-      const consultationsWithUrls = (data as Consultation[]).map((c) => ({
-        ...c,
-        images: getPublicImageUrls(c.images),
-      }));
-      setConsultations(consultationsWithUrls);
+      // CORRECCIÓN: Se elimina el mapeo innecesario.
+      // Las URLs de las imágenes ya vienen completas desde la base de datos.
+      setConsultations(data as Consultation[]);
     } catch (err: any) {
       console.error("Error al cargar consultas:", err.message);
       setErrorConsultations("No se pudieron cargar las consultas.");
@@ -66,14 +65,16 @@ export function useConsultations(): UseConsultationsReturn {
         .single();
 
       if (error) throw error;
-      
+
       // Estandariza el formato de los datos relacionados
       const formattedData = {
         ...data,
         patients: Array.isArray(data.patients) ? data.patients[0] : data.patients,
         profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
       } as Consultation;
-      formattedData.images = getPublicImageUrls(formattedData.images);
+
+      // CORRECCIÓN: Se elimina el llamado a getPublicImageUrls.
+      // La propiedad 'images' ya contiene las URLs públicas completas.
 
       return formattedData;
     } catch (err: any) {
@@ -98,7 +99,7 @@ export function useConsultations(): UseConsultationsReturn {
       return false;
     }
   }, []);
-  
+
 
   const createManualConsultation = useCallback(async (patientId: string, doctorId: string, note: string) => {
     try {
