@@ -13,6 +13,7 @@ import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
 import { usePdfGenerator } from '@/hooks/usePdfGenerator';
+import { ImageZoomModal } from '@/components/common/ImageZoomModal';
 
 // Importa las interfaces desde types/index.ts
 import { Consultation } from '@/types';
@@ -28,6 +29,7 @@ export default function ConsultationDetailPage() {
   const [editedNotes, setEditedNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const params = useParams();
   const id = params.id as string;
 
@@ -210,13 +212,19 @@ export default function ConsultationDetailPage() {
                         key={url}
                         src={url}
                         alt="Fotografía de la consulta"
-                        className="w-full h-40 object-cover rounded-md border"
+                        className="w-full h-40 object-cover rounded-md border cursor-pointer"
+                        onClick={() => setSelectedImage(url)}
                       />
                     ))
                   ) : (
                     <p className="text-sm text-gray-500">No hay fotografías adjuntas.</p>
                   )}
                 </div>
+                <ImageZoomModal
+                  isOpen={!!selectedImage}
+                  imageUrl={selectedImage}
+                  onClose={() => setSelectedImage(null)}
+                />
               </div>
             </div>
           </div>
