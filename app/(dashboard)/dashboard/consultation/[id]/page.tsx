@@ -9,12 +9,11 @@ import {
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
-import { Header } from '@/components/layout/Header';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { ImageZoomModal } from '@/components/common/ImageZoomModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsultations } from '@/hooks/useConsultations';
-import { usePdfGenerator } from '@/hooks/usePdfGenerator';
+import { useConsultationPdf } from '@/hooks/useConsultationPdf';
 
 // Importa las interfaces desde types/index.ts
 import { Consultation } from '@/types';
@@ -22,7 +21,7 @@ import { Consultation } from '@/types';
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
   const { loadConsultationById, loadingConsultations, updateConsultationNotes, addConsultationImage } = useConsultations();
-  const { isGeneratingPDF, generatePdf } = usePdfGenerator();
+  const { isGeneratingPDF, generatePdf } = useConsultationPdf();
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +58,7 @@ export default function ConsultationDetailPage() {
     const patientName = consultation.patients?.full_name || 'desconocido';
     const consultationDate = new Date(consultation.created_at).toLocaleDateString();
     const fileName = `consulta-${patientName}-${consultationDate}.pdf`;
-    await generatePdf('pdf-content', fileName);
+    await generatePdf(consultation, fileName);
   };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
