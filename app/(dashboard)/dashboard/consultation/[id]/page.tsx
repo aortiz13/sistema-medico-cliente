@@ -20,7 +20,7 @@ import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
-  const { loadConsultationById, loadingConsultations, updateConsultationNotes, addConsultationImage } = useConsultations();
+  const { loadConsultationById, loadingConsultations, updateConsultationNotes, addConsultationImage, deleteConsultationImage } = useConsultations();
   const { isGeneratingPDF, generatePdf } = useConsultationPdf();
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
@@ -29,6 +29,7 @@ export default function ConsultationDetailPage() {
   const [editedNotes, setEditedNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const params = useParams();
   const id = params.id as string;
@@ -61,7 +62,7 @@ export default function ConsultationDetailPage() {
     await generatePdf(consultation, fileName);
   };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !consultation) return;
     setUploadingImage(true);
     const file = e.target.files[0];
@@ -71,6 +72,16 @@ export default function ConsultationDetailPage() {
     }
     setUploadingImage(false);
   };
+  const handleDeleteImage = async (url: string) => {
+    if (!consultation) return;
+    setDeletingImage(url);
+    const success = await deleteConsultationImage(consultation.id, url);
+    if (success) {
+      setConsultation({ ...consultation, images: consultation.images?.filter((img) => img !== url) });
+    }
+    setDeletingImage(null);
+  };
+
 
   const handleSaveNotes = async () => {
     if (!consultation) return;
@@ -208,15 +219,25 @@ export default function ConsultationDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {consultation.images && consultation.images.length > 0 ? (
                     consultation.images.map((url) => (
-                      <Image
-                        key={url}
-                        src={url}
-                        alt="Fotografía de la consulta"
-                        width={300}
-                        height={160}
-                        className="w-full h-40 object-cover rounded-md border cursor-pointer"
-                        onClick={() => setSelectedImage(url)}
-                      />
+                      <div key={url} className="relative">
+                        <Image
+                          src={url}
+                          alt="Fotografía de la consulta"
+                          width={300}
+                          height={160}
+                          className="w-full h-40 object-cover rounded-md border cursor-pointer"
+                          onClick={() => setSelectedImage(url)}
+                        />
+                        {profile?.id === consultation.doctor_id && (
+                          <button
+                            onClick={() => handleDeleteImage(url)}
+                            disabled={deletingImage === url}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs"
+                          >
+                            {deletingImage === url ? '...' : 'X'}
+                          </button>
+                        )}
+                      </div>
                     ))
                   ) : (
                     <p className="text-sm text-gray-500">No hay fotografías adjuntas.</p>

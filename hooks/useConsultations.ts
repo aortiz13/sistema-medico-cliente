@@ -13,6 +13,7 @@ interface UseConsultationsReturn {
   updateConsultationNotes: (id: string, note: string) => Promise<boolean>;
   createManualConsultation: (patientId: string, doctorId: string, note: string) => Promise<Consultation | null>;
   addConsultationImage: (id: string, file: File) => Promise<string | null>;
+  deleteConsultationImage: (id: string, imageUrl: string) => Promise<boolean>;
 }
 
 export function useConsultations(): UseConsultationsReturn {
@@ -161,6 +162,41 @@ export function useConsultations(): UseConsultationsReturn {
     }
   }, []);
 
+  const deleteConsultationImage = useCallback(async (id: string, imageUrl: string) => {
+    try {
+      const url = new URL(imageUrl);
+      const path = url.pathname.split('/storage/v1/object/public/consultation-images/')[1];
+      if (!path) throw new Error('Invalid image URL');
+
+      const { error: removeError } = await supabase.storage
+        .from('consultation-images')
+        .remove([path]);
+      if (removeError) throw removeError;
+
+      const { data: existing, error: fetchError } = await supabase
+        .from('consultations')
+        .select('images')
+        .eq('id', id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const images = (existing?.images as string[] | null) || [];
+      const updatedImages = images.filter((url) => url !== imageUrl);
+
+      const { error: updateError } = await supabase
+        .from('consultations')
+        .update({ images: updatedImages })
+        .eq('id', id);
+      if (updateError) throw updateError;
+
+      setConsultations(prev => prev.map(c => c.id === id ? { ...c, images: updatedImages } : c));
+      return true;
+    } catch (err) {
+      console.error('Error al eliminar la imagen:', err);
+      return false;
+    }
+  }, []);
+
 
   return {
     consultations,
@@ -172,5 +208,6 @@ export function useConsultations(): UseConsultationsReturn {
     updateConsultationNotes,
     createManualConsultation,
     addConsultationImage,
+    deleteConsultationImage,
   };
 }
