@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!assistantId) {
-    return NextResponse.json({ error: 'Se requiere el ID del asistente.' }, { status: 400 })
+    return NextResponse.json({ error: 'Se requiere el ID del Médico Asociado.' }, { status: 400 })
   }
 
   const supabaseAdmin = createClient(
@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(assistantId)
 
   if (deleteError) {
-    console.error('Error al eliminar el usuario asistente:', deleteError)
-    return NextResponse.json({ error: 'Error al eliminar la cuenta del asistente.' }, { status: 500 })
+    console.error('Error al eliminar el usuario Médico Asociado:', deleteError)
+    return NextResponse.json({ error: 'Error al eliminar la cuenta del Médico Asociado.' }, { status: 500 })
   }
 
-  return NextResponse.json({ message: 'Asistente eliminado y todos sus datos han sido reasignados exitosamente.' })
+  return NextResponse.json({ message: 'Médico Asociado eliminado y todos sus datos han sido reasignados exitosamente.' })
 }

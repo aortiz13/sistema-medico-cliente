@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react'; // Asegúrate de tener React importado
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-      ArrowLeft, FileText, Mic, Download, Image as ImageIcon,
+      ArrowLeft, FileText, Mic, Download, Image as ImageIcon, Trash2,
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
@@ -20,7 +20,7 @@ import { Consultation } from '@/types';
 
 export default function ConsultationDetailPage() {
   const { profile, loading: loadingAuth, handleLogout } = useAuth();
-  const { loadConsultationById, loadingConsultations, updateConsultationNotes, addConsultationImage, deleteConsultationImage } = useConsultations();
+  const { loadConsultationById, loadingConsultations, updateConsultationNotes, addConsultationImage, deleteConsultationImage, deleteConsultation } = useConsultations();
   const { isGeneratingPDF, generatePdf } = useConsultationPdf();
 
   const [consultation, setConsultation] = useState<Consultation | null>(null);
@@ -32,6 +32,7 @@ export default function ConsultationDetailPage() {
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
   useEffect(() => {
@@ -82,6 +83,17 @@ export default function ConsultationDetailPage() {
     setDeletingImage(null);
   };
 
+  const handleDeleteConsultation = async () => {
+    if (!consultation) return;
+    const confirmed = window.confirm('¿Estás seguro de eliminar esta consulta? Esta acción no se puede deshacer.');
+    if (!confirmed) return;
+    const success = await deleteConsultation(consultation.id);
+    if (success) {
+      router.push('/dashboard/all-consultations');
+    } else {
+      alert('No se pudo eliminar la consulta.');
+    }
+  };
 
   const handleSaveNotes = async () => {
     if (!consultation) return;
@@ -117,14 +129,25 @@ export default function ConsultationDetailPage() {
                 </Link>
                 <h1 className="text-3xl font-bold text-gray-800">Detalle de la Consulta</h1>
               </div>
-              <button
-                onClick={handleDownloadPDF} // <-- Usa la función ahora definida
-                disabled={isGeneratingPDF}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors shadow-sm"
-              >
-                <Download className="w-5 h-5" />
-                <span>{isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF}
+                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors shadow-sm"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>{isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}</span>
+                </button>
+                {profile?.role === 'doctor' && (
+                  <button
+                    onClick={handleDeleteConsultation}
+                    className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span>Eliminar</span>
+                  </button>
+                )}
+              </div>
             </div>
 
               <div id="pdf-content" className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">

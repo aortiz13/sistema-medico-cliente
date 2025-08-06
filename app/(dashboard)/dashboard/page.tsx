@@ -189,7 +189,7 @@ export default function Dashboard() {
                             {!isPaused ? (
                               <button
                                 onClick={pauseRecording}
-                                className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"
+                                className="flex items-center space-x-2 bg-yellow-500 text-white px-5 py-3 rounded-lg hover:bg-yellow-600 transition-colors shadow-soft"
                               >
                                 <Pause className="w-5 h-5" />
                                 <span className="font-semibold">Pausar</span>
@@ -205,7 +205,7 @@ export default function Dashboard() {
                             )}
                             <button
                               onClick={stopRecording}
-                              className="flex items-center space-x-2 bg-gray-700 text-white px-5 py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-soft"
+                              className="flex items-center space-x-2 bg-red-500 text-white px-5 py-3 rounded-lg hover:bg-red-600 transition-colors shadow-soft"
                             >
                               <Square className="w-5 h-5" />
                               <span className="font-semibold">Parar</span>

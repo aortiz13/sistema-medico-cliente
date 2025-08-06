@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { Consultation } from '@/types';
 
 // Extendemos la interfaz para incluir el perfil del profesional
@@ -117,6 +117,22 @@ export default function AllConsultationsPage() {
 
   const handleViewConsultation = (id: string) => {
     router.push(`/dashboard/consultation/${id}`);
+  };
+
+  const handleDeleteConsultation = async (id: string) => {
+    const confirmed = window.confirm('¿Estás seguro de eliminar esta consulta? Esta acción no se puede deshacer.');
+    if (!confirmed) return;
+    try {
+      const { error } = await supabase
+        .from('consultations')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      setConsultations(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      console.error('Error al eliminar la consulta:', err);
+      alert('No se pudo eliminar la consulta.');
+    }
   };
 
   if (loading || loadingAuth) {
@@ -230,12 +246,23 @@ export default function AllConsultationsPage() {
                         : 'Seguimiento'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                    <button
-                      onClick={() => handleViewConsultation(consultation.id)}
-                      className="text-primary hover:text-primary/80"
-                    >
-                      Ver Detalles
-                    </button>
+                    <div className="flex justify-center space-x-4">
+                      <button
+                        onClick={() => handleViewConsultation(consultation.id)}
+                        className="text-primary hover:text-primary/80"
+                      >
+                        Ver Detalles
+                      </button>
+                      {profile?.role === 'doctor' && (
+                        <button
+                          onClick={() => handleDeleteConsultation(consultation.id)}
+                          className="text-red-600 hover:text-red-800 flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Eliminar</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -67,7 +67,7 @@ export default function ManageAssistantsPage() {
 
     if (!data) {
       console.error('Error fetching assistants:', error);
-      setError('No se pudieron cargar los asistentes.');
+      setError('No se pudieron cargar los Médicos Asociados.');
     } else {
       const filtered = (data as Assistant[]).filter(a => a.id !== user?.id);
       setAssistants(filtered);
@@ -111,11 +111,11 @@ export default function ManageAssistantsPage() {
         body: JSON.stringify({ assistantId: assistantToDelete.id }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Falló al eliminar al asistente.');
+      if (!response.ok) throw new Error(result.error || 'Falló al eliminar al Médico Asociado.');
 
       setAssistants(assistants.filter(a => a.id !== assistantToDelete.id));
       setAssistantToDelete(null);
-      setNotification({ message: 'Asistente eliminado exitosamente.', type: 'success' });
+      setNotification({ message: 'Médico Asociado eliminado exitosamente.', type: 'success' });
 
     } catch (error) {
       setAssistantToDelete(null);
@@ -147,7 +147,7 @@ export default function ManageAssistantsPage() {
         title="¿Estás seguro?"
         message={
           <>
-            Estás a punto de eliminar al asistente <span className="font-bold">{assistantToDelete?.full_name}</span>.
+            Estás a punto de eliminar al Médico Asociado <span className="font-bold">{assistantToDelete?.full_name}</span>.
             <br />Todos sus pacientes y consultas serán reasignados a tu cuenta. Esta acción no se puede deshacer.
           </>
         }
@@ -160,7 +160,7 @@ export default function ManageAssistantsPage() {
           <main className="flex-1 p-8 overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
               <div className="lg:col-span-1 bg-base-100 rounded-xl shadow-soft border border-base-300 p-6">
-                <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center"><UserPlus className="w-6 h-6 mr-3 text-primary" />Invitar Nuevo Asistente</h2>
+                <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center"><UserPlus className="w-6 h-6 mr-3 text-primary" />Invitar Nuevo Médico</h2>
                 <form onSubmit={handleInviteAssistant} className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-text-secondary mb-1">Nombre Completo</label>
@@ -177,7 +177,7 @@ export default function ManageAssistantsPage() {
                       onChange={(e) => setNewAssistantRole(e.target.value as 'asistente' | 'doctor')}
                       className="w-full p-3 border border-base-300 rounded-lg bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary"
                     >
-                      <option value="asistente">Asistente</option>
+                      <option value="asistente">Médico Asociado</option>
                       <option value="doctor">Doctor</option>
                     </select>
                   </div>
@@ -189,10 +189,10 @@ export default function ManageAssistantsPage() {
               </div>
 
               <div className="lg:col-span-2 bg-base-100 rounded-xl shadow-soft border border-base-300 p-6">
-                <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center"><Users className="w-6 h-6 mr-3 text-primary" />Lista de Asistentes</h2>
+                <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center"><Users className="w-6 h-6 mr-3 text-primary" />Lista de Médicos</h2>
                 <div className="space-y-3">
                   {error && <p className="text-accent bg-red-100 p-3 rounded-md">{error}</p>}
-                  {assistants.length === 0 && !loadingAssistants && (<p className="text-text-secondary text-center py-8">No hay asistentes registrados.</p>)}
+                  {assistants.length === 0 && !loadingAssistants && (<p className="text-text-secondary text-center py-8">No hay médicos registrados.</p>)}
                   {assistants.map(assistant => (
                     <div key={assistant.id} className="flex items-center justify-between p-4 border border-base-300 rounded-lg hover:bg-base-200">
                       <div className="flex items-center">
@@ -208,7 +208,7 @@ export default function ManageAssistantsPage() {
                         <div>
                           <p className="font-bold text-lg text-text-primary">{assistant.full_name}</p>
                           <p className="text-sm text-text-secondary">
-                            {assistant.role === 'doctor' ? 'Doctor' : 'Asistente'}
+                            {assistant.role === 'doctor' ? 'Doctor' : 'Médico Asociado'}
                           </p>
                         </div>
                       </div>

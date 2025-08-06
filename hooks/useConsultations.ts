@@ -14,6 +14,7 @@ interface UseConsultationsReturn {
   createManualConsultation: (patientId: string, doctorId: string, note: string) => Promise<Consultation | null>;
   addConsultationImage: (id: string, file: File) => Promise<string | null>;
   deleteConsultationImage: (id: string, imageUrl: string) => Promise<boolean>;
+  deleteConsultation: (id: string) => Promise<boolean>;
 }
 
 export function useConsultations(): UseConsultationsReturn {
@@ -124,6 +125,22 @@ export function useConsultations(): UseConsultationsReturn {
       return null;
     }
   }, []);
+
+  const deleteConsultation = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('consultations')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      setConsultations(prev => prev.filter(c => c.id !== id));
+      return true;
+    } catch (err) {
+      console.error('Error al eliminar la consulta:', err);
+      return false;
+    }
+  }, []);
+
   const addConsultationImage = useCallback(async (id: string, file: File) => {
     try {
       const fileExt = file.name.split('.').pop();
@@ -207,6 +224,7 @@ export function useConsultations(): UseConsultationsReturn {
     loadConsultationById,
     updateConsultationNotes,
     createManualConsultation,
+    deleteConsultation,
     addConsultationImage,
     deleteConsultationImage,
   };
