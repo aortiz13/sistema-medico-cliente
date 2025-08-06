@@ -18,6 +18,90 @@ export function useConsultationPdf(): UseConsultationPdfReturn {
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       let y = margin;
+      const lineHeight = 6;
+      const bulletIndent = 6;
+
+      const addPageIfNeeded = () => {
+        if (y > pageHeight - margin) {
+          pdf.addPage();
+          y = margin;
+        }
+      };
+
+      const tokenize = (line: string) => {
+        const segments = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+        const tokens: { text: string; bold: boolean }[] = [];
+        for (const seg of segments) {
+          const bold = seg.startsWith('**') && seg.endsWith('**');
+          const text = bold ? seg.slice(2, -2) : seg;
+          for (const part of text.split(/(\s+)/)) {
+            if (part) tokens.push({ text: part, bold });
+          }
+        }
+        return tokens;
+      };
+
+      const wrapTokens = (tokens: { text: string; bold: boolean }[], maxWidth: number) => {
+        const lines: { text: string; bold: boolean }[][] = [];
+        let current: { text: string; bold: boolean }[] = [];
+        let width = 0;
+        for (const token of tokens) {
+          const w = pdf.getTextWidth(token.text);
+          if (width + w > maxWidth && current.length) {
+            lines.push(current);
+            current = [token];
+            width = w;
+          } else {
+            current.push(token);
+            width += w;
+          }
+        }
+        if (current.length) lines.push(current);
+        return lines;
+      };
+
+      const printMarkdown = (text: string) => {
+        const rawLines = text.split('\n');
+        for (const raw of rawLines) {
+          let line = raw;
+          const trimmed = line.trim();
+          if (!trimmed) {
+            y += lineHeight;
+            continue;
+          }
+
+          const isBullet = trimmed.startsWith('* ');
+          if (isBullet) {
+            line = trimmed.slice(2);
+          }
+
+          const tokens = tokenize(line);
+          const maxWidth = pageWidth - margin * 2 - (isBullet ? bulletIndent : 0);
+          const wrapped = wrapTokens(tokens, maxWidth);
+
+          wrapped.forEach((tokenLine, index) => {
+            addPageIfNeeded();
+            let x = margin;
+            if (isBullet) {
+              if (index === 0) {
+                pdf.setFont('helvetica', 'normal');
+                pdf.text('\u2022', x, y);
+              }
+              x += bulletIndent;
+            }
+
+            for (const token of tokenLine) {
+              pdf.setFont('helvetica', token.bold ? 'bold' : 'normal');
+              pdf.text(token.text, x, y);
+              x += pdf.getTextWidth(token.text);
+            }
+
+            y += lineHeight;
+          });
+
+          y += 2; // espacio entre líneas
+        }
+      };
 
       pdf.setFontSize(16);
       pdf.text('Detalle de la Consulta', pageWidth / 2, y, { align: 'center' });
@@ -38,9 +122,8 @@ export function useConsultationPdf(): UseConsultationPdfReturn {
 
       pdf.setFontSize(12);
       const notes = consultation.formatted_notes?.note_content || '';
-      const lines = pdf.splitTextToSize(notes, pageWidth - margin * 2);
-      pdf.text(lines, margin, y);
-      y += lines.length * 6 + 10;
+      printMarkdown(notes);
+      y += 4;
 
       if (consultation.images && consultation.images.length > 0) {
         for (const url of consultation.images) {
