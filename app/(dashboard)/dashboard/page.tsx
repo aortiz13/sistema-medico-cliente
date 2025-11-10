@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Mic, Square, FileText, UserPlus, X, Users, Activity, Pause, Play,
@@ -30,6 +30,7 @@ export default function Dashboard() {
   } = useAudioRecorder(); // Usa el hook de grabación de audio
 
   const [selectedPatient, setSelectedPatient] = useState('');
+  const [patientSearch, setPatientSearch] = useState('');
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientDni, setNewPatientDni] = useState('');
@@ -72,6 +73,16 @@ export default function Dashboard() {
     }
     setIsSavingPatient(false);
   };
+
+  const filteredPatients = useMemo(() => {
+    const search = patientSearch.trim().toLowerCase();
+    if (!search) {
+      return patients;
+    }
+    return patients.filter((patient) =>
+      patient.full_name.toLowerCase().includes(search)
+    );
+  }, [patients, patientSearch]);
 
   const handleProcessAudio = async () => {
     if (user) {
@@ -167,9 +178,19 @@ export default function Dashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-text-secondary mb-2">2. Seleccionar Paciente</label>
+                      <input
+                        type="text"
+                        value={patientSearch}
+                        onChange={(e) => setPatientSearch(e.target.value)}
+                        placeholder="Buscar por nombre..."
+                        className="w-full p-3 mb-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
                       <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary">
                         <option value="">Seleccionar...</option>
-                        {patients.map((patient) => (<option key={patient.id} value={patient.id}>{patient.full_name}</option>))}
+                        {filteredPatients.map((patient) => (<option key={patient.id} value={patient.id}>{patient.full_name}</option>))}
+                        {filteredPatients.length === 0 && patientSearch.trim() !== '' && (
+                          <option value="" disabled>No se encontraron pacientes</option>
+                        )}
                       </select>
                     </div>
                     <div>
