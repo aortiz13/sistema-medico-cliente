@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, FormEvent, useMemo } from 'react';
+import { useState, useEffect, FormEvent, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
-  Mic, Square, FileText, UserPlus, X, Users, Activity, Pause, Play,
+  Mic, Square, FileText, UserPlus, X, Users, Activity, Pause, Play, Search,
 } from 'lucide-react';
 
 // Importa componentes de UI y hooks
@@ -31,6 +31,8 @@ export default function Dashboard() {
 
   const [selectedPatient, setSelectedPatient] = useState('');
   const [patientSearch, setPatientSearch] = useState('');
+  const [isPatientDropdownOpen, setIsPatientDropdownOpen] = useState(false);
+  const patientComboboxRef = useRef<HTMLDivElement | null>(null);
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientDni, setNewPatientDni] = useState('');
@@ -84,6 +86,31 @@ export default function Dashboard() {
       return normalizedName.includes(search);
     });
   }, [patients, patientSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (patientComboboxRef.current && !patientComboboxRef.current.contains(event.target as Node)) {
+        setIsPatientDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSelectPatient = (patient: Patient) => {
+    setSelectedPatient(patient.id);
+    setPatientSearch(patient.full_name ?? 'Paciente sin nombre');
+    setIsPatientDropdownOpen(false);
+  };
+
+  const handleClearPatient = () => {
+    setSelectedPatient('');
+    setPatientSearch('');
+    setIsPatientDropdownOpen(false);
+  };
 
   const handleProcessAudio = async () => {
     if (user) {
@@ -179,24 +206,70 @@ export default function Dashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-text-secondary mb-2">2. Seleccionar Paciente</label>
-                      <input
-                        type="text"
-                        value={patientSearch}
-                        onChange={(e) => setPatientSearch(e.target.value)}
-                        placeholder="Buscar por nombre..."
-                        className="w-full p-3 mb-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                      <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary">
-                        <option value="">Seleccionar...</option>
-                        {filteredPatients.map((patient) => (
-                          <option key={patient.id} value={patient.id}>
-                            {patient.full_name ?? 'Paciente sin nombre'}
-                          </option>
-                        ))}
-                        {filteredPatients.length === 0 && patientSearch.trim() !== '' && (
-                          <option value="" disabled>No se encontraron pacientes</option>
+                      <div
+                        ref={patientComboboxRef}
+                        className="relative"
+                      >
+                        <div className="relative flex items-center">
+                          <Search className="absolute left-3 h-4 w-4 text-text-secondary" />
+                          <input
+                            type="text"
+                            value={patientSearch}
+                            onFocus={() => setIsPatientDropdownOpen(true)}
+                            onChange={(e) => {
+                              setPatientSearch(e.target.value);
+                              if (selectedPatient) {
+                                setSelectedPatient('');
+                              }
+                              setIsPatientDropdownOpen(true);
+                            }}
+                            placeholder="Buscar paciente por nombre..."
+                            autoComplete="off"
+                            className="w-full pl-10 pr-10 py-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm transition-all"
+                          />
+                          {patientSearch && (
+                            <button
+                              type="button"
+                              onClick={handleClearPatient}
+                              className="absolute right-3 text-text-secondary hover:text-text-primary transition-colors"
+                              aria-label="Limpiar selección de paciente"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                        {isPatientDropdownOpen && (
+                          <div className="absolute left-0 right-0 mt-2 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto transition ease-out duration-150 origin-top">
+                            {filteredPatients.length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-text-secondary">No se encontraron pacientes</div>
+                            ) : (
+                              filteredPatients.map((patient) => {
+                                const displayName = patient.full_name ?? 'Paciente sin nombre';
+                                const initials = displayName.charAt(0).toUpperCase();
+
+                                return (
+                                  <button
+                                    key={patient.id}
+                                    type="button"
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={() => handleSelectPatient(patient)}
+                                    className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-colors ${
+                                      selectedPatient === patient.id
+                                        ? 'bg-primary/10 text-text-primary'
+                                        : 'hover:bg-base-200'
+                                    }`}
+                                  >
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                                      {initials}
+                                    </span>
+                                    <span className="truncate">{displayName}</span>
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
                         )}
-                      </select>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-text-secondary mb-2">3. Grabar Audio</label>
