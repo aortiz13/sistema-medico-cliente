@@ -79,9 +79,10 @@ export default function Dashboard() {
     if (!search) {
       return patients;
     }
-    return patients.filter((patient) =>
-      patient.full_name.toLowerCase().includes(search)
-    );
+    return patients.filter((patient) => {
+      const normalizedName = patient.full_name?.toLowerCase() ?? '';
+      return normalizedName.includes(search);
+    });
   }, [patients, patientSearch]);
 
   const handleProcessAudio = async () => {
@@ -187,7 +188,11 @@ export default function Dashboard() {
                       />
                       <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full p-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary">
                         <option value="">Seleccionar...</option>
-                        {filteredPatients.map((patient) => (<option key={patient.id} value={patient.id}>{patient.full_name}</option>))}
+                        {filteredPatients.map((patient) => (
+                          <option key={patient.id} value={patient.id}>
+                            {patient.full_name ?? 'Paciente sin nombre'}
+                          </option>
+                        ))}
                         {filteredPatients.length === 0 && patientSearch.trim() !== '' && (
                           <option value="" disabled>No se encontraron pacientes</option>
                         )}
