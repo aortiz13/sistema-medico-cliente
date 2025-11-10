@@ -223,7 +223,7 @@ export default function Dashboard() {
                               }
                               setIsPatientDropdownOpen(true);
                             }}
-                            placeholder="Buscar paciente por nombre..."
+                            placeholder="Buscar por nombre"
                             autoComplete="off"
                             className="w-full pl-10 pr-10 py-3 border border-base-300 rounded-lg bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm transition-all"
                           />
