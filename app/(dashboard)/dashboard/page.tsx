@@ -239,7 +239,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         {isPatientDropdownOpen && (
-                          <div className="absolute left-0 right-0 mt-2 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto transition ease-out duration-150 origin-top">
+                          <div className="absolute left-0 right-0 mt-2 z-50 rounded-lg border border-base-300 bg-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] max-h-60 overflow-y-auto transition ease-out duration-150 origin-top">
                             {filteredPatients.length === 0 ? (
                               <div className="px-4 py-3 text-sm text-text-secondary">No se encontraron pacientes</div>
                             ) : (
